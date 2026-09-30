@@ -1,0 +1,20 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Firma: NUNCA en el repo
+*.jks
+*.keystore
+keystore*.txt
+
+# Sistema
+.DS_Store
+Thumbs.db
+*Zone.Identifier

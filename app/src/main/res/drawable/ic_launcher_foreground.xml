@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- "T" azul de la extensión, dentro de la zona segura (66 dp centrales) -->
+    <path
+        android:fillColor="#5B8AFF"
+        android:pathData="M32,32 L76,32 L76,45 L60,45 L60,78 L48,78 L48,45 L32,45 Z" />
+</vector>
