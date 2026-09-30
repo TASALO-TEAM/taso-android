@@ -31,6 +31,7 @@ import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider as GlanceColor
 import com.tasalo.android.MainActivity
 import com.tasalo.android.container
 import com.tasalo.android.domain.AppSettings
@@ -57,7 +58,7 @@ object WidgetColors {
     private val red = ColorProvider(day = Color(0xFFDC2626), night = Color(0xFFFF6B6B))
     private val green = ColorProvider(day = Color(0xFF16A34A), night = Color(0xFF4ADE80))
 
-    fun change(change: Change, invert: Boolean): ColorProvider = when (change) {
+    fun change(change: Change, invert: Boolean): GlanceColor = when (change) {
         Change.UP -> if (invert) green else red
         Change.DOWN -> if (invert) red else green
         Change.NEUTRAL -> dim
@@ -104,7 +105,7 @@ fun openApp(context: Context, source: Source?): Action {
 fun WText(
     text: String,
     modifier: GlanceModifier = GlanceModifier,
-    color: ColorProvider = WidgetColors.text,
+    color: GlanceColor = WidgetColors.text,
     size: Int = 14,
     bold: Boolean = false,
     mono: Boolean = false,
