@@ -95,8 +95,10 @@ object DiagnosticLog {
         folder.listFiles()?.sortedBy { it.name }?.dropLast(MAX_CRASHES)?.forEach { it.delete() }
     }
 
-    fun pendingCrashes(): List<File> =
-        File(dir ?: return emptyList(), "crashes").listFiles()?.sortedBy { it.name }.orEmpty()
+    fun pendingCrashes(): List<File> {
+        val base = dir ?: return emptyList()
+        return File(base, "crashes").listFiles()?.sortedBy { it.name }.orEmpty()
+    }
 
     fun hasPendingCrashes(): Boolean = pendingCrashes().isNotEmpty()
 

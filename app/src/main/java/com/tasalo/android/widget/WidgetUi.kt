@@ -23,7 +23,6 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.appWidgetBackground
-import androidx.glance.appwidget.appWidgetBackgroundRadius
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
@@ -161,7 +160,7 @@ data class WidgetData(val snapshot: Snapshot, val settings: AppSettings, val now
 abstract class SafeGlanceWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Exact
 
-    override suspend fun onCompositionError(
+    override fun onCompositionError(
         context: Context,
         glanceId: GlanceId,
         appWidgetId: Int,
@@ -236,14 +235,14 @@ fun WText(
 }
 
 /**
- * Fondo del widget. En Android 12+ usa el radio de esquina del sistema para que el widget
+ * Fondo del widget. En Android 12+ usa el radio de esquina del sistema (dimen del propio Android) para que el widget
  * case con el launcher; antes de eso, un radio fijo. El padding de 12 dp evita que el contenido
  * choque con las esquinas grandes de Android 12+.
  */
 @Composable
 fun WidgetFrame(onClick: Action, content: @Composable () -> Unit) {
     val shape = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        GlanceModifier.appWidgetBackgroundRadius()
+        GlanceModifier.cornerRadius(android.R.dimen.system_app_widget_background_radius)
     } else {
         GlanceModifier.cornerRadius(16.dp)
     }
