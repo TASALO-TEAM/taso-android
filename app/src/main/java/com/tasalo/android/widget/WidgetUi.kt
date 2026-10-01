@@ -3,19 +3,27 @@ package com.tasalo.android.widget
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalContext
 import androidx.glance.action.Action
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.appWidgetBackgroundRadius
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.updateAll
 import androidx.glance.background
@@ -30,14 +38,17 @@ import androidx.glance.layout.padding
 import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider as GlanceColor
 import com.tasalo.android.MainActivity
 import com.tasalo.android.container
+import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Snapshot
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.Format
 import com.tasalo.android.work.RefreshScheduler
 import java.time.Instant
@@ -48,21 +59,83 @@ object WidgetKeys {
     val CURRENCIES = stringPreferencesKey("widget_currencies")
 }
 
-/** Paleta de la extensión, con variante clara/oscura (plan §6). */
-object WidgetColors {
-    val bg = ColorProvider(day = Color(0xE6E8EAF3), night = Color(0xE609091E))
-    val text = ColorProvider(day = Color(0xFF1A1B2E), night = Color(0xFFE8EAF3))
-    val dim = ColorProvider(day = Color(0xFF6A6E88), night = Color(0xFF8A8FB0))
-    val accent = ColorProvider(day = Color(0xFF3B6EE8), night = Color(0xFF5B8AFF))
-    val track = ColorProvider(day = Color(0x33000000), night = Color(0x33FFFFFF))
-    private val red = ColorProvider(day = Color(0xFFDC2626), night = Color(0xFFFF6B6B))
-    private val green = ColorProvider(day = Color(0xFF16A34A), night = Color(0xFF4ADE80))
+/**
+ * Paleta de la extensión. En AUTO sigue el modo día/noche del sistema; si el usuario fijó
+ * Claro u Oscuro en Ajustes, los widgets lo respetan también (antes solo seguían al sistema).
+ */
+data class WidgetPalette(
+    val bg: GlanceColor,
+    val text: GlanceColor,
+    val dim: GlanceColor,
+    val accent: GlanceColor,
+    val track: GlanceColor,
+    val up: GlanceColor,
+    val down: GlanceColor,
+) {
+    companion object {
+        private fun fixed(argb: Long): GlanceColor = ColorProvider(day = Color(argb), night = Color(argb))
 
-    fun change(change: Change, invert: Boolean): GlanceColor = when (change) {
-        Change.UP -> if (invert) green else red
-        Change.DOWN -> if (invert) red else green
-        Change.NEUTRAL -> dim
+        // Fondo casi opaco: sobre fondos de pantalla claros/ruidosos el texto seguía ilegible con 90 %.
+        val Auto = WidgetPalette(
+            bg = ColorProvider(day = Color(0xF5E8EAF3), night = Color(0xF509091E)),
+            text = ColorProvider(day = Color(0xFF1A1B2E), night = Color(0xFFE8EAF3)),
+            dim = ColorProvider(day = Color(0xFF5B5F7A), night = Color(0xFF9A9FC0)),
+            accent = ColorProvider(day = Color(0xFF3B6EE8), night = Color(0xFF5B8AFF)),
+            track = ColorProvider(day = Color(0x33000000), night = Color(0x33FFFFFF)),
+            up = ColorProvider(day = Color(0xFFDC2626), night = Color(0xFFFF6B6B)),
+            down = ColorProvider(day = Color(0xFF16A34A), night = Color(0xFF4ADE80)),
+        )
+        val Light = WidgetPalette(
+            bg = fixed(0xF5E8EAF3),
+            text = fixed(0xFF1A1B2E),
+            dim = fixed(0xFF5B5F7A),
+            accent = fixed(0xFF3B6EE8),
+            track = fixed(0x33000000),
+            up = fixed(0xFFDC2626),
+            down = fixed(0xFF16A34A),
+        )
+        val Dark = WidgetPalette(
+            bg = fixed(0xF509091E),
+            text = fixed(0xFFE8EAF3),
+            dim = fixed(0xFF9A9FC0),
+            accent = fixed(0xFF5B8AFF),
+            track = fixed(0x33FFFFFF),
+            up = fixed(0xFFFF6B6B),
+            down = fixed(0xFF4ADE80),
+        )
+
+        fun of(mode: ThemeMode): WidgetPalette = when (mode) {
+            ThemeMode.AUTO -> Auto
+            ThemeMode.LIGHT -> Light
+            ThemeMode.DARK -> Dark
+        }
     }
+}
+
+val LocalPalette = staticCompositionLocalOf { WidgetPalette.Auto }
+
+/** Accesos cortos a la paleta vigente; solo se usan dentro de composables de widget. */
+object WidgetColors {
+    val bg: GlanceColor @Composable get() = LocalPalette.current.bg
+    val text: GlanceColor @Composable get() = LocalPalette.current.text
+    val dim: GlanceColor @Composable get() = LocalPalette.current.dim
+    val accent: GlanceColor @Composable get() = LocalPalette.current.accent
+    val track: GlanceColor @Composable get() = LocalPalette.current.track
+
+    @Composable
+    fun change(change: Change, invert: Boolean): GlanceColor {
+        val p = LocalPalette.current
+        return when (change) {
+            Change.UP -> if (invert) p.down else p.up
+            Change.DOWN -> if (invert) p.up else p.down
+            Change.NEUTRAL -> p.dim
+        }
+    }
+}
+
+@Composable
+fun WidgetRoot(theme: ThemeMode, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalPalette provides WidgetPalette.of(theme)) { content() }
 }
 
 /** Lo que leen los widgets: solo el caché, nunca la red (plan §3). */
@@ -73,14 +146,41 @@ data class WidgetData(val snapshot: Snapshot, val settings: AppSettings, val now
             val now = Instant.now()
             return WidgetData(c.repository.snapshot(now), c.settingsStore.current(), now)
         }
+
+        /** Si algo falla al leer, el widget muestra "Abre TASALO" en lugar de romperse. */
+        suspend fun loadOrNull(context: Context): WidgetData? = try {
+            load(context)
+        } catch (e: Exception) {
+            DiagnosticLog.e("Widget", "no se pudo leer el caché", e)
+            null
+        }
+    }
+}
+
+/** Base común: registra en el diagnóstico cualquier error de composición (clave para fallos por dispositivo). */
+abstract class SafeGlanceWidget : GlanceAppWidget() {
+    override val sizeMode: SizeMode = SizeMode.Exact
+
+    override suspend fun onCompositionError(
+        context: Context,
+        glanceId: GlanceId,
+        appWidgetId: Int,
+        throwable: Throwable,
+    ) {
+        DiagnosticLog.e("Widget", "error de composición en ${javaClass.simpleName} (id=$appWidgetId)", throwable)
+        super.onCompositionError(context, glanceId, appWidgetId, throwable)
     }
 }
 
 object WidgetUpdater {
     suspend fun updateAll(context: Context) {
-        TasasWidget().updateAll(context)
-        BloqueWidget().updateAll(context)
-        AnioFraseWidget().updateAll(context)
+        try {
+            TasasWidget().updateAll(context)
+            BloqueWidget().updateAll(context)
+            AnioFraseWidget().updateAll(context)
+        } catch (e: Exception) {
+            DiagnosticLog.e("Widget", "updateAll falló", e)
+        }
     }
 }
 
@@ -101,6 +201,12 @@ fun openApp(context: Context, source: Source?): Action {
     return actionStartActivity(intent)
 }
 
+/** Escala de fuente máxima que toleran los widgets: más allá, el texto se sale de la celda. */
+private const val MAX_FONT_SCALE = 1.15f
+
+@Composable
+fun fontScale(): Float = LocalContext.current.resources.configuration.fontScale.coerceAtLeast(1f)
+
 @Composable
 fun WText(
     text: String,
@@ -109,30 +215,45 @@ fun WText(
     size: Int = 14,
     bold: Boolean = false,
     mono: Boolean = false,
+    end: Boolean = false,
     maxLines: Int = 1,
 ) {
+    // "Tamaño de fuente muy grande" (Samsung/Xiaomi) rompía las filas: se limita el escalado.
+    val scale = fontScale()
+    val adjust = if (scale > MAX_FONT_SCALE) MAX_FONT_SCALE / scale else 1f
     Text(
         text = text,
         modifier = modifier,
         maxLines = maxLines,
         style = TextStyle(
             color = color,
-            fontSize = size.sp,
+            fontSize = (size * adjust).sp,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             fontFamily = if (mono) FontFamily.Monospace else null,
+            textAlign = if (end) TextAlign.End else TextAlign.Start,
         ),
     )
 }
 
-/** Fondo translúcido con esquinas redondeadas (Glance no soporta blur). */
+/**
+ * Fondo del widget. En Android 12+ usa el radio de esquina del sistema para que el widget
+ * case con el launcher; antes de eso, un radio fijo. El padding de 12 dp evita que el contenido
+ * choque con las esquinas grandes de Android 12+.
+ */
 @Composable
 fun WidgetFrame(onClick: Action, content: @Composable () -> Unit) {
+    val shape = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        GlanceModifier.appWidgetBackgroundRadius()
+    } else {
+        GlanceModifier.cornerRadius(16.dp)
+    }
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
+            .appWidgetBackground()
             .background(WidgetColors.bg)
-            .cornerRadius(20.dp)
-            .padding(10.dp)
+            .then(shape)
+            .padding(12.dp)
             .clickable(onClick),
     ) {
         content()
@@ -157,7 +278,13 @@ fun WidgetHeader(title: String, subtitle: String) {
         WText(title, color = WidgetColors.accent, size = 13, bold = true)
         Spacer(GlanceModifier.defaultWeight())
         WText(subtitle, color = WidgetColors.dim, size = 11)
-        WText(" ↻", modifier = GlanceModifier.clickable(actionRunCallback<RefreshCallback>()), color = WidgetColors.accent, size = 16, bold = true)
+        WText(
+            " ↻",
+            modifier = GlanceModifier.clickable(actionRunCallback<RefreshCallback>()),
+            color = WidgetColors.accent,
+            size = 16,
+            bold = true,
+        )
     }
 }
 

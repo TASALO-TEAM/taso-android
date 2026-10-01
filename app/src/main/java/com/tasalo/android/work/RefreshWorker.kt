@@ -12,6 +12,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.tasalo.android.container
+import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.widget.WidgetUpdater
 import java.util.concurrent.TimeUnit
 
@@ -19,10 +20,18 @@ import java.util.concurrent.TimeUnit
 class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        val result = applicationContext.container.repository.refreshAll()
-        // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.
-        WidgetUpdater.updateAll(applicationContext)
-        return if (result.anyOk || runAttemptCount >= 2) Result.success() else Result.retry()
+        return try {
+            val result = applicationContext.container.repository.refreshAll()
+            if (!result.allOk) {
+                DiagnosticLog.w("Worker", "refresco parcial: tasas=${result.rates} combustible=${result.fuel} año=${result.year}")
+            }
+            // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.
+            WidgetUpdater.updateAll(applicationContext)
+            if (result.anyOk || runAttemptCount >= 2) Result.success() else Result.retry()
+        } catch (e: Exception) {
+            DiagnosticLog.e("Worker", "el refresco en segundo plano falló", e)
+            if (runAttemptCount >= 2) Result.failure() else Result.retry()
+        }
     }
 }
 

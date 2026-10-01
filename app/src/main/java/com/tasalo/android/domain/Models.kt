@@ -61,6 +61,10 @@ data class AppSettings(
     val invertColors: Boolean = false,
     /** Monedas ocultas, formato "FUENTE:MONEDA" (ej. "ELTOQUE:BTC"). */
     val hidden: Set<String> = emptySet(),
+    /** Preguntar si se quiere enviar un reporte cuando se detecta un cierre inesperado. */
+    val crashPrompt: Boolean = true,
+    val skippedVersion: String? = null,
+    val lastUpdateCheck: Long = 0L,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

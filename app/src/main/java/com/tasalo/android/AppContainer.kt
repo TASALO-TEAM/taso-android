@@ -7,6 +7,8 @@ import com.tasalo.android.data.TasaloRepository
 import com.tasalo.android.data.local.CacheStore
 import com.tasalo.android.data.local.SettingsStore
 import com.tasalo.android.data.remote.TasaloApi
+import com.tasalo.android.diag.DiagnosticLog
+import com.tasalo.android.update.UpdateChecker
 import com.tasalo.android.work.RefreshScheduler
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -25,6 +27,8 @@ class AppContainer(context: Context) {
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
+
+    val updateChecker = UpdateChecker(http)
 
     private val apis = ConcurrentHashMap<String, TasaloApi>()
 
@@ -50,7 +54,11 @@ class TasaloApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Primero el registro y el capturador de fallos, para que cualquier error posterior quede anotado.
+        DiagnosticLog.init(this)
+        DiagnosticLog.installCrashHandler()
         container = AppContainer(this)
+        DiagnosticLog.i("App", "inicio")
         RefreshScheduler.schedulePeriodic(this)
     }
 }

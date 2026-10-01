@@ -10,23 +10,31 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.LinearProgressIndicator
-import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.Format
 import com.tasalo.android.work.RefreshScheduler
 
 /** W3 — "Año y frase": progreso del año (siempre disponible, cálculo local) y frase del día. */
-class AnioFraseWidget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Exact
+class AnioFraseWidget : SafeGlanceWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val data = WidgetData.load(context)
-        provideContent { AnioFraseContent(context, data) }
+        val data = WidgetData.loadOrNull(context)
+        provideContent {
+            WidgetRoot(data?.settings?.theme ?: ThemeMode.AUTO) {
+                if (data == null) {
+                    WidgetFrame(openApp(context, null)) { EmptyWidget() }
+                } else {
+                    AnioFraseContent(context, data)
+                }
+            }
+        }
     }
 }
 
@@ -48,7 +56,13 @@ private fun AnioFraseContent(context: Context, data: WidgetData) {
             WText("Año ${year.year}", color = WidgetColors.accent, size = 13, bold = true)
             Spacer(GlanceModifier.defaultWeight())
             WText(Format.percent(year.percent), size = 13, bold = true, mono = true)
-            WText(" ↻", modifier = GlanceModifier.clickable(androidx.glance.appwidget.action.actionRunCallback<RefreshCallback>()), color = WidgetColors.accent, size = 16, bold = true)
+            WText(
+                " ↻",
+                modifier = GlanceModifier.clickable(actionRunCallback<RefreshCallback>()),
+                color = WidgetColors.accent,
+                size = 16,
+                bold = true,
+            )
         }
         Spacer(GlanceModifier.height(6.dp))
         LinearProgressIndicator(

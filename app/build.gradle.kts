@@ -5,6 +5,8 @@ plugins {
 }
 
 val keystorePath: String? = System.getenv("KEYSTORE_PATH")
+val appVersion: String = providers.gradleProperty("VERSION_NAME").get()
+val appVersionCode: Int = appVersion.split(".").map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 android {
     namespace = "com.tasalo.android"
@@ -14,8 +16,8 @@ android {
         applicationId = "com.tasalo.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersion
     }
 
     signingConfigs {

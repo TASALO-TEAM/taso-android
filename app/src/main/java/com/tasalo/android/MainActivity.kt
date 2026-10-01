@@ -1,6 +1,9 @@
 package com.tasalo.android
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -27,7 +30,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tasalo.android.diag.DiagnosticLog
+import com.tasalo.android.diag.ReportSender
 import com.tasalo.android.domain.Source
+import com.tasalo.android.ui.CrashReportDialog
+import com.tasalo.android.ui.UpdateDialog
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.fuel.FuelScreen
 import com.tasalo.android.ui.home.HomeScreen
@@ -61,6 +68,15 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Abre la descarga en el navegador: Android pide la confirmación de instalación habitual. */
+fun openUrl(context: android.content.Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (e: ActivityNotFoundException) {
+        DiagnosticLog.w("Update", "no hay navegador para abrir $url", e)
+    }
+}
+
 private data class Tab(val label: String, val icon: String)
 
 private val TABS = listOf(Tab("Tasas", "💱"), Tab("Combustible", "⛽"), Tab("Ajustes", "⚙️"))
@@ -87,6 +103,36 @@ private fun TasaloRoot(vm: MainViewModel) {
 
     TasaloTheme(settings.theme, settings.invertColors) {
         var tab by rememberSaveable { mutableIntStateOf(0) }
+
+        // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
+        val update = state.update
+        if (state.showCrash) {
+            CrashReportDialog(
+                onSend = {
+                    val opened = ReportSender.send(activity)
+                    if (!opened) {
+                        Toast.makeText(
+                            activity,
+                            "No hay app de correo. El reporte se copió al portapapeles: envíalo a ${DiagnosticLog.REPORT_EMAIL}",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                    vm.onCrashHandled()
+                },
+                onDismiss = vm::onCrashHandled,
+            )
+        } else if (state.showUpdate && update != null) {
+            UpdateDialog(
+                info = update,
+                currentVersion = state.currentVersion,
+                onUpdate = {
+                    openUrl(activity, update.apkUrl ?: update.pageUrl)
+                    vm.dismissUpdate()
+                },
+                onLater = vm::dismissUpdate,
+                onSkip = vm::skipUpdate,
+            )
+        }
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {

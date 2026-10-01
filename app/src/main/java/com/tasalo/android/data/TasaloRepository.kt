@@ -3,6 +3,7 @@ package com.tasalo.android.data
 import com.tasalo.android.data.local.CacheStore
 import com.tasalo.android.data.parse.Parsers
 import com.tasalo.android.data.remote.TasaloApi
+import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.domain.QuoteRule
 import com.tasalo.android.domain.Snapshot
 import com.tasalo.android.domain.Source
@@ -105,6 +106,7 @@ class TasaloRepository(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            DiagnosticLog.w("Red", "petición falló", e)
             return null
         }
     }
@@ -129,6 +131,7 @@ class TasaloRepository(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            DiagnosticLog.e("Datos", "actualización falló", e)
             false
         }
 }

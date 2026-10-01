@@ -1,6 +1,7 @@
 package com.tasalo.android.ui.settings
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -37,6 +38,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.tasalo.android.diag.DiagnosticLog
+import com.tasalo.android.diag.ReportSender
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.REPO_URL
 import com.tasalo.android.domain.Source
@@ -125,6 +128,10 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
             }
         }
 
+        item { UpdateSection(state, vm) }
+
+        item { DiagnosticsSection(state, vm) }
+
         item { AdvancedSection(currentUrl = settings.baseUrl, vm = vm) }
 
         item {
@@ -187,6 +194,63 @@ private fun AboutSection(context: Context) {
             OutlinedButton(onClick = { uriHandler.openUri(REPO_URL) }) { Text("Ver repositorio") }
             Text(
                 "Las tasas son referenciales. TASALO no es una aplicación oficial.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UpdateSection(state: UiState, vm: MainViewModel) {
+    val context = LocalContext.current
+    Section("Actualizaciones") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Versión instalada: ${state.currentVersion}")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = { vm.checkForUpdates(manual = true) }, enabled = !state.checkingUpdate) {
+                    Text(if (state.checkingUpdate) "Buscando…" else "Buscar actualizaciones")
+                }
+                val update = state.update
+                if (update != null) {
+                    OutlinedButton(onClick = { vm.showUpdateDialog() }) { Text("Ver novedades de ${update.version}") }
+                }
+            }
+            state.updateMessage?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticsSection(state: UiState, vm: MainViewModel) {
+    val context = LocalContext.current
+    Section("Diagnóstico (beta)") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Preguntar al detectar un fallo")
+                    Text(
+                        "Si la app se cierra sola, te ofrece enviar un reporte al equipo.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = state.settings.crashPrompt, onCheckedChange = vm::setCrashPrompt)
+            }
+            OutlinedButton(onClick = {
+                if (!ReportSender.send(context)) {
+                    Toast.makeText(
+                        context,
+                        "No hay app de correo. El reporte se copió: envíalo a ${DiagnosticLog.REPORT_EMAIL}",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }) { Text("Enviar registro por correo") }
+            Text(
+                "Abre tu app de correo con el reporte listo para ${DiagnosticLog.REPORT_EMAIL}. " +
+                    "Lo revisas antes de enviarlo; no incluye datos personales.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

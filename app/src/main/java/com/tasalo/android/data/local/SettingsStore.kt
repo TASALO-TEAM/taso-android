@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.tasalo.android.domain.AppSettings
@@ -28,6 +29,9 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val BASE_URL = stringPreferencesKey("base_url")
         val INVERT = booleanPreferencesKey("invert_colors")
         val HIDDEN = stringSetPreferencesKey("hidden_currencies")
+        val CRASH_PROMPT = booleanPreferencesKey("crash_prompt")
+        val SKIPPED_VERSION = stringPreferencesKey("skipped_version")
+        val LAST_UPDATE_CHECK = longPreferencesKey("last_update_check")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -40,6 +44,9 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 baseUrl = p[Keys.BASE_URL]?.let(UrlValidator::normalize) ?: DEFAULT_BASE_URL,
                 invertColors = p[Keys.INVERT] ?: false,
                 hidden = p[Keys.HIDDEN] ?: emptySet(),
+                crashPrompt = p[Keys.CRASH_PROMPT] ?: true,
+                skippedVersion = p[Keys.SKIPPED_VERSION],
+                lastUpdateCheck = p[Keys.LAST_UPDATE_CHECK] ?: 0L,
             )
         }
 
@@ -74,6 +81,18 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun resetBaseUrl() {
         store.edit { it.remove(Keys.BASE_URL) }
+    }
+
+    suspend fun setCrashPrompt(value: Boolean) {
+        store.edit { it[Keys.CRASH_PROMPT] = value }
+    }
+
+    suspend fun setSkippedVersion(version: String?) {
+        store.edit { if (version == null) it.remove(Keys.SKIPPED_VERSION) else it[Keys.SKIPPED_VERSION] = version }
+    }
+
+    suspend fun setLastUpdateCheck(millis: Long) {
+        store.edit { it[Keys.LAST_UPDATE_CHECK] = millis }
     }
 
     suspend fun setCurrencyVisible(source: Source, currency: String, visible: Boolean) {

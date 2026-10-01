@@ -9,7 +9,6 @@ import androidx.glance.GlanceModifier
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
@@ -17,22 +16,28 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.layout.padding
 import androidx.glance.layout.width
-import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.Format
 import com.tasalo.android.work.RefreshScheduler
 
 /** W2 — "Bloque completo": todas las monedas de El Toque, BCC o CADECA. */
-class BloqueWidget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Exact
+class BloqueWidget : SafeGlanceWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val data = WidgetData.load(context)
+        val data = WidgetData.loadOrNull(context)
         provideContent {
             val prefs = currentState<Preferences>()
-            val source = Source.fromId(prefs[WidgetKeys.SOURCE]) ?: data.settings.defaultSource
-            BloqueContent(context, data, source)
+            WidgetRoot(data?.settings?.theme ?: ThemeMode.AUTO) {
+                if (data == null) {
+                    WidgetFrame(openApp(context, null)) { EmptyWidget() }
+                } else {
+                    val source = Source.fromId(prefs[WidgetKeys.SOURCE]) ?: data.settings.defaultSource
+                    BloqueContent(context, data, source)
+                }
+            }
         }
     }
 }
@@ -46,6 +51,8 @@ class BloqueWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 }
 
+private val ArrowWidth = 22.dp
+
 @Composable
 private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
     val rates = data.snapshot.rates
@@ -58,18 +65,22 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         val stale = Format.isStale(rates.fetchedAt, data.now)
         val invert = data.settings.invertColors
         val textColor = if (stale) WidgetColors.dim else WidgetColors.text
+        val isCadeca = source == Source.CADECA
         val list = rates.bySource[source].orEmpty().filter { !data.settings.isHidden(source, it.currency) }
-        // Sin scroll: se muestran las primeras filas que caben según el alto.
-        val reserved = if (source == Source.CADECA) 58f else 42f
-        val maxRows = ((size.height.value - reserved) / 24f).toInt().coerceIn(1, 15)
+
+        // Sin scroll: se muestran las primeras filas que caben según el alto y la escala de fuente.
+        val rowDp = 24f * fontScale().coerceAtMost(1.15f)
+        val reserved = if (isCadeca) 68f else 52f
+        val maxRows = ((size.height.value - reserved) / rowDp).toInt().coerceIn(1, 15)
 
         WidgetHeader(source.title, subtitleFor(rates.fetchedAt, data.now))
-        if (source == Source.CADECA && list.isNotEmpty()) {
+        if (isCadeca && list.isNotEmpty()) {
+            // Las columnas reparten el ancho disponible (antes eran de 64 dp fijos y se desbordaban en widgets estrechos).
             Row(GlanceModifier.fillMaxWidth()) {
                 Spacer(GlanceModifier.defaultWeight())
-                WText("Compra", color = WidgetColors.dim, size = 10, modifier = GlanceModifier.width(64.dp))
-                WText("Venta", color = WidgetColors.dim, size = 10, modifier = GlanceModifier.width(64.dp))
-                Spacer(GlanceModifier.width(16.dp))
+                WText("Compra", color = WidgetColors.dim, size = 10, end = true, modifier = GlanceModifier.defaultWeight())
+                WText("Venta", color = WidgetColors.dim, size = 10, end = true, modifier = GlanceModifier.defaultWeight())
+                Spacer(GlanceModifier.width(ArrowWidth))
             }
         } else {
             Spacer(GlanceModifier.height(4.dp))
@@ -81,17 +92,25 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         }
 
         list.take(maxRows).forEach { rate ->
-            val flag = Currencies.META[rate.currency]?.flag.orEmpty()
-            Row(GlanceModifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                WText("$flag ${rate.currency}".trim(), size = 13, bold = true, color = textColor)
-                Spacer(GlanceModifier.defaultWeight())
-                if (source == Source.CADECA) {
-                    WText(rate.buy?.let(Format::rate) ?: "—", size = 13, mono = true, color = textColor, modifier = GlanceModifier.width(64.dp))
-                    WText(rate.sell?.let(Format::rate) ?: Format.rate(rate.rate), size = 13, mono = true, bold = true, color = textColor, modifier = GlanceModifier.width(64.dp))
+            Row(
+                GlanceModifier.fillMaxWidth().padding(vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                WText(rate.currency, size = 13, bold = true, color = textColor, modifier = GlanceModifier.defaultWeight())
+                if (isCadeca) {
+                    WText(rate.buy?.let(Format::rate) ?: "—", size = 13, mono = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())
+                    WText(rate.sell?.let(Format::rate) ?: Format.rate(rate.rate), size = 13, mono = true, bold = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())
                 } else {
-                    WText(Format.rate(rate.rate), size = 14, mono = true, bold = true, color = textColor)
+                    WText(Format.rate(rate.rate), size = 14, mono = true, bold = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())
                 }
-                WText(" ${Format.arrow(rate.change)}", color = WidgetColors.change(rate.change, invert), size = 13, bold = true, modifier = GlanceModifier.width(16.dp))
+                WText(
+                    Format.arrow(rate.change),
+                    color = WidgetColors.change(rate.change, invert),
+                    size = 13,
+                    bold = true,
+                    end = true,
+                    modifier = GlanceModifier.width(ArrowWidth),
+                )
             }
         }
     }
