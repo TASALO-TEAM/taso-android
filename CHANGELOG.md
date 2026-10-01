@@ -3,6 +3,15 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.2.1
+
+### Novedades
+- **Nuevo icono de la app**: el logo de TASALO (la T con la flecha de tendencia), también en iconos temáticos de Android 13+.
+
+### Widgets
+- **Tasas 2x1**: ya no se corta el valor. En una celda de alto todo va en una fila: código a la izquierda y valor a la derecha, y tocar la hora refresca los datos.
+- **Bloque**: pasa a tamaño 4x2 por defecto y usa dos columnas cuando hay ancho, así la misma información ocupa menos alto. (Los widgets ya colocados conservan su tamaño; puedes redimensionarlos o añadir uno nuevo.)
+
 ## 0.2.0
 
 ### Novedades

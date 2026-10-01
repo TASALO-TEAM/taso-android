@@ -7,8 +7,10 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalSize
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
@@ -52,6 +54,13 @@ class TasasWidgetReceiver : GlanceAppWidgetReceiver() {
     }
 }
 
+/** Tamaño del valor según el ancho útil: en un 2x1 estrecho tiene que caber junto al código. */
+private fun valueSizeFor(usableWidthDp: Float): Int = when {
+    usableWidthDp >= 150f -> 26
+    usableWidthDp >= 115f -> 22
+    else -> 18
+}
+
 @Composable
 private fun TasasContent(context: Context, data: WidgetData, source: Source, saved: String?) {
     val rates = data.snapshot.rates
@@ -68,48 +77,108 @@ private fun TasasContent(context: Context, data: WidgetData, source: Source, sav
         val chosen = wanted.mapNotNull { code -> all.firstOrNull { it.currency == code } }
             .ifEmpty { all.take(2) }
             .take(4)
+        val subtitle = subtitleFor(rates.fetchedAt, data.now)
 
-        WidgetHeader(source.title, subtitleFor(rates.fetchedAt, data.now))
-        Spacer(GlanceModifier.height(4.dp))
+        // Medidas útiles (sin el padding de 12 dp por lado) y escala de fuente limitada.
+        val scale = fontScale().coerceAtMost(1.15f)
+        val usableW = size.width.value - 24f
+        val usableH = size.height.value - 24f
 
-        // Se muestran tantas monedas como caben: así un widget pequeño no se corta ni se desborda.
-        val rowsThatFit = ((size.height.value - 40f) / (24f * fontScale().coerceAtMost(1.15f))).toInt().coerceAtLeast(1)
         when {
-            chosen.isEmpty() -> WText("Sin datos para esta fuente", color = WidgetColors.dim, size = 12)
-            chosen.size == 1 -> BigRate(chosen.first(), stale, invert, tall = size.height >= 90.dp)
-            size.width >= 220.dp && chosen.size >= 3 -> {
-                chosen.chunked(2).take(rowsThatFit.coerceAtLeast(1)).forEach { pair ->
-                    Row(GlanceModifier.fillMaxWidth()) {
-                        pair.forEach { rate ->
-                            Column(GlanceModifier.defaultWeight()) { RateCell(rate, stale, invert) }
+            chosen.isEmpty() -> {
+                WidgetHeader(source.title, subtitle)
+                WText("Sin datos para esta fuente", color = WidgetColors.dim, size = 12)
+            }
+
+            // 2x1 (una celda de alto): sin cabecera y todo en una fila; el valor va a la derecha.
+            usableH < 66f * scale -> {
+                val lines = (usableH / (34f * scale)).toInt().coerceAtLeast(1)
+                chosen.take(lines).forEach { rate ->
+                    CompactRow(rate, source, subtitle.takeIf { lines == 1 }, stale, invert, valueSizeFor(usableW))
+                }
+            }
+
+            else -> {
+                WidgetHeader(source.title, subtitle)
+                Spacer(GlanceModifier.height(4.dp))
+                val bodyH = usableH - 28f * scale
+                val bigFits = bodyH >= 78f * scale
+                val lines = (bodyH / (28f * scale)).toInt().coerceAtLeast(1)
+                when {
+                    chosen.size == 1 && bigFits ->
+                        BigRate(chosen.first(), stale, invert, showName = bodyH >= 96f * scale)
+                    usableW >= 200f && chosen.size >= 3 -> {
+                        val gridRows = (bodyH / (44f * scale)).toInt().coerceAtLeast(1)
+                        chosen.chunked(2).take(gridRows).forEach { pair ->
+                            Row(GlanceModifier.fillMaxWidth()) {
+                                pair.forEach { rate ->
+                                    Column(GlanceModifier.defaultWeight()) { RateCell(rate, stale, invert) }
+                                }
+                                if (pair.size == 1) Spacer(GlanceModifier.defaultWeight())
+                            }
                         }
-                        if (pair.size == 1) Spacer(GlanceModifier.defaultWeight())
+                    }
+                    else -> chosen.take(lines).forEach { rate ->
+                        RateLine(rate, stale, invert, valueSize = valueSizeFor(usableW))
                     }
                 }
             }
-            else -> chosen.take(rowsThatFit).forEach { rate -> RateLine(rate, stale, invert) }
         }
     }
 }
 
+/**
+ * Fila única para widgets de una celda de alto: código (y hora) a la izquierda, valor a la derecha.
+ * La columna izquierda reparte el espacio sobrante, así el valor nunca se corta.
+ */
 @Composable
-private fun BigRate(rate: Rate, stale: Boolean, invert: Boolean, tall: Boolean) {
+private fun CompactRow(
+    rate: Rate,
+    source: Source,
+    subtitle: String?,
+    stale: Boolean,
+    invert: Boolean,
+    valueSize: Int,
+) {
+    val main = if (stale) WidgetColors.dim else WidgetColors.text
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(GlanceModifier.defaultWeight()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                WText(rate.currency, size = 14, bold = true, color = main)
+                WText(" ${Format.arrow(rate.change)}", color = WidgetColors.change(rate.change, invert), size = 12, bold = true)
+            }
+            if (subtitle != null) {
+                // Tocar la hora refresca los datos (no hay botón de refresco en este tamaño).
+                WText(
+                    "↻ ${source.title} · $subtitle",
+                    modifier = GlanceModifier.clickable(actionRunCallback<RefreshCallback>()),
+                    color = WidgetColors.dim,
+                    size = 10,
+                )
+            }
+        }
+        WText(Format.rate(rate.rate), size = valueSize, bold = true, mono = true, color = main, end = true)
+    }
+}
+
+@Composable
+private fun BigRate(rate: Rate, stale: Boolean, invert: Boolean, showName: Boolean) {
     val meta = Currencies.META[rate.currency]
     val main = if (stale) WidgetColors.dim else WidgetColors.text
     Row(verticalAlignment = Alignment.CenterVertically) {
         WText(rate.currency, size = 14, bold = true, color = main)
-        if (tall && meta != null) WText("  ${meta.name}", size = 12, color = WidgetColors.dim)
+        if (showName && meta != null) WText("  ${meta.name}", size = 12, color = WidgetColors.dim)
     }
     WText(Format.rate(rate.rate), size = 30, bold = true, mono = true, color = main)
     WText(Format.change(rate), color = WidgetColors.change(rate.change, invert), size = 13, bold = true)
 }
 
 @Composable
-private fun RateLine(rate: Rate, stale: Boolean, invert: Boolean) {
+private fun RateLine(rate: Rate, stale: Boolean, invert: Boolean, valueSize: Int) {
     val main = if (stale) WidgetColors.dim else WidgetColors.text
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         WText(rate.currency, size = 14, bold = true, color = main, modifier = GlanceModifier.defaultWeight())
-        WText(Format.rate(rate.rate), size = 15, bold = true, mono = true, color = main, end = true)
+        WText(Format.rate(rate.rate), size = minOf(valueSize, 20), bold = true, mono = true, color = main, end = true)
         WText(" ${Format.arrow(rate.change)}", color = WidgetColors.change(rate.change, invert), size = 13, bold = true)
     }
 }
