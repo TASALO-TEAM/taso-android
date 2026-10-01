@@ -40,6 +40,9 @@ jobs:
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Lint (APIs que no existen en Android 8-12)
+        run: ./gradlew lintDebug --stacktrace
+
       - name: Tests unitarios + APK debug
         run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
 

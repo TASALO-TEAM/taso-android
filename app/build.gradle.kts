@@ -55,6 +55,11 @@ android {
     buildFeatures {
         compose = true
     }
+    lint {
+        // Los tests corren en un JDK moderno y no detectan APIs que en Android no existen (Android 8–12).
+        checkOnly.add("NewApi")
+        abortOnError = true
+    }
     testOptions {
         unitTests.isReturnDefaultValues = true
     }

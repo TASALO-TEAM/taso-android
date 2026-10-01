@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.2.2
+
+### Correcciones
+- **Cierre al abrir la app en Android 12 o anterior** (visto en Android 11): la app se cerraba al instante por usar una función que solo existe desde Android 13. Afectaba a las versiones 0.1.0, 0.2.0 y 0.2.1. Si tu teléfono la cerraba al abrir, instala esta versión a mano.
+- La compilación ahora comprueba que no se use ninguna función que falte en Android 8–12, para que no vuelva a pasar.
+
 ## 0.2.1
 
 ### Novedades

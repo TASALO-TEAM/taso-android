@@ -93,7 +93,7 @@ class TasaloRepository(
         val text = fetch { api.yearState().string() } ?: return false
         val parsed = Parsers.year(text) ?: return false
         val stored = cache.current()
-        val today = LocalDate.ofInstant(now(), zone())
+        val today = now().atZone(zone()).toLocalDate()
         val (quote, quoteDate) = QuoteRule.resolve(stored.quote, stored.quoteDate, parsed.quote, today)
         cache.saveYear(text, now(), quote, quoteDate)
         return true

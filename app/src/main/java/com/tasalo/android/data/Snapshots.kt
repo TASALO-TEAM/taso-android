@@ -36,7 +36,7 @@ object Snapshots {
         val api = raw.yearJson?.let(Parsers::year)
         val at = raw.yearAt
         // Datos de la API de otro día ya no valen para el "quedan X días": se usa el cálculo local.
-        val fresh = api != null && at != null && LocalDate.ofInstant(at, zone) == localNow.toLocalDate()
+        val fresh = api != null && at != null && at.atZone(zone).toLocalDate() == localNow.toLocalDate()
         val p = YearMath.compute(localNow, if (fresh) api else null)
         return YearState(
             year = p.year,

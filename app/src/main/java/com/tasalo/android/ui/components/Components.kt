@@ -151,7 +151,7 @@ private val MONTH_LETTERS = listOf("E", "F", "M", "A", "M", "J", "J", "A", "S", 
 
 @Composable
 fun YearCard(year: YearState, now: Instant, modifier: Modifier = Modifier) {
-    val currentMonth = LocalDate.ofInstant(now, ZoneId.systemDefault()).monthValue
+    val currentMonth = now.atZone(ZoneId.systemDefault()).monthValue
     GlassCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
