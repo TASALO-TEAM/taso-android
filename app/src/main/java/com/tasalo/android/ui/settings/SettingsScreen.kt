@@ -46,6 +46,8 @@ import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.UiState
+import com.tasalo.android.util.Format
+import java.time.Instant
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -127,6 +129,8 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
                 }
             }
         }
+
+        item { RefreshSection(state, vm) }
 
         item { UpdateSection(state, vm) }
 
@@ -239,6 +243,15 @@ private fun DiagnosticsSection(state: UiState, vm: MainViewModel) {
                 }
                 Switch(checked = state.settings.crashPrompt, onCheckedChange = vm::setCrashPrompt)
             }
+            Text(
+                if (state.settings.lastBackgroundRefresh > 0L) {
+                    "Último refresco en segundo plano: " + Format.relative(Instant.ofEpochMilli(state.settings.lastBackgroundRefresh), state.now)
+                } else {
+                    "Aún no ha habido refrescos en segundo plano."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             OutlinedButton(onClick = {
                 if (!ReportSender.send(context)) {
                     Toast.makeText(
@@ -251,6 +264,30 @@ private fun DiagnosticsSection(state: UiState, vm: MainViewModel) {
             Text(
                 "Abre tu app de correo con el reporte listo para ${DiagnosticLog.REPORT_EMAIL}. " +
                     "Lo revisas antes de enviarlo; no incluye datos personales.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RefreshSection(state: UiState, vm: MainViewModel) {
+    val options = listOf(15 to "15 min", 30 to "30 min", 60 to "1 h", 0 to "Manual")
+    Section("Actualización en segundo plano") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                options.forEachIndexed { index, (minutes, label) ->
+                    SegmentedButton(
+                        selected = state.settings.refreshMinutes == minutes,
+                        onClick = { vm.setRefreshMinutes(minutes) },
+                        shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                    ) { Text(label) }
+                }
+            }
+            Text(
+                "Cada cuánto se descargan las tasas aunque la app esté cerrada (los widgets leen de aquí). " +
+                    "Más tiempo = menos batería, datos y consultas a la API. Al abrir la app siempre se actualiza si hace falta.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -288,4 +288,4 @@ fun WidgetHeader(title: String, subtitle: String) {
 }
 
 fun subtitleFor(fetchedAt: Instant?, now: Instant): String =
-    if (fetchedAt == null) "sin datos" else Format.relative(fetchedAt, now)
+    if (fetchedAt == null) "sin datos" else "act. ${Format.absolute(fetchedAt, now)}"

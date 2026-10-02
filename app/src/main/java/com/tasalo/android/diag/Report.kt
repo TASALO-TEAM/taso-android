@@ -63,11 +63,24 @@ object ReportBuilder {
     @RequiresApi(Build.VERSION_CODES.R)
     private fun exitReasonsApi30(context: Context): String {
         val am = context.getSystemService(ActivityManager::class.java) ?: return "(sin ActivityManager)"
-        val list = am.getHistoricalProcessExitReasons(context.packageName, 0, 6)
-        if (list.isEmpty()) return "(ninguno)"
+        val list = am.getHistoricalProcessExitReasons(context.packageName, 0, 12)
+            .filterNot { isBenign(it.reason, it.importance) }
+            .take(6)
+        if (list.isEmpty()) return "(ninguno relevante)"
         return list.joinToString("\n") {
             "${Instant.ofEpochMilli(it.timestamp)} ${reasonName(it.reason)} importancia=${it.importance} ${it.description.orEmpty()}".trim()
         }
+    }
+
+    /** Salidas normales (el usuario cerró la app, actualización, el sistema liberó memoria de una app en caché). */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun isBenign(reason: Int, importance: Int): Boolean = when (reason) {
+        ApplicationExitInfo.REASON_EXIT_SELF,
+        ApplicationExitInfo.REASON_USER_REQUESTED,
+        ApplicationExitInfo.REASON_USER_STOPPED,
+        15, 16 -> true // PACKAGE_STATE_CHANGE / PACKAGE_UPDATED (Android 14+)
+        ApplicationExitInfo.REASON_LOW_MEMORY -> importance >= ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED
+        else -> false
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

@@ -64,6 +64,13 @@ class FormatTest {
     }
 
     @Test
+    fun absolute_time_shows_hour_today_and_date_otherwise() {
+        val now = Instant.parse("2026-09-29T20:00:00Z")
+        assertEquals("19:32", Format.absolute(Instant.parse("2026-09-29T19:32:00Z"), now, ZoneOffset.UTC))
+        assertEquals("28/09 23:05", Format.absolute(Instant.parse("2026-09-28T23:05:00Z"), now, ZoneOffset.UTC))
+    }
+
+    @Test
     fun stale_after_sixty_minutes_or_without_data() {
         val now = Instant.parse("2026-09-29T20:00:00Z")
         assertFalse(Format.isStale(now.minusSeconds(59 * 60), now))

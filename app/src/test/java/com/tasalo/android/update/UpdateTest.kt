@@ -82,6 +82,18 @@ class MarkdownParserTest {
     }
 
     @Test
+    fun unsafe_link_schemes_are_shown_as_plain_text() {
+        assertTrue(MarkdownParser.isSafeUrl("https://x.org"))
+        assertTrue(MarkdownParser.isSafeUrl("tg://resolve?domain=x"))
+        assertFalse(MarkdownParser.isSafeUrl("javascript:alert(1)"))
+        assertFalse(MarkdownParser.isSafeUrl("intent://scan#Intent;end"))
+        assertFalse(MarkdownParser.isSafeUrl("file:///sdcard/x"))
+        val span = MarkdownParser.inline("[toca](javascript:alert(1))").single()
+        assertEquals("toca", span.text)
+        assertNull(span.url)
+    }
+
+    @Test
     fun html_comments_and_crlf_are_handled() {
         val blocks = MarkdownParser.parse("<!-- oculto -->\r\n- a\r\n- b")
         assertEquals(2, blocks.size)

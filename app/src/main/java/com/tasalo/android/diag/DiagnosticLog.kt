@@ -21,12 +21,17 @@ object DiagnosticLog {
     private const val CRASH_TRACE_CHARS = 8_000
 
     @Volatile private var dir: File? = null
+    @Volatile private var version: String = ""
     private val lock = Any()
 
     fun init(context: Context) {
         val base = File(context.filesDir, "diag")
-        File(base, "crashes").mkdirs()
+        val crashes = File(base, "crashes").apply { mkdirs() }
+        version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
+            .getOrNull().orEmpty()
         dir = base
+        // Los fallos de versiones anteriores ya no sirven (y confundían: un reporte de 0.2.2 traía fallos de 0.2.0).
+        crashes.listFiles()?.filter { !it.name.endsWith("-v$version.txt") }?.forEach { it.delete() }
     }
 
     fun i(tag: String, message: String) = write('I', tag, message, null)
@@ -83,6 +88,7 @@ object DiagnosticLog {
         val folder = File(base, "crashes").apply { mkdirs() }
         val trace = error.stackTraceToString().take(CRASH_TRACE_CHARS)
         val text = buildString {
+            appendLine("Versión: $version")
             appendLine("Fecha: ${Instant.now()}")
             appendLine("Hilo: ${thread.name}")
             appendLine()
@@ -91,7 +97,7 @@ object DiagnosticLog {
             appendLine("--- últimos eventos ---")
             appendLine(tail(40))
         }
-        File(folder, "crash-${System.currentTimeMillis()}.txt").writeText(text)
+        File(folder, "crash-${System.currentTimeMillis()}-v$version.txt").writeText(text)
         folder.listFiles()?.sortedBy { it.name }?.dropLast(MAX_CRASHES)?.forEach { it.delete() }
     }
 

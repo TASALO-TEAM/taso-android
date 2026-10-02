@@ -3,6 +3,22 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.2.3
+
+### Widgets
+- Muestran la **hora real del dato** ("act. 14:32") en lugar de "hace X min". Un widget es una imagen fija: "hace 3 min" se quedaba congelado y parecía actualizado aunque llevara horas sin datos.
+
+### Segundo plano
+- Nuevo ajuste **Actualización en segundo plano**: 15 min, 30 min (por defecto), 1 h o solo manual. Menos intervalos = menos batería, datos y consultas a la API.
+- *Ajustes → Diagnóstico* indica cuándo fue el último refresco en segundo plano. Si es muy antiguo, tu móvil está frenando la app: en Xiaomi activa el *Autoinicio* y pon la batería en *Sin restricciones* para TASALO.
+
+### Reportes de fallos
+- Cada fallo guardado lleva la versión de la app y se descartan los de versiones anteriores, así no se vuelve a preguntar por fallos ya corregidos.
+- Se quitan del reporte las salidas normales del sistema (app cerrada por el usuario, actualización, memoria liberada en segundo plano).
+
+### Seguridad
+- Los enlaces en el lector de novedades solo se abren si son `https`, `http` o `tg`.
+
 ## 0.2.2
 
 ### Correcciones

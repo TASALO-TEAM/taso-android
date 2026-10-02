@@ -11,6 +11,10 @@ import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.update.UpdateChecker
 import com.tasalo.android.work.RefreshScheduler
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -59,7 +63,9 @@ class TasaloApp : Application() {
         DiagnosticLog.installCrashHandler()
         container = AppContainer(this)
         DiagnosticLog.i("App", "inicio")
-        RefreshScheduler.schedulePeriodic(this)
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            RefreshScheduler.schedulePeriodic(this@TasaloApp, container.settingsStore.current().refreshMinutes)
+        }
     }
 }
 

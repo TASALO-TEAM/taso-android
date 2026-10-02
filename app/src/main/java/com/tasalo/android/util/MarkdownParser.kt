@@ -84,6 +84,11 @@ object MarkdownParser {
         return blocks
     }
 
+    fun isSafeUrl(url: String): Boolean {
+        val u = url.trim().lowercase()
+        return u.startsWith("https://") || u.startsWith("http://") || u.startsWith("tg://") || u.startsWith("tg:")
+    }
+
     fun inline(text: String, bold: Boolean = false, italic: Boolean = false, url: String? = null): List<MdSpan> {
         val spans = mutableListOf<MdSpan>()
         var pos = 0
@@ -95,7 +100,8 @@ object MarkdownParser {
                 g[2].isNotEmpty() -> spans += inline(g[2], true, italic, url)
                 g[3].isNotEmpty() -> spans += inline(g[3], true, italic, url)
                 g[4].isNotEmpty() -> spans += inline(g[4], bold, true, url)
-                g[5].isNotEmpty() -> spans += inline(g[5], bold, italic, g[6])
+                // Enlaces con esquema no permitido (javascript:, intent:, file:…) se muestran como texto plano.
+                g[5].isNotEmpty() -> spans += inline(g[5], bold, italic, if (isSafeUrl(g[6])) g[6] else url)
             }
             pos = m.range.last + 1
         }

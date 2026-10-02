@@ -65,6 +65,9 @@ data class AppSettings(
     val crashPrompt: Boolean = true,
     val skippedVersion: String? = null,
     val lastUpdateCheck: Long = 0L,
+    /** Minutos entre refrescos en segundo plano; 0 = solo manual. */
+    val refreshMinutes: Int = 30,
+    val lastBackgroundRefresh: Long = 0L,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

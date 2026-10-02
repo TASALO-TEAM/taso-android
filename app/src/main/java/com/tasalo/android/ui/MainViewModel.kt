@@ -17,6 +17,7 @@ import com.tasalo.android.update.UpdateInfo
 import com.tasalo.android.update.UpdateResult
 import com.tasalo.android.util.NetworkMonitor
 import com.tasalo.android.widget.WidgetUpdater
+import com.tasalo.android.work.RefreshScheduler
 import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -205,6 +206,13 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     fun onCrashHandled() {
         viewModelScope.launch(Dispatchers.IO) { DiagnosticLog.clearCrashes() }
         extras.update { it.copy(showCrash = false) }
+    }
+
+    fun setRefreshMinutes(minutes: Int) {
+        viewModelScope.launch {
+            settingsStore.setRefreshMinutes(minutes)
+            RefreshScheduler.schedulePeriodic(app, minutes)
+        }
     }
 
     fun setCrashPrompt(value: Boolean) {

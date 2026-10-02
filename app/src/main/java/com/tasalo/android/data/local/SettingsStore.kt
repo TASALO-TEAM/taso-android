@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
@@ -19,6 +20,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+/** Intervalos permitidos (minutos) para el refresco en segundo plano; 0 = manual. */
+val REFRESH_OPTIONS = setOf(0, 15, 30, 60)
+
 /** Ajustes del usuario, en un DataStore separado del caché (plan §4.3). */
 class SettingsStore(private val store: DataStore<Preferences>) {
 
@@ -32,6 +36,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val CRASH_PROMPT = booleanPreferencesKey("crash_prompt")
         val SKIPPED_VERSION = stringPreferencesKey("skipped_version")
         val LAST_UPDATE_CHECK = longPreferencesKey("last_update_check")
+        val REFRESH_MINUTES = intPreferencesKey("refresh_minutes")
+        val LAST_BG_REFRESH = longPreferencesKey("last_bg_refresh")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -47,6 +53,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 crashPrompt = p[Keys.CRASH_PROMPT] ?: true,
                 skippedVersion = p[Keys.SKIPPED_VERSION],
                 lastUpdateCheck = p[Keys.LAST_UPDATE_CHECK] ?: 0L,
+                refreshMinutes = p[Keys.REFRESH_MINUTES]?.takeIf { it in REFRESH_OPTIONS } ?: 30,
+                lastBackgroundRefresh = p[Keys.LAST_BG_REFRESH] ?: 0L,
             )
         }
 
@@ -89,6 +97,14 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun setSkippedVersion(version: String?) {
         store.edit { if (version == null) it.remove(Keys.SKIPPED_VERSION) else it[Keys.SKIPPED_VERSION] = version }
+    }
+
+    suspend fun setRefreshMinutes(minutes: Int) {
+        store.edit { it[Keys.REFRESH_MINUTES] = if (minutes in REFRESH_OPTIONS) minutes else 30 }
+    }
+
+    suspend fun setLastBackgroundRefresh(millis: Long) {
+        store.edit { it[Keys.LAST_BG_REFRESH] = millis }
     }
 
     suspend fun setLastUpdateCheck(millis: Long) {

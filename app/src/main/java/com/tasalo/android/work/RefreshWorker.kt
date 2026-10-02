@@ -21,10 +21,14 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 
     override suspend fun doWork(): Result {
         return try {
-            val result = applicationContext.container.repository.refreshAll()
-            if (!result.allOk) {
+            val container = applicationContext.container
+            val result = container.repository.refreshAll()
+            if (result.allOk) {
+                DiagnosticLog.i("Worker", "refresco en segundo plano correcto")
+            } else {
                 DiagnosticLog.w("Worker", "refresco parcial: tasas=${result.rates} combustible=${result.fuel} año=${result.year}")
             }
+            if (result.anyOk) container.settingsStore.setLastBackgroundRefresh(System.currentTimeMillis())
             // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.
             WidgetUpdater.updateAll(applicationContext)
             if (result.anyOk || runAttemptCount >= 2) Result.success() else Result.retry()
@@ -42,14 +46,22 @@ object RefreshScheduler {
     private val needsNetwork: Constraints
         get() = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
-    /** Cada 15 min (el mínimo de WorkManager). KEEP => se agenda una sola vez. */
-    fun schedulePeriodic(context: Context) {
-        val request = PeriodicWorkRequestBuilder<RefreshWorker>(15, TimeUnit.MINUTES)
+    /**
+     * Programa el refresco cada `minutes` (WorkManager no baja de 15). 0 = solo manual: se cancela.
+     * UPDATE aplica el nuevo intervalo sin duplicar el trabajo.
+     */
+    fun schedulePeriodic(context: Context, minutes: Int) {
+        val manager = WorkManager.getInstance(context)
+        if (minutes <= 0) {
+            manager.cancelUniqueWork(PERIODIC)
+            DiagnosticLog.i("Worker", "refresco en segundo plano desactivado (manual)")
+            return
+        }
+        val request = PeriodicWorkRequestBuilder<RefreshWorker>(minutes.coerceAtLeast(15).toLong(), TimeUnit.MINUTES)
             .setConstraints(needsNetwork)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES)
             .build()
-        WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.KEEP, request)
+        manager.enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
     fun refreshNow(context: Context) {

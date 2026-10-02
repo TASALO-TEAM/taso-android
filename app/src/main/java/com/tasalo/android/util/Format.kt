@@ -84,6 +84,13 @@ object Format {
         }
     }
 
+    /** Hora del dato: "14:32" si es de hoy, "30/09 14:32" si no. No miente cuando el widget queda congelado. */
+    fun absolute(then: Instant, now: Instant, zone: ZoneId = ZoneId.systemDefault()): String {
+        val t = then.atZone(zone)
+        val sameDay = t.toLocalDate() == now.atZone(zone).toLocalDate()
+        return DateTimeFormatter.ofPattern(if (sameDay) "HH:mm" else "dd/MM HH:mm").format(t)
+    }
+
     fun isStale(fetchedAt: Instant?, now: Instant, minutes: Long = 60): Boolean =
         fetchedAt == null || Duration.between(fetchedAt, now).toMinutes() >= minutes
 }
