@@ -3,6 +3,9 @@ package com.tasalo.android
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.mutableStateOf
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
 import android.os.Bundle
@@ -35,6 +38,8 @@ import com.tasalo.android.diag.ReportSender
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.CrashReportDialog
 import com.tasalo.android.ui.UpdateDialog
+import com.tasalo.android.ui.notifications.NotificationsScreen
+import com.tasalo.android.update.UpdatePhase
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.fuel.FuelScreen
 import com.tasalo.android.ui.home.HomeScreen
@@ -103,6 +108,8 @@ private fun TasaloRoot(vm: MainViewModel) {
 
     TasaloTheme(settings.theme, settings.invertColors) {
         var tab by rememberSaveable { mutableIntStateOf(0) }
+        var showNotifications by rememberSaveable { mutableStateOf(false) }
+        BackHandler(enabled = showNotifications) { showNotifications = false }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
         val update = state.update
@@ -121,16 +128,31 @@ private fun TasaloRoot(vm: MainViewModel) {
                 },
                 onDismiss = vm::onCrashHandled,
             )
-        } else if (state.showUpdate && update != null) {
+        } else if ((state.showUpdate || state.updatePhase != UpdatePhase.Idle) && update != null) {
             UpdateDialog(
                 info = update,
                 currentVersion = state.currentVersion,
-                onUpdate = {
-                    openUrl(activity, update.apkUrl ?: update.pageUrl)
+                phase = state.updatePhase,
+                onUpdate = vm::startUpdate,
+                onLater = {
+                    vm.resetUpdatePhase()
                     vm.dismissUpdate()
                 },
-                onLater = vm::dismissUpdate,
                 onSkip = vm::skipUpdate,
+                onCancel = vm::cancelUpdate,
+                onBrowser = {
+                    openUrl(activity, update.apkUrl ?: update.pageUrl)
+                    vm.resetUpdatePhase()
+                    vm.dismissUpdate()
+                },
+                onOpenSettings = {
+                    runCatching {
+                        activity.startActivity(
+                            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}")),
+                        )
+                    }
+                    vm.resetUpdatePhase()
+                },
             )
         }
         Scaffold(
@@ -140,7 +162,10 @@ private fun TasaloRoot(vm: MainViewModel) {
                     TABS.forEachIndexed { index, item ->
                         NavigationBarItem(
                             selected = tab == index,
-                            onClick = { tab = index },
+                            onClick = {
+                                tab = index
+                                showNotifications = false
+                            },
                             icon = { Text(item.icon, modifier = Modifier.semantics { contentDescription = item.label }) },
                             label = { Text(item.label) },
                         )
@@ -149,10 +174,19 @@ private fun TasaloRoot(vm: MainViewModel) {
             },
         ) { padding ->
             Box(Modifier.padding(padding)) {
-                when (tab) {
-                    0 -> HomeScreen(state, vm::refresh, vm::selectSource)
-                    1 -> FuelScreen(state, vm::refresh)
-                    else -> SettingsScreen(state, vm)
+                if (showNotifications) {
+                    NotificationsScreen(
+                        state = state,
+                        vm = vm,
+                        onBack = { showNotifications = false },
+                        onUpdate = vm::showUpdateDialog,
+                    )
+                } else {
+                    when (tab) {
+                        0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
+                        1 -> FuelScreen(state, vm::refresh)
+                        else -> SettingsScreen(state, vm)
+                    }
                 }
             }
         }

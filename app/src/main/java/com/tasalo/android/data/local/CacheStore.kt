@@ -29,6 +29,8 @@ class CacheStore(private val store: DataStore<Preferences>) {
         val yearAt: Instant? = null,
         val quote: String? = null,
         val quoteDate: LocalDate? = null,
+        val releasesJson: String? = null,
+        val releasesAt: Instant? = null,
     )
 
     private object Keys {
@@ -40,6 +42,8 @@ class CacheStore(private val store: DataStore<Preferences>) {
         val YEAR_AT = longPreferencesKey("year_at")
         val QUOTE = stringPreferencesKey("quote_text")
         val QUOTE_DATE = stringPreferencesKey("quote_date")
+        val RELEASES_JSON = stringPreferencesKey("releases_json")
+        val RELEASES_AT = longPreferencesKey("releases_at")
     }
 
     val raw: Flow<Raw> = store.data
@@ -54,6 +58,8 @@ class CacheStore(private val store: DataStore<Preferences>) {
                 yearAt = p[Keys.YEAR_AT]?.let(Instant::ofEpochMilli),
                 quote = p[Keys.QUOTE],
                 quoteDate = p[Keys.QUOTE_DATE]?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                releasesJson = p[Keys.RELEASES_JSON],
+                releasesAt = p[Keys.RELEASES_AT]?.let(Instant::ofEpochMilli),
             )
         }
 
@@ -63,6 +69,13 @@ class CacheStore(private val store: DataStore<Preferences>) {
         store.edit {
             it[Keys.LATEST_JSON] = json
             it[Keys.LATEST_AT] = at.toEpochMilli()
+        }
+    }
+
+    suspend fun saveReleases(json: String, at: Instant) {
+        store.edit {
+            it[Keys.RELEASES_JSON] = json
+            it[Keys.RELEASES_AT] = at.toEpochMilli()
         }
     }
 

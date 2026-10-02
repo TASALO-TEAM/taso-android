@@ -40,6 +40,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.diag.ReportSender
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
+import com.tasalo.android.R
+import com.tasalo.android.update.CertInfo
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.REPO_URL
 import com.tasalo.android.domain.Source
@@ -195,7 +202,22 @@ private fun AboutSection(context: Context) {
     Section("Acerca de") {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
             Text("TASALO Android · versión $version")
-            OutlinedButton(onClick = { uriHandler.openUri(REPO_URL) }) { Text("Ver repositorio") }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                SOCIAL_LINKS.forEach { link ->
+                    IconButton(onClick = { runCatching { uriHandler.openUri(link.url) } }) {
+                        Icon(painterResource(link.icon), contentDescription = link.label, tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+            val fingerprint = remember { CertInfo.installedFingerprint(context) }
+            Text(
+                "Huella SHA-256 del certificado de firma (debe coincidir con la de la Release en GitHub):",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            SelectionContainer {
+                Text(fingerprint ?: "no disponible", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelSmall)
+            }
             Text(
                 "Las tasas son referenciales. TASALO no es una aplicación oficial.",
                 style = MaterialTheme.typography.bodySmall,
@@ -294,3 +316,11 @@ private fun RefreshSection(state: UiState, vm: MainViewModel) {
         }
     }
 }
+private data class SocialLink(val label: String, val url: String, val icon: Int)
+
+/** Iconos genéricos (no logos de marca). Telegram (bot, canal, grupo) se añade aquí cuando haya enlaces: `R.drawable.ic_social_send`. */
+private val SOCIAL_LINKS = listOf(
+    SocialLink("GitHub", "https://github.com/TASALO-TEAM", R.drawable.ic_social_code),
+    SocialLink("Blog en Ecency", "https://ecency.com/@ersusoficial", R.drawable.ic_social_article),
+    SocialLink("Correo del equipo", "mailto:tasaloteam@gmail.com", R.drawable.ic_social_mail),
+)

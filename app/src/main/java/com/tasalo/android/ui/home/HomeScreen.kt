@@ -12,7 +12,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,6 +49,7 @@ fun HomeScreen(
     state: UiState,
     onRefresh: () -> Unit,
     onSelectSource: (Source) -> Unit,
+    onOpenNotifications: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val source = state.settings.source
@@ -65,7 +69,14 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    Header(state.rates?.fetchedAt, state.now, state.refreshing, onRefresh)
+                    Header(
+                        state.rates?.fetchedAt,
+                        state.now,
+                        state.refreshing,
+                        onRefresh,
+                        hasNotifications = state.update != null,
+                        onBell = onOpenNotifications,
+                    )
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     SourceSelector(source, onSelectSource)
@@ -124,7 +135,14 @@ internal fun bannerFor(state: UiState): Pair<String, Boolean>? {
 }
 
 @Composable
-private fun Header(fetchedAt: Instant?, now: Instant, refreshing: Boolean, onRefresh: () -> Unit) {
+private fun Header(
+    fetchedAt: Instant?,
+    now: Instant,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
+    hasNotifications: Boolean,
+    onBell: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -138,11 +156,19 @@ private fun Header(fetchedAt: Instant?, now: Instant, refreshing: Boolean, onRef
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onRefresh, enabled = !refreshing) {
-            if (refreshing) {
-                CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
-            } else {
-                Icon(Icons.Filled.Refresh, contentDescription = "Actualizar tasas")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Campana a la izquierda del botón de actualizar; el punto indica que hay algo nuevo.
+            IconButton(onClick = onBell) {
+                BadgedBox(badge = { if (hasNotifications) Badge() }) {
+                    Icon(Icons.Filled.Notifications, contentDescription = "Notificaciones")
+                }
+            }
+            IconButton(onClick = onRefresh, enabled = !refreshing) {
+                if (refreshing) {
+                    CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Actualizar tasas")
+                }
             }
         }
     }

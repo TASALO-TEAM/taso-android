@@ -4,6 +4,10 @@
     <!-- Solo estos dos permisos (plan §7). Sin ubicación, contactos ni notificaciones. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Para actualizar TASALO desde la propia app (descarga + instalación). Solo instala nuestro paquete firmado con nuestra clave. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 12+: permite actualizarse sin pedir confirmación cuando el sistema lo admite. -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <!-- Solo para anotar el nombre del launcher en el reporte de diagnóstico (errores visuales de widgets). -->
     <queries>
@@ -76,5 +80,8 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_anio_info" />
         </receiver>
+        <receiver
+            android:name=".update.InstallResultReceiver"
+            android:exported="false" />
     </application>
 </manifest>

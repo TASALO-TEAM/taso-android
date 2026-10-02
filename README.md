@@ -21,7 +21,7 @@ Kotlin · Jetpack Compose (Material 3) · Glance · Retrofit + OkHttp · kotlinx
 
 ## Permisos
 
-Solo `INTERNET` y `ACCESS_NETWORK_STATE`. Solo HTTPS. `allowBackup=false`.
+`INTERNET` y `ACCESS_NETWORK_STATE`, más `REQUEST_INSTALL_PACKAGES` y `UPDATE_PACKAGES_WITHOUT_USER_ACTION` para actualizarse a sí misma (el instalador solo acepta un APK del mismo paquete y con la misma firma). Solo HTTPS. `allowBackup=false`.
 
 ## Compilar
 
@@ -38,3 +38,7 @@ Un tag `vX.Y.Z` dispara el workflow que firma el APK y lo adjunta a la Release. 
 ## Licencia
 
 MIT — ver [LICENSE](LICENSE).
+
+## Verificar una instalación
+
+Cada Release publica `taso-android-vX.Y.Z.apk.sha256` (huella del APK) y, en sus notas, la **huella SHA-256 del certificado de firma**. La misma huella aparece en *Ajustes → Acerca de* dentro de la app: si coinciden, la app está firmada con la clave oficial de TASALO.

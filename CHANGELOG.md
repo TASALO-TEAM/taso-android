@@ -3,6 +3,22 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.3.0
+
+### Actualizar sin salir de la app
+- Al pulsar **Actualizar**, la app descarga el APK con una barra de progreso, comprueba que no esté dañado (huella SHA-256), que sea de TASALO y que tenga la misma firma, y lo instala. Ya no te manda al navegador.
+- En Android 12 o superior la instalación puede hacerse **sin ninguna confirmación**; en Android 8–11 el sistema pide un toque para confirmar (lo exige Android).
+- La primera vez Android pedirá permitir a TASALO "instalar aplicaciones": solo se usa para actualizarse a sí misma.
+- Si algo falla, el diálogo ofrece *Reintentar* o *Descargar con el navegador*.
+- Cada Release incluye ahora el archivo `.sha256` y la huella del certificado de firma, que también aparece en *Ajustes → Acerca de* para que puedas comprobar que tu instalación es auténtica.
+
+### Notificaciones
+- Nueva **campana** a la izquierda del botón de actualizar (con un punto cuando hay una versión nueva).
+- Pantalla de notificaciones con dos secciones: **Alertas** (aquí llegarán los mensajes del equipo) y **Actualizaciones** (las últimas versiones con sus novedades). Las novedades se expanden al tocarlas.
+
+### Ajustes
+- *Acerca de* incluye accesos directos a GitHub, el blog y el correo del equipo.
+
 ## 0.2.3
 
 ### Widgets

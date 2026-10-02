@@ -182,3 +182,51 @@ class UpdateCheckerTest {
         assertNotNull(UpdateChecker.parseRelease(releaseJson, "https://github.com", repo))
     }
 }
+
+class UpdateInstallTest {
+    @Test
+    fun checksum_file_formats_are_parsed() {
+        val hash = "a".repeat(32) + "B".repeat(32)
+        assertEquals(hash.lowercase(), UpdateChecker.parseSha256("$hash  taso-android-v0.3.0.apk\n"))
+        assertEquals(hash.lowercase(), UpdateChecker.parseSha256(hash))
+        assertNull(UpdateChecker.parseSha256("no es un hash"))
+        assertNull(UpdateChecker.parseSha256("abc123"))
+    }
+
+    @Test
+    fun downloads_are_only_allowed_from_our_releases() {
+        val ok = "https://github.com/TASALO-TEAM/taso-android/releases/download/v0.3.0/taso-android-v0.3.0.apk"
+        assertTrue(UpdateDownloader.isAllowedUrl(ok))
+        assertFalse(UpdateDownloader.isAllowedUrl("https://github.com/otro/repo/releases/download/v1/app.apk"))
+        assertFalse(UpdateDownloader.isAllowedUrl("http://github.com/TASALO-TEAM/taso-android/releases/x.apk"))
+        assertFalse(UpdateDownloader.isAllowedUrl("https://evil.example/TASALO-TEAM/taso-android/x.apk"))
+    }
+
+    @Test
+    fun release_json_exposes_the_sha256_asset() {
+        val json = """
+            {"tag_name":"v0.3.0","html_url":"https://github.com/x","body":"notas",
+             "assets":[{"name":"taso-android-v0.3.0.apk","size":10,"browser_download_url":"https://github.com/a.apk"},
+                       {"name":"taso-android-v0.3.0.apk.sha256","size":90,"browser_download_url":"https://github.com/a.apk.sha256"}]}
+        """.trimIndent()
+        val info = UpdateChecker.parseRelease(json, "https://github.com", "TASALO-TEAM/taso-android")!!
+        assertEquals("https://github.com/a.apk", info.apkUrl)
+        assertEquals("https://github.com/a.apk.sha256", info.sha256Url)
+    }
+
+    @Test
+    fun release_list_skips_drafts_and_prereleases_and_keeps_order() {
+        val json = """
+            [{"tag_name":"v0.3.0","name":"TASALO Android v0.3.0","body":"nuevo","published_at":"2026-10-02T10:00:00Z","html_url":"https://github.com/r3"},
+             {"tag_name":"v0.3.0-rc1","prerelease":true,"body":"x"},
+             {"tag_name":"v0.2.9","draft":true,"body":"x"},
+             {"tag_name":"v0.2.3","body":"viejo","published_at":"2026-10-01T10:00:00Z"}]
+        """.trimIndent()
+        val list = UpdateChecker.parseReleases(json)
+        assertEquals(listOf("0.3.0", "0.2.3"), list.map { it.version })
+        assertEquals("TASALO Android v0.3.0", list[0].title)
+        assertEquals("Versión 0.2.3", list[1].title)
+        assertNotNull(list[0].publishedAt)
+        assertTrue(UpdateChecker.parseReleases("basura").isEmpty())
+    }
+}

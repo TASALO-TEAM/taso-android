@@ -1,12 +1,14 @@
 package com.tasalo.android.update
 
 import com.tasalo.android.diag.DiagnosticLog
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.longOrNull
 import okhttp3.OkHttpClient
@@ -44,6 +46,17 @@ data class UpdateInfo(
     val pageUrl: String,
     val apkUrl: String?,
     val apkBytes: Long?,
+    /** Archivo `.apk.sha256` publicado junto al APK (Releases antiguas no lo tienen). */
+    val sha256Url: String? = null,
+)
+
+/** Una Release publicada, para la pestaña "Actualizaciones" de las notificaciones. */
+data class ReleaseInfo(
+    val version: String,
+    val title: String,
+    val notes: String?,
+    val publishedAt: Instant?,
+    val pageUrl: String,
 )
 
 sealed interface UpdateResult {
@@ -53,8 +66,8 @@ sealed interface UpdateResult {
 }
 
 /**
- * Consulta la última Release publicada en GitHub. No pide permisos nuevos ni instala nada:
- * el botón "Actualizar" abre la descarga del APK y Android pide la confirmación habitual.
+ * Consulta las Releases publicadas en GitHub. El botón "Actualizar" descarga el APK dentro de la app
+ * (ver `UpdateInstaller`); aquí solo se averigua qué hay y dónde.
  */
 class UpdateChecker(
     private val client: OkHttpClient,
@@ -77,6 +90,41 @@ class UpdateChecker(
         } ?: return@withContext UpdateResult.Failed("No se pudo consultar GitHub")
 
         if (SemVer.isNewer(info.version, currentVersion)) UpdateResult.Available(info) else UpdateResult.UpToDate
+    }
+
+    /** Texto crudo de las últimas Releases (para guardarlo en caché) o null si falla. */
+    suspend fun fetchReleasesJson(limit: Int = 10): String? = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("$apiBase/repos/$repo/releases?per_page=$limit")
+                .header("Accept", "application/vnd.github+json")
+                .header("User-Agent", "TASALO-Android")
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    DiagnosticLog.w("Update", "lista de Releases respondió ${response.code}")
+                    null
+                } else {
+                    response.body?.string()
+                }
+            }
+        } catch (e: Exception) {
+            DiagnosticLog.w("Update", "lista de Releases falló", e)
+            null
+        }
+    }
+
+    /** Descarga el `.sha256` y devuelve la huella en minúsculas, o null si no se pudo. */
+    suspend fun fetchSha256(url: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder().url(url).header("User-Agent", "TASALO-Android").build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) null else parseSha256(response.body?.string().orEmpty())
+            }
+        } catch (e: Exception) {
+            DiagnosticLog.w("Update", "no se pudo leer el .sha256", e)
+            null
+        }
     }
 
     private fun fromApi(): UpdateInfo? {
@@ -104,37 +152,74 @@ class UpdateChecker(
             val location = response.header("Location") ?: return null
             val tag = location.substringAfter("/tag/", "").substringBefore('?').trim()
             if (tag.isEmpty()) return null
+            val apk = "$webBase/$repo/releases/download/$tag/taso-android-$tag.apk"
             return UpdateInfo(
                 version = tag.removePrefix("v"),
                 notes = null,
                 pageUrl = "$webBase/$repo/releases/tag/$tag",
-                apkUrl = "$webBase/$repo/releases/download/$tag/taso-android-$tag.apk",
+                apkUrl = apk,
                 apkBytes = null,
+                sha256Url = "$apk.sha256",
             )
         }
     }
 
     companion object {
         private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        private val sha256Regex = Regex("""\b[0-9a-fA-F]{64}\b""")
+
+        /** Acepta el formato de `sha256sum` ("<hash>  archivo") o un hash suelto. */
+        fun parseSha256(text: String): String? = sha256Regex.find(text)?.value?.lowercase()
+
+        private fun obj(text: String): JsonObject? = try {
+            json.parseToJsonElement(text) as? JsonObject
+        } catch (e: Exception) {
+            null
+        }
+
+        private fun str(o: JsonObject, key: String): String? = (o[key] as? JsonPrimitive)?.contentOrNull
 
         fun parseRelease(text: String, webBase: String, repo: String): UpdateInfo? {
-            val root = try {
-                json.parseToJsonElement(text) as? JsonObject
-            } catch (e: Exception) {
-                null
-            } ?: return null
-            val tag = (root["tag_name"] as? JsonPrimitive)?.contentOrNull?.trim().orEmpty()
+            val root = obj(text) ?: return null
+            return releaseFrom(root, webBase, repo)
+        }
+
+        private fun releaseFrom(root: JsonObject, webBase: String, repo: String): UpdateInfo? {
+            val tag = str(root, "tag_name")?.trim().orEmpty()
             if (tag.isEmpty()) return null
-            val apk = (root["assets"] as? JsonArray)
-                ?.mapNotNull { it as? JsonObject }
-                ?.firstOrNull { (it["name"] as? JsonPrimitive)?.contentOrNull?.endsWith(".apk", true) == true }
+            val assets = (root["assets"] as? JsonArray)?.mapNotNull { it as? JsonObject }.orEmpty()
+            val apk = assets.firstOrNull { str(it, "name")?.endsWith(".apk", true) == true }
+            val sha = assets.firstOrNull { str(it, "name")?.endsWith(".apk.sha256", true) == true }
             return UpdateInfo(
                 version = tag.removePrefix("v"),
-                notes = (root["body"] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() },
-                pageUrl = (root["html_url"] as? JsonPrimitive)?.contentOrNull ?: "$webBase/$repo/releases/tag/$tag",
-                apkUrl = (apk?.get("browser_download_url") as? JsonPrimitive)?.contentOrNull,
+                notes = str(root, "body")?.trim()?.takeIf { it.isNotEmpty() },
+                pageUrl = str(root, "html_url") ?: "$webBase/$repo/releases/tag/$tag",
+                apkUrl = apk?.let { str(it, "browser_download_url") },
                 apkBytes = (apk?.get("size") as? JsonPrimitive)?.longOrNull,
+                sha256Url = sha?.let { str(it, "browser_download_url") },
             )
+        }
+
+        /** Lista de Releases (sin borradores ni pre-lanzamientos), de la más nueva a la más vieja. */
+        fun parseReleases(text: String, webBase: String = "https://github.com", repo: String = "TASALO-TEAM/taso-android"): List<ReleaseInfo> {
+            val array = try {
+                json.parseToJsonElement(text) as? JsonArray
+            } catch (e: Exception) {
+                null
+            } ?: return emptyList()
+            return array.mapNotNull { element ->
+                val o = element as? JsonObject ?: return@mapNotNull null
+                if ((o["draft"] as? JsonPrimitive)?.booleanOrNull == true) return@mapNotNull null
+                if ((o["prerelease"] as? JsonPrimitive)?.booleanOrNull == true) return@mapNotNull null
+                val info = releaseFrom(o, webBase, repo) ?: return@mapNotNull null
+                ReleaseInfo(
+                    version = info.version,
+                    title = str(o, "name")?.takeIf { it.isNotBlank() } ?: "Versión ${info.version}",
+                    notes = info.notes,
+                    publishedAt = str(o, "published_at")?.let { runCatching { Instant.parse(it) }.getOrNull() },
+                    pageUrl = info.pageUrl,
+                )
+            }
         }
     }
 }

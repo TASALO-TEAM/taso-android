@@ -2,10 +2,13 @@ package com.tasalo.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -14,36 +17,100 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.components.MarkdownView
 import com.tasalo.android.update.UpdateInfo
+import com.tasalo.android.update.UpdatePhase
 
+/** Diálogo de actualización: novedades + consentimiento, y después progreso/errores sin salir de la app. */
 @Composable
 fun UpdateDialog(
     info: UpdateInfo,
     currentVersion: String,
+    phase: UpdatePhase,
     onUpdate: () -> Unit,
     onLater: () -> Unit,
     onSkip: () -> Unit,
+    onCancel: () -> Unit,
+    onBrowser: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
+    val busy = phase is UpdatePhase.Downloading || phase is UpdatePhase.Verifying || phase is UpdatePhase.Installing
+    val size = info.apkBytes?.let { " (%.1f MB)".format(it / 1_048_576.0) }.orEmpty()
+
     AlertDialog(
-        onDismissRequest = onLater,
-        title = { Text("Nueva versión ${info.version}") },
+        // Mientras se descarga no se cierra con un toque fuera: para eso está el botón Cancelar.
+        onDismissRequest = { if (!busy) onLater() },
+        title = {
+            Text(
+                when (phase) {
+                    is UpdatePhase.Downloading -> "Descargando ${info.version}"
+                    UpdatePhase.Verifying -> "Comprobando la descarga"
+                    UpdatePhase.Installing -> "Instalando ${info.version}"
+                    UpdatePhase.NeedsPermission -> "Falta un permiso"
+                    is UpdatePhase.Failed -> "No se pudo actualizar"
+                    UpdatePhase.Idle -> "Nueva versión ${info.version}"
+                },
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "Tienes la versión $currentVersion. ¿Quieres actualizar ahora?",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Column(
-                    Modifier
-                        .heightIn(max = 280.dp)
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    MarkdownView(info.notes ?: "[Ver cambios en GitHub](${info.pageUrl})")
+                when (phase) {
+                    UpdatePhase.Idle -> {
+                        Text(
+                            "Tienes la versión $currentVersion. Al pulsar Actualizar, TASALO descargará$size e instalará " +
+                                "la versión ${info.version}. Android puede pedirte que confirmes la instalación.",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Column(
+                            Modifier
+                                .heightIn(max = 240.dp)
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            MarkdownView(info.notes ?: "[Ver cambios en GitHub](${info.pageUrl})")
+                        }
+                        TextButton(onClick = onSkip) { Text("Omitir esta versión") }
+                    }
+                    is UpdatePhase.Downloading -> {
+                        LinearProgressIndicator(progress = { phase.percent / 100f }, modifier = Modifier.fillMaxWidth())
+                        Text("${phase.percent} %", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    UpdatePhase.Verifying, UpdatePhase.Installing -> {
+                        CircularProgressIndicator()
+                        Text(
+                            if (phase == UpdatePhase.Installing) {
+                                "Si Android pide confirmar, pulsa Instalar. La app se reiniciará con la versión nueva."
+                            } else {
+                                "Comprobando que el archivo no está dañado y que es de TASALO."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    UpdatePhase.NeedsPermission -> Text(
+                        "Para instalar la actualización, Android necesita que permitas a TASALO instalar aplicaciones. " +
+                            "Solo se usa para actualizarse a sí misma. Actívalo en la pantalla que se abrirá, vuelve y pulsa Actualizar.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    is UpdatePhase.Failed -> Text(phase.reason, style = MaterialTheme.typography.bodyMedium)
                 }
-                TextButton(onClick = onSkip) { Text("Omitir esta versión") }
             }
         },
-        confirmButton = { TextButton(onClick = onUpdate) { Text("Actualizar") } },
-        dismissButton = { TextButton(onClick = onLater) { Text("Más tarde") } },
+        confirmButton = {
+            when (phase) {
+                UpdatePhase.Idle -> TextButton(onClick = onUpdate) { Text("Actualizar") }
+                UpdatePhase.NeedsPermission -> TextButton(onClick = onOpenSettings) { Text("Abrir ajustes") }
+                is UpdatePhase.Failed -> TextButton(onClick = onUpdate) { Text("Reintentar") }
+                else -> TextButton(onClick = onCancel, enabled = phase is UpdatePhase.Downloading) { Text("Cancelar") }
+            }
+        },
+        dismissButton = {
+            when (phase) {
+                UpdatePhase.Idle -> TextButton(onClick = onLater) { Text("Más tarde") }
+                is UpdatePhase.Failed -> Column {
+                    TextButton(onClick = onBrowser) { Text("Descargar con el navegador") }
+                    TextButton(onClick = onLater) { Text("Cerrar") }
+                }
+                UpdatePhase.NeedsPermission -> TextButton(onClick = onLater) { Text("Ahora no") }
+                else -> Unit
+            }
+        },
     )
 }
 

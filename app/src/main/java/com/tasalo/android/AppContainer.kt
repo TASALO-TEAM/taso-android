@@ -9,6 +9,8 @@ import com.tasalo.android.data.local.SettingsStore
 import com.tasalo.android.data.remote.TasaloApi
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.update.UpdateChecker
+import com.tasalo.android.update.UpdateDownloader
+import java.io.File
 import com.tasalo.android.work.RefreshScheduler
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +35,7 @@ class AppContainer(context: Context) {
         .build()
 
     val updateChecker = UpdateChecker(http)
+    val updateDownloader = UpdateDownloader(http)
 
     private val apis = ConcurrentHashMap<String, TasaloApi>()
 
@@ -64,6 +67,8 @@ class TasaloApp : Application() {
         container = AppContainer(this)
         DiagnosticLog.i("App", "inicio")
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            // APK de una actualización anterior (o interrumpida): ya no hace falta.
+            runCatching { File(cacheDir, "updates").deleteRecursively() }
             RefreshScheduler.schedulePeriodic(this@TasaloApp, container.settingsStore.current().refreshMinutes)
         }
     }

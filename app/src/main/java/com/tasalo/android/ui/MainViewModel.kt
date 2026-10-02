@@ -13,14 +13,23 @@ import com.tasalo.android.domain.RatesSnapshot
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.domain.YearState
+import com.tasalo.android.update.ApkInstaller
+import com.tasalo.android.update.ApkVerifier
+import com.tasalo.android.update.ReleaseInfo
+import com.tasalo.android.update.UpdateChecker
+import com.tasalo.android.update.UpdateFlow
 import com.tasalo.android.update.UpdateInfo
+import com.tasalo.android.update.UpdatePhase
 import com.tasalo.android.update.UpdateResult
 import com.tasalo.android.util.NetworkMonitor
 import com.tasalo.android.widget.WidgetUpdater
 import com.tasalo.android.work.RefreshScheduler
+import java.io.File
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,6 +59,8 @@ data class UiState(
     val checkingUpdate: Boolean = false,
     val updateMessage: String? = null,
     val showCrash: Boolean = false,
+    val updatePhase: UpdatePhase = UpdatePhase.Idle,
+    val releases: List<ReleaseInfo> = emptyList(),
 )
 
 /** Estado de actualizaciones y reportes, separado para no pasar de 5 flujos en un solo `combine`. */
@@ -101,16 +112,18 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             ratesError = err.first,
             fuelError = err.second,
             currentVersion = currentVersion,
+            releases = releasesFrom(raw.releasesJson),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState(currentVersion = currentVersion))
 
-    val state: StateFlow<UiState> = combine(base, extras) { b, x ->
+    val state: StateFlow<UiState> = combine(base, extras, UpdateFlow.phase) { b, x, phase ->
         b.copy(
             update = x.update,
             showUpdate = x.showUpdate,
             checkingUpdate = x.checking,
             updateMessage = x.message,
             showCrash = x.showCrash,
+            updatePhase = phase,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState(currentVersion = currentVersion))
 
@@ -190,6 +203,87 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         val version = extras.value.update?.version ?: return
         viewModelScope.launch { settingsStore.setSkippedVersion(version) }
         extras.update { it.copy(showUpdate = false) }
+    }
+
+    // ---------- Descarga e instalación dentro de la app ----------
+
+    private var updateJob: Job? = null
+
+    /** Descarga, verifica e instala. Al aceptar el diálogo, el usuario consiente descargar e instalar esta versión. */
+    fun startUpdate() {
+        val info = extras.value.update ?: return
+        if (updateJob?.isActive == true) return
+        val apkUrl = info.apkUrl
+        if (apkUrl == null) {
+            UpdateFlow.phase.value = UpdatePhase.Failed("Esta versión no incluye un APK descargable.")
+            return
+        }
+        if (!app.packageManager.canRequestPackageInstalls()) {
+            UpdateFlow.phase.value = UpdatePhase.NeedsPermission
+            return
+        }
+        updateJob = viewModelScope.launch {
+            val dest = File(app.cacheDir, "updates/taso-android-v${info.version}.apk")
+            try {
+                DiagnosticLog.i("Update", "el usuario aceptó actualizar a ${info.version}")
+                UpdateFlow.phase.value = UpdatePhase.Downloading(0)
+                container.updateDownloader.download(apkUrl, dest, info.apkBytes) { percent ->
+                    UpdateFlow.phase.value = UpdatePhase.Downloading(percent)
+                }
+                UpdateFlow.phase.value = UpdatePhase.Verifying
+                val expected = info.sha256Url?.let { updateChecker.fetchSha256(it) }
+                val problem = withContext(Dispatchers.IO) { ApkVerifier.verify(app, dest, expected) }
+                if (problem != null) {
+                    dest.delete()
+                    DiagnosticLog.w("Update", "verificación rechazó la APK: $problem")
+                    UpdateFlow.phase.value = UpdatePhase.Failed(problem)
+                    return@launch
+                }
+                UpdateFlow.phase.value = UpdatePhase.Installing
+                withContext(Dispatchers.IO) { ApkInstaller.install(app, dest) }
+            } catch (e: CancellationException) {
+                dest.delete()
+                UpdateFlow.phase.value = UpdatePhase.Idle
+                throw e
+            } catch (e: Exception) {
+                dest.delete()
+                DiagnosticLog.e("Update", "la actualización falló", e)
+                UpdateFlow.phase.value = UpdatePhase.Failed("No se pudo descargar la actualización. Revisa tu conexión.")
+            }
+        }
+    }
+
+    fun cancelUpdate() {
+        updateJob?.cancel()
+        UpdateFlow.phase.value = UpdatePhase.Idle
+    }
+
+    fun resetUpdatePhase() {
+        UpdateFlow.phase.value = UpdatePhase.Idle
+    }
+
+    // ---------- Notificaciones: Actualizaciones ----------
+
+    private var releasesKey: String? = null
+    private var releasesValue: List<ReleaseInfo> = emptyList()
+
+    private fun releasesFrom(json: String?): List<ReleaseInfo> {
+        if (json == null) return emptyList()
+        if (json != releasesKey) {
+            releasesKey = json
+            releasesValue = UpdateChecker.parseReleases(json)
+        }
+        return releasesValue
+    }
+
+    /** Descarga la lista de Releases (cada 15 min como máximo, salvo `force`) y la guarda para verla sin red. */
+    fun loadReleases(force: Boolean = false) {
+        viewModelScope.launch {
+            val cached = container.cacheStore.current()
+            val age = cached.releasesAt?.let { Duration.between(it, Instant.now()).toMinutes() }
+            if (!force && cached.releasesJson != null && age != null && age < 15) return@launch
+            updateChecker.fetchReleasesJson()?.let { container.cacheStore.saveReleases(it, Instant.now()) }
+        }
     }
 
     // ---------- Reportes de fallos ----------
