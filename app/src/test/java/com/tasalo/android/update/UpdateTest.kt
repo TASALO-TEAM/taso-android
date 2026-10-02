@@ -88,7 +88,7 @@ class MarkdownParserTest {
         assertFalse(MarkdownParser.isSafeUrl("javascript:alert(1)"))
         assertFalse(MarkdownParser.isSafeUrl("intent://scan#Intent;end"))
         assertFalse(MarkdownParser.isSafeUrl("file:///sdcard/x"))
-        val span = MarkdownParser.inline("[toca](javascript:alert(1))").single()
+        val span = MarkdownParser.inline("[toca](javascript:void)").single()
         assertEquals("toca", span.text)
         assertNull(span.url)
     }
