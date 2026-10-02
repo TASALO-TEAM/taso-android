@@ -78,6 +78,6 @@ jobs:
           # Huella del APK (la app la verifica antes de instalar) y del certificado de firma (se muestra en Ajustes).
           sha256sum "taso-android-v$V.apk" > "taso-android-v$V.apk.sha256"
           FP=$(keytool -list -v -keystore "$KEYSTORE_PATH" -alias "$KEY_ALIAS" -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | grep -m1 "SHA256:" | sed "s/.*SHA256: *//")
-          printf "\n\n---\n**Huella SHA-256 del certificado de firma:**\n`%s`\n" "$FP" >> notes.md
+          printf '\n\n---\n**Huella SHA-256 del certificado de firma:**\n`%s`\n' "$FP" >> notes.md
           gh release create "v$V" "taso-android-v$V.apk" "taso-android-v$V.apk.sha256" \
             --target "$GITHUB_SHA" --title "TASALO Android v$V" --notes-file notes.md
