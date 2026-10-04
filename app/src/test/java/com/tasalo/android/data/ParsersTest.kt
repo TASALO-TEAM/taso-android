@@ -3,6 +3,7 @@ package com.tasalo.android.data
 import com.tasalo.android.data.parse.Parsers
 import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Fuel
+import java.time.Instant
 import com.tasalo.android.domain.Source
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -151,5 +152,50 @@ class ParsersTest {
         val y = Parsers.year("""{"ok":true}""")!!
         assertNull(y.percent)
         assertNull(y.quote)
+    }
+
+    // ---------- /app/messages (Alertas) ----------
+
+    @Test
+    fun messages_fixture_is_parsed_newest_first_with_its_format() {
+        val messages = Parsers.messages(fixture("app_messages.json"))!!
+        assertEquals(listOf(3L, 2L), messages.map { it.id })
+        assertEquals("Mantenimiento esta noche", messages[0].title)
+        assertEquals("telegram", messages[0].format)
+        assertTrue(messages[0].body.startsWith("*Esta noche*"))
+        assertEquals("markdown", messages[1].format)
+        assertEquals(Instant.parse("2026-10-02T14:30:00.123456Z"), messages[0].createdAt)
+    }
+
+    @Test
+    fun messages_discard_invalid_entries_and_default_the_format() {
+        val json = """{"ok":true,"data":[
+            {"id":1,"title":"Sin cuerpo","body":""},
+            {"title":"Sin id","body":"x"},
+            {"id":5,"title":"Válido","body":"texto","format":"html","created_at":"fecha rota"},
+            "basura"]}"""
+        val messages = Parsers.messages(json)!!
+        assertEquals(1, messages.size)
+        assertEquals("telegram", messages[0].format) // formato desconocido -> telegram
+        assertNull(messages[0].createdAt)
+    }
+
+    @Test
+    fun messages_require_ok_and_a_data_list() {
+        assertNull(Parsers.messages("""{"ok":false,"data":[]}"""))
+        assertNull(Parsers.messages("""{"ok":true,"data":{}}"""))
+        assertNull(Parsers.messages("no es json"))
+        assertTrue(Parsers.messages("""{"ok":true,"data":[]}""")!!.isEmpty())
+    }
+
+    @Test
+    fun instant_accepts_offsets_zulu_and_naive_dates() {
+        val expected = Instant.parse("2026-10-02T14:30:00Z")
+        assertEquals(expected, Parsers.instant("2026-10-02T14:30:00+00:00"))
+        assertEquals(expected, Parsers.instant("2026-10-02T14:30:00Z"))
+        assertEquals(expected, Parsers.instant("2026-10-02T14:30:00"))
+        assertEquals(expected, Parsers.instant("2026-10-02T10:30:00-04:00"))
+        assertNull(Parsers.instant("mañana"))
+        assertNull(Parsers.instant(null))
     }
 }

@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,8 +36,10 @@ import com.tasalo.android.ui.UiState
 import com.tasalo.android.ui.components.EmptyMessage
 import com.tasalo.android.ui.components.GlassCard
 import com.tasalo.android.ui.components.MarkdownView
+import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.update.ReleaseInfo
 import com.tasalo.android.update.SemVer
+import com.tasalo.android.util.MdDialect
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -63,7 +66,11 @@ fun NotificationsScreen(
             Text("Notificaciones", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
         }
         TabRow(selectedTabIndex = tab) {
-            Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Alertas") })
+            Tab(
+                selected = tab == 0,
+                onClick = { tab = 0 },
+                text = { Text(if (state.unreadAlerts > 0) "Alertas (${state.unreadAlerts})" else "Alertas") },
+            )
             Tab(
                 selected = tab == 1,
                 onClick = { tab = 1 },
@@ -71,7 +78,7 @@ fun NotificationsScreen(
             )
         }
         when (tab) {
-            0 -> EmptyMessage("Aquí llegarán los avisos y mensajes del equipo TASALO. Por ahora no hay ninguno.")
+            0 -> AlertsTab(state, vm)
             else -> UpdatesTab(state, onUpdate)
         }
     }
@@ -147,6 +154,66 @@ private fun ReleaseItem(
             if (expanded) {
                 MarkdownView(release.notes ?: "[Ver cambios en GitHub](${release.pageUrl})")
                 if (newer) Button(onClick = onUpdate) { Text("Actualizar") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlertsTab(state: UiState, vm: MainViewModel) {
+    // Lo que estaba sin leer al abrir sigue marcado mientras la pantalla está abierta.
+    val lastSeenAtOpen = remember { state.settings.lastSeenMessageId }
+    var expanded by rememberSaveable { mutableStateOf<Long?>(null) }
+    LaunchedEffect(state.messages.firstOrNull()?.id) { vm.markMessagesSeen() }
+
+    if (state.messages.isEmpty()) {
+        EmptyMessage("Aquí llegarán los avisos y mensajes del equipo TASALO. Por ahora no hay ninguno.")
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        items(state.messages, key = { it.id }) { message ->
+            AlertItem(
+                message = message,
+                unread = message.id > lastSeenAtOpen,
+                expanded = expanded == message.id,
+                onToggle = { expanded = if (expanded == message.id) null else message.id },
+            )
+        }
+    }
+}
+
+/** Mensaje contraído (título + fecha); al tocarlo se expande con el texto completo en el lector Markdown. */
+@Composable
+private fun AlertItem(message: AppMessage, unread: Boolean, expanded: Boolean, onToggle: () -> Unit) {
+    GlassCard(Modifier.fillMaxWidth().clickable(onClick = onToggle)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        (if (unread) "● " else "") + message.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = if (unread) FontWeight.Bold else FontWeight.Medium,
+                        color = if (unread) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
+                    val date = message.createdAt?.let { dateFormat.format(it) }
+                    Text(
+                        listOfNotNull(date, if (unread) "Nuevo" else null).joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(if (expanded) "▴" else "▾", style = MaterialTheme.typography.titleMedium)
+            }
+            if (expanded) {
+                MarkdownView(
+                    message.body,
+                    dialect = if (message.format == "markdown") MdDialect.STANDARD else MdDialect.TELEGRAM,
+                )
             }
         }
     }

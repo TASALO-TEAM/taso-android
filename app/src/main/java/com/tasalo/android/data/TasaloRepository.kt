@@ -22,10 +22,16 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import retrofit2.HttpException
 
-data class RefreshResult(val rates: Boolean, val fuel: Boolean, val year: Boolean) {
+/**
+ * `messages` es opcional: con una API sin el endpoint (404) falla en silencio y no cuenta para `allOk`,
+ * así no aparecen avisos de error por algo que la app puede no necesitar.
+ */
+data class RefreshResult(val rates: Boolean, val fuel: Boolean, val year: Boolean, val messages: Boolean = true) {
     val anyOk: Boolean get() = rates || fuel || year
     val allOk: Boolean get() = rates && fuel && year
 }
+
+private const val MESSAGES_LIMIT = 20
 
 class TasaloRepository(
     private val cache: CacheStore,
@@ -48,7 +54,8 @@ class TasaloRepository(
         val rates = async { safe { refreshRates(api) } }
         val year = async { safe { refreshYear(api) } }
         val fuel = async { safe { refreshFuel(api) } }
-        RefreshResult(rates = rates.await(), fuel = fuel.await(), year = year.await())
+        val messages = async { safe { refreshMessages(api) } }
+        RefreshResult(rates = rates.await(), fuel = fuel.await(), year = year.await(), messages = messages.await())
     }
 
     private suspend fun refreshRates(api: TasaloApi): Boolean {
@@ -86,6 +93,13 @@ class TasaloRepository(
         val text = fetch { api.fuel().string() } ?: return false
         if (Parsers.fuel(text) == null) return false
         cache.saveFuel(text, now())
+        return true
+    }
+
+    private suspend fun refreshMessages(api: TasaloApi): Boolean {
+        val text = fetch { api.appMessages(MESSAGES_LIMIT).string() } ?: return false
+        if (Parsers.messages(text) == null) return false
+        cache.saveMessages(text, now())
         return true
     }
 

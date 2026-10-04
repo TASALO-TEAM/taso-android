@@ -27,13 +27,14 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.util.MarkdownParser
+import com.tasalo.android.util.MdDialect
 import com.tasalo.android.util.MdBlock
 import com.tasalo.android.util.MdSpan
 
 /** Lector de Markdown para las notas de versión (y, más adelante, el spotlight del bot). */
 @Composable
-fun MarkdownView(text: String, modifier: Modifier = Modifier) {
-    val blocks = remember(text) { MarkdownParser.parse(text) }
+fun MarkdownView(text: String, modifier: Modifier = Modifier, dialect: MdDialect = MdDialect.STANDARD) {
+    val blocks = remember(text, dialect) { MarkdownParser.parse(text, dialect) }
     val linkColor = MaterialTheme.colorScheme.primary
     val codeBackground = MaterialTheme.colorScheme.surfaceVariant
 

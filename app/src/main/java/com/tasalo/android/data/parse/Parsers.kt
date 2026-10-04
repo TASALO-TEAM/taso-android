@@ -1,5 +1,6 @@
 package com.tasalo.android.data.parse
 
+import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.Fuel
@@ -7,7 +8,12 @@ import com.tasalo.android.domain.FuelPrice
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.YearApi
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -120,5 +126,37 @@ object Parsers {
             daysLeft = number(progress?.get("days_left"))?.toInt(),
             quote = quote,
         )
+    }
+
+    /** Fecha ISO de FastAPI: con zona ("...+00:00" o "Z") o sin ella (se toma como UTC). */
+    fun instant(text: String?): Instant? {
+        if (text.isNullOrBlank()) return null
+        return runCatching { OffsetDateTime.parse(text).toInstant() }.getOrNull()
+            ?: runCatching { LocalDateTime.parse(text).toInstant(ZoneOffset.UTC) }.getOrNull()
+    }
+
+    /**
+     * `/app/messages` -> exige ok == true y `data` como lista. Los mensajes sin id, título o cuerpo
+     * se descartan; devuelve los más nuevos primero.
+     */
+    fun messages(text: String): List<AppMessage>? {
+        val r = root(text) ?: return null
+        if (!isOk(r)) return null
+        val data = r["data"] as? JsonArray ?: return null
+        return data.mapNotNull { element ->
+            val o = element as? JsonObject ?: return@mapNotNull null
+            val id = number(o["id"])?.toLong() ?: return@mapNotNull null
+            val title = (o["title"] as? JsonPrimitive)?.contentOrNull?.trim().orEmpty()
+            val body = (o["body"] as? JsonPrimitive)?.contentOrNull?.trim().orEmpty()
+            if (title.isEmpty() || body.isEmpty()) return@mapNotNull null
+            val format = (o["format"] as? JsonPrimitive)?.contentOrNull?.lowercase()
+            AppMessage(
+                id = id,
+                title = title,
+                body = body,
+                format = if (format == "markdown") "markdown" else "telegram",
+                createdAt = instant((o["created_at"] as? JsonPrimitive)?.contentOrNull),
+            )
+        }.sortedByDescending { it.id }
     }
 }

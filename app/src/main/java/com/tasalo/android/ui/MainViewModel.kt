@@ -5,8 +5,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tasalo.android.container
 import com.tasalo.android.data.Snapshots
+import com.tasalo.android.data.parse.Parsers
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.diag.ReportBuilder
+import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.FuelSnapshot
 import com.tasalo.android.domain.RatesSnapshot
@@ -61,6 +63,9 @@ data class UiState(
     val showCrash: Boolean = false,
     val updatePhase: UpdatePhase = UpdatePhase.Idle,
     val releases: List<ReleaseInfo> = emptyList(),
+    val messages: List<AppMessage> = emptyList(),
+    /** Mensajes de Alertas posteriores al último que el usuario vio. */
+    val unreadAlerts: Int = 0,
 )
 
 /** Estado de actualizaciones y reportes, separado para no pasar de 5 flujos en un solo `combine`. */
@@ -101,6 +106,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         errors,
     ) { raw, settings, now, isRefreshing, err ->
         val snap = Snapshots.from(raw, now)
+        val messages = messagesFrom(raw.messagesJson)
         UiState(
             loaded = true,
             rates = snap.rates,
@@ -113,6 +119,8 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             fuelError = err.second,
             currentVersion = currentVersion,
             releases = releasesFrom(raw.releasesJson),
+            messages = messages,
+            unreadAlerts = messages.count { it.id > settings.lastSeenMessageId },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), UiState(currentVersion = currentVersion))
 
@@ -263,6 +271,28 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     // ---------- Notificaciones: Actualizaciones ----------
+
+    // ---------- Notificaciones: Alertas ----------
+
+    private var messagesKey: String? = null
+    private var messagesValue: List<AppMessage> = emptyList()
+
+    private fun messagesFrom(json: String?): List<AppMessage> {
+        if (json == null) return emptyList()
+        if (json != messagesKey) {
+            messagesKey = json
+            messagesValue = Parsers.messages(json).orEmpty()
+        }
+        return messagesValue
+    }
+
+    /** Al abrir la pestaña Alertas todo lo que hay queda como leído. */
+    fun markMessagesSeen() {
+        viewModelScope.launch {
+            val newest = state.value.messages.maxOfOrNull { it.id } ?: return@launch
+            if (newest > state.value.settings.lastSeenMessageId) settingsStore.setLastSeenMessageId(newest)
+        }
+    }
 
     private var releasesKey: String? = null
     private var releasesValue: List<ReleaseInfo> = emptyList()

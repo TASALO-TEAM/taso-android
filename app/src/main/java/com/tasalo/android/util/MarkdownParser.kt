@@ -18,17 +18,33 @@ sealed interface MdBlock {
 }
 
 /**
- * Markdown mínimo para las notas de versión: títulos, listas, negrita, cursiva, `código`,
- * enlaces, bloques de código y separadores. Sin dependencias; lo no soportado se muestra como texto.
+ * Dialecto del texto:
+ * - STANDARD: Markdown habitual (notas de versión, posts del blog): `**negrita**`, `*cursiva*`, `# títulos`.
+ * - TELEGRAM: Markdown legacy de Telegram, que es lo que escribe el admin con /msapp en el bot:
+ *   `*negrita*`, `_cursiva_`, `` `código` ``, `[texto](url)`. No hay títulos y los saltos de línea cuentan.
+ */
+enum class MdDialect { STANDARD, TELEGRAM }
+
+/**
+ * Markdown mínimo para las notas de versión y los mensajes del equipo: títulos, listas, negrita,
+ * cursiva, `código`, enlaces, bloques de código y separadores. Sin dependencias; lo no soportado se muestra como texto.
  */
 object MarkdownParser {
     private val heading = Regex("""^(#{1,6})\s+(.*)$""")
     private val bullet = Regex("""^(\s*)[-*+]\s+(.*)$""")
+    private val telegramBullet = Regex("""^(\s*)[-*+•]\s+(.*)$""")
     private val numbered = Regex("""^\s*(\d+)[.)]\s+(.*)$""")
     private val rule = Regex("""^\s*([-*_])(\s*\1){2,}\s*$""")
     private val token = Regex("""`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*\s][^*]*)\*|\[([^\]]+)]\(([^)\s]+)\)""")
 
-    fun parse(source: String): List<MdBlock> {
+    // Telegram: *negrita*, _cursiva_ (no dentro de una palabra: snake_case se queda tal cual), `código`, enlaces.
+    private val telegramToken = Regex(
+        """`([^`]+)`|\*([^*\n]+)\*|(?<![\p{L}\p{N}])_([^_\n]+)_(?![\p{L}\p{N}])|\[([^\]]+)]\(([^)\s]+)\)""",
+    )
+
+    fun parse(source: String, dialect: MdDialect = MdDialect.STANDARD): List<MdBlock> {
+        val telegram = dialect == MdDialect.TELEGRAM
+        val bulletRegex = if (telegram) telegramBullet else bullet
         val blocks = mutableListOf<MdBlock>()
         val paragraph = mutableListOf<String>()
         var inCode = false
@@ -36,7 +52,7 @@ object MarkdownParser {
 
         fun flushParagraph() {
             if (paragraph.isNotEmpty()) {
-                blocks += MdBlock.Paragraph(inline(paragraph.joinToString(" ")))
+                blocks += MdBlock.Paragraph(inline(paragraph.joinToString(" "), dialect = dialect))
                 paragraph.clear()
             }
         }
@@ -60,22 +76,24 @@ object MarkdownParser {
             if (line.trimStart().startsWith("<!--")) continue
             when {
                 line.isBlank() -> flushParagraph()
-                rule.matches(line) -> { flushParagraph(); blocks += MdBlock.Rule }
-                heading.matches(line) -> {
+                !telegram && rule.matches(line) -> { flushParagraph(); blocks += MdBlock.Rule }
+                !telegram && heading.matches(line) -> {
                     flushParagraph()
                     val m = heading.find(line)!!
                     blocks += MdBlock.Heading(m.groupValues[1].length, inline(m.groupValues[2].trim()))
                 }
-                bullet.matches(line) -> {
+                bulletRegex.matches(line) -> {
                     flushParagraph()
-                    val m = bullet.find(line)!!
-                    blocks += MdBlock.Bullet(m.groupValues[1].length / 2, inline(m.groupValues[2]))
+                    val m = bulletRegex.find(line)!!
+                    blocks += MdBlock.Bullet(m.groupValues[1].length / 2, inline(m.groupValues[2], dialect = dialect))
                 }
                 numbered.matches(line) -> {
                     flushParagraph()
                     val m = numbered.find(line)!!
-                    blocks += MdBlock.Numbered(m.groupValues[1].toInt(), inline(m.groupValues[2]))
+                    blocks += MdBlock.Numbered(m.groupValues[1].toInt(), inline(m.groupValues[2], dialect = dialect))
                 }
+                // En Telegram cada línea es un renglón propio; en Markdown estándar las líneas seguidas forman un párrafo.
+                telegram -> blocks += MdBlock.Paragraph(inline(line.trim(), dialect = dialect))
                 else -> paragraph += line.trim()
             }
         }
@@ -89,19 +107,35 @@ object MarkdownParser {
         return u.startsWith("https://") || u.startsWith("http://") || u.startsWith("tg://") || u.startsWith("tg:")
     }
 
-    fun inline(text: String, bold: Boolean = false, italic: Boolean = false, url: String? = null): List<MdSpan> {
+    fun inline(
+        text: String,
+        bold: Boolean = false,
+        italic: Boolean = false,
+        url: String? = null,
+        dialect: MdDialect = MdDialect.STANDARD,
+    ): List<MdSpan> {
+        val telegram = dialect == MdDialect.TELEGRAM
         val spans = mutableListOf<MdSpan>()
         var pos = 0
-        for (m in token.findAll(text)) {
+        for (m in (if (telegram) telegramToken else token).findAll(text)) {
             if (m.range.first > pos) spans += MdSpan(text.substring(pos, m.range.first), bold, italic, url = url)
             val g = m.groupValues
-            when {
-                g[1].isNotEmpty() -> spans += MdSpan(g[1], bold, italic, code = true, url = url)
-                g[2].isNotEmpty() -> spans += inline(g[2], true, italic, url)
-                g[3].isNotEmpty() -> spans += inline(g[3], true, italic, url)
-                g[4].isNotEmpty() -> spans += inline(g[4], bold, true, url)
-                // Enlaces con esquema no permitido (javascript:, intent:, file:…) se muestran como texto plano.
-                g[5].isNotEmpty() -> spans += inline(g[5], bold, italic, if (isSafeUrl(g[6])) g[6] else url)
+            if (telegram) {
+                when {
+                    g[1].isNotEmpty() -> spans += MdSpan(g[1], bold, italic, code = true, url = url)
+                    g[2].isNotEmpty() -> spans += inline(g[2], true, italic, url, dialect)
+                    g[3].isNotEmpty() -> spans += inline(g[3], bold, true, url, dialect)
+                    // Enlaces con esquema no permitido (javascript:, intent:, file:…) se muestran como texto plano.
+                    g[4].isNotEmpty() -> spans += inline(g[4], bold, italic, if (isSafeUrl(g[5])) g[5] else url, dialect)
+                }
+            } else {
+                when {
+                    g[1].isNotEmpty() -> spans += MdSpan(g[1], bold, italic, code = true, url = url)
+                    g[2].isNotEmpty() -> spans += inline(g[2], true, italic, url)
+                    g[3].isNotEmpty() -> spans += inline(g[3], true, italic, url)
+                    g[4].isNotEmpty() -> spans += inline(g[4], bold, true, url)
+                    g[5].isNotEmpty() -> spans += inline(g[5], bold, italic, if (isSafeUrl(g[6])) g[6] else url)
+                }
             }
             pos = m.range.last + 1
         }

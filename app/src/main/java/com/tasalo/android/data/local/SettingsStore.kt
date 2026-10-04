@@ -38,6 +38,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val LAST_UPDATE_CHECK = longPreferencesKey("last_update_check")
         val REFRESH_MINUTES = intPreferencesKey("refresh_minutes")
         val LAST_BG_REFRESH = longPreferencesKey("last_bg_refresh")
+        val LAST_SEEN_MESSAGE = longPreferencesKey("last_seen_message")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -55,6 +56,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 lastUpdateCheck = p[Keys.LAST_UPDATE_CHECK] ?: 0L,
                 refreshMinutes = p[Keys.REFRESH_MINUTES]?.takeIf { it in REFRESH_OPTIONS } ?: 30,
                 lastBackgroundRefresh = p[Keys.LAST_BG_REFRESH] ?: 0L,
+                lastSeenMessageId = p[Keys.LAST_SEEN_MESSAGE] ?: 0L,
             )
         }
 
@@ -101,6 +103,10 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun setRefreshMinutes(minutes: Int) {
         store.edit { it[Keys.REFRESH_MINUTES] = if (minutes in REFRESH_OPTIONS) minutes else 30 }
+    }
+
+    suspend fun setLastSeenMessageId(id: Long) {
+        store.edit { it[Keys.LAST_SEEN_MESSAGE] = id }
     }
 
     suspend fun setLastBackgroundRefresh(millis: Long) {

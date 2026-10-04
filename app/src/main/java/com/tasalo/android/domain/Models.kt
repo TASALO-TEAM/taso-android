@@ -50,6 +50,16 @@ data class YearState(
 
 data class Snapshot(val rates: RatesSnapshot?, val fuel: FuelSnapshot?, val year: YearState)
 
+/** Mensaje del equipo para la sección Alertas (se publica desde el bot con /msapp). */
+data class AppMessage(
+    val id: Long,
+    val title: String,
+    val body: String,
+    /** "telegram" (Markdown legacy de Telegram) o "markdown" (estándar). */
+    val format: String,
+    val createdAt: Instant?,
+)
+
 enum class ThemeMode { AUTO, DARK, LIGHT }
 
 data class AppSettings(
@@ -68,6 +78,8 @@ data class AppSettings(
     /** Minutos entre refrescos en segundo plano; 0 = solo manual. */
     val refreshMinutes: Int = 30,
     val lastBackgroundRefresh: Long = 0L,
+    /** Último mensaje de Alertas que el usuario ya vio (para el punto de no leídos). */
+    val lastSeenMessageId: Long = 0L,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

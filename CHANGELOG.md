@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.4.0
+
+### Alertas
+- La sección **Alertas** de las notificaciones ya recibe los **mensajes del equipo TASALO**. Se ven contraídos (título y fecha) y se expanden al tocarlos. El formato (negrita, cursiva, enlaces) es el mismo que en Telegram.
+- La campana muestra un punto, y la pestaña Alertas un contador, cuando hay mensajes sin leer.
+- Los mensajes se descargan junto con las tasas (cada 30 min por defecto) y se guardan los últimos 20, así puedes releerlos sin conexión.
+
 ## 0.3.0
 
 ### Actualizar sin salir de la app

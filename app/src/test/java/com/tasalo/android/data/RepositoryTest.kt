@@ -2,6 +2,7 @@ package com.tasalo.android.data
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.tasalo.android.data.local.CacheStore
+import com.tasalo.android.data.parse.Parsers
 import com.tasalo.android.data.remote.TasaloApi
 import com.tasalo.android.domain.Source
 import java.io.File
@@ -181,7 +182,38 @@ class RepositoryTest {
     fun client_errors_are_not_retried() = runBlocking {
         route { code(404) }
         repo().refreshAll()
-        // latest + 3 fallbacks + fuel + year = 6 llamadas, una sola vez cada una.
-        assertEquals(6, server.requestCount)
+        // latest + 3 fallbacks + fuel + year + mensajes = 7 llamadas, una sola vez cada una.
+        assertEquals(7, server.requestCount)
+    }
+
+    @Test
+    fun messages_are_saved_in_the_cache() = runBlocking {
+        route {
+            when (it) {
+                "/api/v1/app/messages?limit=20" -> ok(fixture("app_messages.json"))
+                else -> code(404)
+            }
+        }
+        val result = repo().refreshAll()
+        assertTrue(result.messages)
+        val messages = Parsers.messages(cache.current().messagesJson!!)!!
+        assertEquals(listOf(3L, 2L), messages.map { it.id })
+    }
+
+    @Test
+    fun a_missing_messages_endpoint_does_not_break_or_flag_the_refresh() = runBlocking {
+        // API antigua sin /app/messages: 404 en mensajes, todo lo demás bien.
+        route {
+            when (it) {
+                "/api/v1/tasas/latest" -> ok(fixture("latest.json"))
+                "/api/v1/tasas/fuel" -> ok(fixture("fuel.json"))
+                "/api/v1/year/state" -> ok(fixture("year_state.json"))
+                else -> code(404)
+            }
+        }
+        val result = repo().refreshAll()
+        assertFalse(result.messages)
+        assertTrue(result.allOk) // los mensajes son opcionales: no cuentan para allOk
+        assertNull(cache.current().messagesJson)
     }
 }

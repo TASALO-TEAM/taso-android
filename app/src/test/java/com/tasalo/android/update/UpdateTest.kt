@@ -2,6 +2,7 @@ package com.tasalo.android.update
 
 import com.tasalo.android.util.MarkdownParser
 import com.tasalo.android.util.MdBlock
+import com.tasalo.android.util.MdDialect
 import com.tasalo.android.util.MdSpan
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -79,6 +80,41 @@ class MarkdownParserTest {
 
         val blocks = MarkdownParser.parse("```\nfoo\n  bar\n```")
         assertEquals(MdBlock.Code("foo\n  bar"), blocks.single())
+    }
+
+    @Test
+    fun telegram_dialect_uses_single_marks_and_keeps_line_breaks() {
+        val blocks = MarkdownParser.parse(
+            "*Importante*: mantenimiento\nSegunda línea\n# no es título\n- punto\n• otro",
+            MdDialect.TELEGRAM,
+        )
+        assertEquals(MdBlock.Paragraph(listOf(MdSpan("Importante", bold = true), MdSpan(": mantenimiento"))), blocks[0])
+        assertEquals(MdBlock.Paragraph(listOf(MdSpan("Segunda línea"))), blocks[1])
+        assertEquals(MdBlock.Paragraph(listOf(MdSpan("# no es título"))), blocks[2]) // en Telegram no hay títulos
+        assertEquals(MdBlock.Bullet(0, listOf(MdSpan("punto"))), blocks[3])
+        assertEquals(MdBlock.Bullet(0, listOf(MdSpan("otro"))), blocks[4])
+    }
+
+    @Test
+    fun telegram_italic_ignores_underscores_inside_words() {
+        val spans = MarkdownParser.inline("usa snake_case_name y _cursiva_", dialect = MdDialect.TELEGRAM)
+        assertEquals(MdSpan("cursiva", italic = true), spans.single { it.italic })
+        assertTrue(spans.any { it.text.contains("snake_case_name") })
+    }
+
+    @Test
+    fun telegram_code_links_and_unsafe_links() {
+        val spans = MarkdownParser.inline("`x=1` y [web](https://x.org) y [mala](javascript:void)", dialect = MdDialect.TELEGRAM)
+        assertEquals(MdSpan("x=1", code = true), spans.first { it.code })
+        assertEquals(MdSpan("web", url = "https://x.org"), spans.first { it.url != null })
+        assertNull(spans.first { it.text == "mala" }.url)
+    }
+
+    @Test
+    fun standard_dialect_is_unchanged() {
+        // En Markdown estándar `*x*` sigue siendo cursiva y `**x**` negrita.
+        assertEquals(MdSpan("x", italic = true), MarkdownParser.inline("*x*").single())
+        assertEquals(MdSpan("x", bold = true), MarkdownParser.inline("**x**").single())
     }
 
     @Test

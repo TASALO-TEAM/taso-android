@@ -74,7 +74,7 @@ fun HomeScreen(
                         state.now,
                         state.refreshing,
                         onRefresh,
-                        hasNotifications = state.update != null,
+                        hasNotifications = state.update != null || state.unreadAlerts > 0,
                         onBell = onOpenNotifications,
                     )
                 }
