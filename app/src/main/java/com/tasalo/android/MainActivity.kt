@@ -197,6 +197,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                         BLOG_TAB -> BlogScreen(
                             state = blog,
                             onRefresh = { vm.loadBlog(force = true) },
+                            onSelectAccount = vm::selectBlogAccount,
                             onOpen = vm::openPost,
                             onClose = vm::closePost,
                         )

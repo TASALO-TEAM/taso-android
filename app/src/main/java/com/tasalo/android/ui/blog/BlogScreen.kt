@@ -1,6 +1,7 @@
 package com.tasalo.android.ui.blog
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,19 +20,26 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.tasalo.android.domain.BLOG_ACCOUNTS
 import com.tasalo.android.domain.BlogPost
+import com.tasalo.android.domain.blogAccountLabel
 import com.tasalo.android.openUrl
 import com.tasalo.android.ui.BlogUiState
 import com.tasalo.android.ui.components.EmptyMessage
@@ -51,6 +59,7 @@ private val dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(Zone
 fun BlogScreen(
     state: BlogUiState,
     onRefresh: () -> Unit,
+    onSelectAccount: (String) -> Unit,
     onOpen: (String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -59,7 +68,7 @@ fun BlogScreen(
     if (post != null) {
         PostDetail(post, onClose, modifier)
     } else {
-        PostList(state, onRefresh, onOpen, modifier)
+        PostList(state, onRefresh, onSelectAccount, onOpen, modifier)
     }
 }
 
@@ -68,9 +77,13 @@ fun BlogScreen(
 private fun PostList(
     state: BlogUiState,
     onRefresh: () -> Unit,
+    onSelectAccount: (String) -> Unit,
     onOpen: (String) -> Unit,
     modifier: Modifier,
 ) {
+    // Deslizar a izquierda/derecha cambia de cuenta, igual que entre fuentes de tasas.
+    val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
+
     Column(modifier.fillMaxSize()) {
         Row(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp),
@@ -86,9 +99,38 @@ private fun PostList(
                 Icon(Icons.Filled.Refresh, contentDescription = "Actualizar")
             }
         }
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            BLOG_ACCOUNTS.forEachIndexed { index, handle ->
+                SegmentedButton(
+                    selected = handle == state.account,
+                    onClick = { onSelectAccount(handle) },
+                    shape = SegmentedButtonDefaults.itemShape(index, BLOG_ACCOUNTS.size),
+                ) {
+                    Text(blogAccountLabel(handle))
+                }
+            }
+        }
         PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(state.account) {
+                        var total = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { total = 0f },
+                            onDragCancel = { total = 0f },
+                            onDragEnd = {
+                                val current = BLOG_ACCOUNTS.indexOf(state.account)
+                                val target = when {
+                                    total <= -swipeThreshold -> current + 1
+                                    total >= swipeThreshold -> current - 1
+                                    else -> current
+                                }
+                                BLOG_ACCOUNTS.getOrNull(target)?.let(onSelectAccount)
+                            },
+                            onHorizontalDrag = { _, dx -> total += dx },
+                        )
+                    },
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -97,7 +139,7 @@ private fun PostList(
                     state.posts.isEmpty() && state.error -> item {
                         ErrorState("No se pudieron cargar los posts. Revisa tu conexión.", onRetry = onRefresh)
                     }
-                    state.posts.isEmpty() -> item { EmptyMessage("Todavía no hay posts.") }
+                    state.posts.isEmpty() -> item { EmptyMessage("Todavía no hay posts en ${blogAccountLabel(state.account)}.") }
                     else -> {
                         if (state.error) {
                             item {

@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.5.2
+
+### Blog
+- La pestaña Blog tiene ahora **dos cuentas**: **@tasalo** (el blog del equipo, la que se abre primero) y **@ersusoficial**. Cámbialas con las pestañas de arriba o **deslizando** a izquierda o derecha, como entre las fuentes de tasas. Cada cuenta guarda sus últimos posts para leerlos sin conexión.
+
+### Ajustes
+- En **Acerca de** hay un acceso directo al **bot de Telegram (@tasalobot)** y el enlace al blog apunta ahora al blog de TASALO.
+
 ## 0.5.1
 
 ### Tasas

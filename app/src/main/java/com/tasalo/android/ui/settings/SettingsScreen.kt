@@ -318,9 +318,10 @@ private fun RefreshSection(state: UiState, vm: MainViewModel) {
 }
 private data class SocialLink(val label: String, val url: String, val icon: Int)
 
-/** Iconos genéricos (no logos de marca). Telegram (bot, canal, grupo) se añade aquí cuando haya enlaces: `R.drawable.ic_social_send`. */
+/** Iconos genéricos (no logos de marca). Más canales de Telegram (grupo, canal) se añaden aquí con `R.drawable.ic_social_send`. */
 private val SOCIAL_LINKS = listOf(
+    SocialLink("Bot de Telegram (@tasalobot)", "https://t.me/tasalobot", R.drawable.ic_social_send),
     SocialLink("GitHub", "https://github.com/TASALO-TEAM", R.drawable.ic_social_code),
-    SocialLink("Blog en Ecency", "https://ecency.com/@ersusoficial", R.drawable.ic_social_article),
+    SocialLink("Blog de TASALO en Ecency", "https://ecency.com/@tasalo", R.drawable.ic_social_article),
     SocialLink("Correo del equipo", "mailto:tasaloteam@gmail.com", R.drawable.ic_social_mail),
 )

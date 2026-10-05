@@ -2,8 +2,10 @@ package com.tasalo.android.domain
 
 import java.time.Instant
 
-/** Cuenta de Hive cuyos posts muestra la pestaña Blog. Se cambia aquí cuando haya una cuenta de TASALO. */
-const val BLOG_ACCOUNT = "ersusoficial"
+/** Cuentas de Hive que muestra la pestaña Blog, en el orden de sus pestañas (la primera es la que se abre). */
+val BLOG_ACCOUNTS = listOf("tasalo", "ersusoficial")
+
+fun blogAccountLabel(handle: String): String = "@$handle"
 
 /** Un post del blog (Hive). `body` ya es Markdown estándar, sin HTML. */
 data class BlogPost(

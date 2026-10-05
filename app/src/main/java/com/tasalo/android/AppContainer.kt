@@ -39,7 +39,7 @@ class AppContainer(context: Context) {
     val updateChecker = UpdateChecker(http)
     val updateDownloader = UpdateDownloader(http)
     val blogClient = BlogClient(http)
-    val blogStore = BlogStore(File(context.filesDir, "blog_posts.json"))
+    val blogStore = BlogStore(context.filesDir)
 
     private val apis = ConcurrentHashMap<String, TasaloApi>()
 
@@ -73,6 +73,8 @@ class TasaloApp : Application() {
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             // APK de una actualización anterior (o interrumpida): ya no hace falta.
             runCatching { File(cacheDir, "updates").deleteRecursively() }
+            // Caché del Blog de la 0.5.0 (una sola cuenta): ahora hay un archivo por cuenta.
+            runCatching { File(filesDir, "blog_posts.json").delete() }
             RefreshScheduler.schedulePeriodic(this@TasaloApp, container.settingsStore.current().refreshMinutes)
         }
     }
