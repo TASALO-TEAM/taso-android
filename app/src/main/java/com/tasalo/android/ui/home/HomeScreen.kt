@@ -1,5 +1,6 @@
 package com.tasalo.android.ui.home
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +30,8 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.RefreshError
@@ -57,13 +60,35 @@ fun HomeScreen(
     val rates = snapshot?.bySource?.get(source).orEmpty()
         .filter { !state.settings.isHidden(source, it.currency) }
 
+    // Deslizar a izquierda/derecha cambia de fuente (El Toque / BCC / CADECA), además de tocar el selector.
+    val sources = Source.entries
+    val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
+
     PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             // 2 columnas en teléfono; 3 si el ancho es >= 600 dp (plan §4.1).
             val columns = if (maxWidth >= 600.dp) 3 else 2
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(source) {
+                        var total = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { total = 0f },
+                            onDragCancel = { total = 0f },
+                            onDragEnd = {
+                                val current = sources.indexOf(source)
+                                val target = when {
+                                    total <= -swipeThreshold -> current + 1
+                                    total >= swipeThreshold -> current - 1
+                                    else -> current
+                                }
+                                sources.getOrNull(target)?.takeIf { it != source }?.let(onSelectSource)
+                            },
+                            onHorizontalDrag = { _, dx -> total += dx },
+                        )
+                    },
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),

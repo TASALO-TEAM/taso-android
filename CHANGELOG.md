@@ -3,6 +3,11 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.5.1
+
+### Tasas
+- Ahora puedes **deslizar a izquierda o derecha** sobre las tasas para cambiar entre El Toque, BCC y CADECA. Tocar el selector de arriba sigue funcionando igual.
+
 ## 0.5.0
 
 ### Blog
