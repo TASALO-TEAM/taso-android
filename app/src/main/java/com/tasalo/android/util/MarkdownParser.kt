@@ -14,6 +14,8 @@ sealed interface MdBlock {
     data class Numbered(val number: Int, val spans: List<MdSpan>) : MdBlock
     data class Paragraph(val spans: List<MdSpan>) : MdBlock
     data class Code(val text: String) : MdBlock
+    /** Imagen en su propia línea (`![alt](https://...)`); solo se admiten direcciones https. */
+    data class Image(val alt: String, val url: String) : MdBlock
     data object Rule : MdBlock
 }
 
@@ -35,6 +37,10 @@ object MarkdownParser {
     private val telegramBullet = Regex("""^(\s*)[-*+•]\s+(.*)$""")
     private val numbered = Regex("""^\s*(\d+)[.)]\s+(.*)$""")
     private val rule = Regex("""^\s*([-*_])(\s*\1){2,}\s*$""")
+    // Imágenes: en su propia línea son un bloque; dentro de un texto se sustituyen por su descripción.
+    private val imageLine = Regex("""^\s*!\[([^\]]*)]\((\S+?)(?:\s+"[^"]*")?\)\s*$""")
+    private val linkedImageLine = Regex("""^\s*\[!\[([^\]]*)]\((\S+?)\)]\((\S+?)\)\s*$""")
+    private val inlineImage = Regex("""!\[([^\]]*)]\((\S+?)(?:\s+"[^"]*")?\)""")
     private val token = Regex("""`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*\s][^*]*)\*|\[([^\]]+)]\(([^)\s]+)\)""")
 
     // Telegram: *negrita*, _cursiva_ (no dentro de una palabra: snake_case se queda tal cual), `código`, enlaces.
@@ -58,7 +64,7 @@ object MarkdownParser {
         }
 
         for (raw in source.replace("\r\n", "\n").lines()) {
-            val line = raw.trimEnd()
+            var line = raw.trimEnd()
             if (line.trimStart().startsWith("```")) {
                 if (inCode) {
                     blocks += MdBlock.Code(code.joinToString("\n"))
@@ -74,6 +80,16 @@ object MarkdownParser {
                 continue
             }
             if (line.trimStart().startsWith("<!--")) continue
+            if (!telegram) {
+                val image = imageLine.matchEntire(line) ?: linkedImageLine.matchEntire(line)
+                if (image != null) {
+                    flushParagraph()
+                    val url = image.groupValues[2].trim()
+                    if (url.lowercase().startsWith("https://")) blocks += MdBlock.Image(image.groupValues[1], url)
+                    continue
+                }
+                line = inlineImage.replace(line) { it.groupValues[1] }
+            }
             when {
                 line.isBlank() -> flushParagraph()
                 !telegram && rule.matches(line) -> { flushParagraph(); blocks += MdBlock.Rule }

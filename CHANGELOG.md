@@ -3,6 +3,15 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.5.0
+
+### Blog
+- Nueva pestaña **Blog** en la barra inferior (📰), entre Combustible y Ajustes.
+- Muestra los **últimos 10 posts** con portada, título, un resumen y la fecha. Toca uno para leerlo completo dentro de la app, con sus imágenes, y usa **Abrir en Ecency** si prefieres verlo allí.
+- Las imágenes se cargan solo cuando llegas a ellas, así gastas menos datos.
+- Los posts se guardan en el móvil: puedes releerlos **sin conexión**. Se actualizan al abrir la pestaña (si pasaron más de 15 minutos), con el botón de refrescar o arrastrando la lista hacia abajo.
+- Desde un post, el botón *Atrás* vuelve a la lista.
+
 ## 0.4.1
 
 ### Arreglos
