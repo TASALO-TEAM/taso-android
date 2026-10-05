@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.4.1
+
+### Arreglos
+- **Xiaomi, Redmi y POCO:** la actualización dentro de la app fallaba con "Permission denied". Ahora Android muestra su confirmación de instalación: pulsa **Instalar**. Si se cancela, el mensaje explica qué hacer.
+- La ventana de error de la actualización ya no se corta: los botones *Reintentar*, *Descargar con el navegador* y *Cerrar* se ajustan al ancho de la pantalla y el texto del error se puede desplazar.
+- Los reportes de fallos ya no incluyen como errores las interrupciones normales del refresco en segundo plano.
+
 ## 0.4.0
 
 ### Alertas

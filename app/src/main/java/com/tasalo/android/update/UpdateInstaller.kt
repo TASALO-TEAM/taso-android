@@ -155,6 +155,12 @@ object ApkVerifier {
 object ApkInstaller {
     const val ACTION_RESULT = "com.tasalo.android.INSTALL_RESULT"
 
+    private fun isXiaomiFamily(): Boolean {
+        val maker = Build.MANUFACTURER.lowercase()
+        val brand = Build.BRAND.lowercase()
+        return listOf("xiaomi", "redmi", "poco").any { maker.contains(it) || brand.contains(it) }
+    }
+
     /**
      * Instala el APK con una sesión de PackageInstaller. En Android 12+ pide no mostrar confirmación
      * (se respeta cuando se cumplen las condiciones del sistema: la app se actualiza a sí misma, etc.);
@@ -165,7 +171,9 @@ object ApkInstaller {
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(context.packageName)
             setSize(apk.length())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // En Xiaomi/Redmi/POCO (HyperOS/MIUI) la instalación sin confirmación se aborta con
+            // "Permission denied" (reporte 0.3.0, Android 16): ahí se deja que Android muestre su confirmación.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isXiaomiFamily()) {
                 setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
             }
         }
@@ -229,7 +237,9 @@ class InstallResultReceiver : BroadcastReceiver() {
     }
 
     private fun friendly(status: Int): String = when (status) {
-        PackageInstaller.STATUS_FAILURE_ABORTED -> "Instalación cancelada."
+        PackageInstaller.STATUS_FAILURE_ABORTED ->
+            "Android canceló la instalación (en Xiaomi/Redmi puede ocurrir si se rechaza el aviso de seguridad). " +
+                "Inténtalo de nuevo y pulsa Instalar, o usa «Descargar con el navegador»."
         PackageInstaller.STATUS_FAILURE_BLOCKED -> "El sistema bloqueó la instalación (puede ser una restricción del fabricante)."
         PackageInstaller.STATUS_FAILURE_CONFLICT -> "La APK entra en conflicto con la app instalada (firma o versión)."
         PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> "La APK no es compatible con este dispositivo."

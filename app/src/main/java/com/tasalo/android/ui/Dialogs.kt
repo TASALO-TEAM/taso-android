@@ -13,7 +13,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.components.MarkdownView
 import com.tasalo.android.update.UpdateInfo
@@ -88,7 +90,13 @@ fun UpdateDialog(
                             "Solo se usa para actualizarse a sí misma. Actívalo en la pantalla que se abrirá, vuelve y pulsa Actualizar.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    is UpdatePhase.Failed -> Text(phase.reason, style = MaterialTheme.typography.bodyMedium)
+                    is UpdatePhase.Failed -> Column(
+                        Modifier
+                            .heightIn(max = 240.dp)
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        Text(phase.reason, style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         },
@@ -96,17 +104,23 @@ fun UpdateDialog(
             when (phase) {
                 UpdatePhase.Idle -> TextButton(onClick = onUpdate) { Text("Actualizar") }
                 UpdatePhase.NeedsPermission -> TextButton(onClick = onOpenSettings) { Text("Abrir ajustes") }
-                is UpdatePhase.Failed -> TextButton(onClick = onUpdate) { Text("Reintentar") }
+                // Las tres acciones van apiladas a todo el ancho: en pantallas estrechas o con fuente grande
+                // (p. ej. Redmi/MIUI) los textos largos se parten en varias líneas en vez de salirse de la ventana.
+                is UpdatePhase.Failed -> Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.End,
+                ) {
+                    TextButton(onClick = onUpdate) { Text("Reintentar", textAlign = TextAlign.End) }
+                    TextButton(onClick = onBrowser) { Text("Descargar con el navegador", textAlign = TextAlign.End) }
+                    TextButton(onClick = onLater) { Text("Cerrar", textAlign = TextAlign.End) }
+                }
                 else -> TextButton(onClick = onCancel, enabled = phase is UpdatePhase.Downloading) { Text("Cancelar") }
             }
         },
         dismissButton = {
             when (phase) {
                 UpdatePhase.Idle -> TextButton(onClick = onLater) { Text("Más tarde") }
-                is UpdatePhase.Failed -> Column {
-                    TextButton(onClick = onBrowser) { Text("Descargar con el navegador") }
-                    TextButton(onClick = onLater) { Text("Cerrar") }
-                }
+                is UpdatePhase.Failed -> Unit
                 UpdatePhase.NeedsPermission -> TextButton(onClick = onLater) { Text("Ahora no") }
                 else -> Unit
             }

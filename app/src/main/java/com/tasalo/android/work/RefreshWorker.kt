@@ -32,6 +32,10 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.
             WidgetUpdater.updateAll(applicationContext)
             if (result.anyOk || runAttemptCount >= 2) Result.success() else Result.retry()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // WorkManager cancela el trabajo al reprogramarlo o al abrir la app: es normal, no un fallo.
+            DiagnosticLog.i("Worker", "refresco en segundo plano interrumpido (se reprograma)")
+            throw e
         } catch (e: Exception) {
             DiagnosticLog.e("Worker", "el refresco en segundo plano falló", e)
             if (runAttemptCount >= 2) Result.failure() else Result.retry()
