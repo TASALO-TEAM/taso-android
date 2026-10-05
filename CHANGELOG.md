@@ -3,6 +3,16 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.5.3
+
+### Blog
+- Nuevo botón **+** junto a las pestañas del Blog: escribe un usuario de Hive (con o sin @, o pega el enlace de su blog en Ecency) y se carga su blog como una tercera pestaña. Se recuerda al cerrar la app.
+- Con un usuario elegido, el botón ✎ permite **cambiarlo por otro** o **quitarlo**.
+- Los posts se leen ahora con un lector de Markdown **completo**: **tablas** (con scroll horizontal si no caben), **citas** con barra lateral, listas anidadas y de tareas (☐/☑), texto tachado, **enlaces** (también los sueltos, con título o con paréntesis) y menciones `@usuario` que abren su perfil. Los saltos de línea se respetan como en Hive.
+- Las imágenes admiten enlace (por ejemplo, la miniatura de un vídeo abre el vídeo) y varias en una misma línea.
+- Los posts que traen **HTML** (de otras apps de Hive) se entienden: tablas, citas, listas, código, imágenes y enlaces se convierten. Los vídeos embebidos aparecen como enlace al original, y los scripts y estilos se descartan para no mostrar cosas raras.
+- Los posts guardados se vuelven a descargar una vez para aplicar el nuevo formato. Las **Alertas** del equipo siguen con el formato sencillo de Telegram.
+
 ## 0.5.2
 
 ### Blog

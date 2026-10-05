@@ -27,6 +27,12 @@ class BlogStore(private val dir: File) {
         }
     }
 
+    /** Borra lo guardado de una cuenta (al cambiar la pestaña personalizada). */
+    suspend fun delete(account: String) = withContext(Dispatchers.IO) {
+        runCatching { fileFor(account).delete() }
+        Unit
+    }
+
     suspend fun save(account: String, posts: List<BlogPost>, at: Instant) = withContext(Dispatchers.IO) {
         try {
             val file = fileFor(account)
