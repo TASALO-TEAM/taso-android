@@ -10,6 +10,7 @@ import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.diag.ReportBuilder
 import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.AppSettings
+import com.tasalo.android.domain.BlogPost
 import com.tasalo.android.domain.FuelSnapshot
 import com.tasalo.android.domain.RatesSnapshot
 import com.tasalo.android.domain.Source
@@ -66,6 +67,19 @@ data class UiState(
     val messages: List<AppMessage> = emptyList(),
     /** Mensajes de Alertas posteriores al último que el usuario vio. */
     val unreadAlerts: Int = 0,
+)
+
+/** Pestaña Blog: va aparte de `UiState` porque solo se carga al abrir la pestaña. */
+data class BlogUiState(
+    val posts: List<BlogPost> = emptyList(),
+    /** Ya se leyó lo guardado en el móvil (para no mostrar "sin posts" antes de tiempo). */
+    val loaded: Boolean = false,
+    val loading: Boolean = false,
+    /** El último intento de actualizar falló; si hay posts guardados se siguen mostrando. */
+    val error: Boolean = false,
+    val fetchedAt: Instant? = null,
+    /** `permlink` del post abierto, o null si se ve la lista. */
+    val selected: String? = null,
 )
 
 /** Estado de actualizaciones y reportes, separado para no pasar de 5 flujos en un solo `combine`. */
@@ -315,6 +329,44 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             updateChecker.fetchReleasesJson()?.let { container.cacheStore.saveReleases(it, Instant.now()) }
         }
     }
+
+    // ---------- Blog ----------
+
+    private val _blog = MutableStateFlow(BlogUiState())
+    val blog: StateFlow<BlogUiState> = _blog
+
+    /**
+     * Al abrir la pestaña: muestra lo guardado y descarga los últimos posts si no hay nada o pasaron
+     * más de 15 min (o siempre con `force`, que es el gesto de refrescar).
+     */
+    fun loadBlog(force: Boolean = false) {
+        viewModelScope.launch {
+            if (_blog.value.loading) return@launch
+            if (!_blog.value.loaded) {
+                val cached = container.blogStore.load()
+                _blog.update {
+                    it.copy(posts = cached?.posts.orEmpty(), fetchedAt = cached?.fetchedAt, loaded = true)
+                }
+            }
+            val at = _blog.value.fetchedAt
+            val fresh = at != null && Duration.between(at, Instant.now()).toMinutes() < 15
+            if (!force && fresh) return@launch
+
+            _blog.update { it.copy(loading = true, error = false) }
+            val posts = container.blogClient.fetch()
+            if (posts != null) {
+                val now = Instant.now()
+                container.blogStore.save(posts, now)
+                _blog.update { it.copy(posts = posts, fetchedAt = now, loading = false, error = false) }
+            } else {
+                _blog.update { it.copy(loading = false, error = true) }
+            }
+        }
+    }
+
+    fun openPost(permlink: String) = _blog.update { it.copy(selected = permlink) }
+
+    fun closePost() = _blog.update { it.copy(selected = null) }
 
     // ---------- Reportes de fallos ----------
 

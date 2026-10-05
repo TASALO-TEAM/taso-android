@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,6 +42,7 @@ import com.tasalo.android.ui.UpdateDialog
 import com.tasalo.android.ui.notifications.NotificationsScreen
 import com.tasalo.android.update.UpdatePhase
 import com.tasalo.android.ui.MainViewModel
+import com.tasalo.android.ui.blog.BlogScreen
 import com.tasalo.android.ui.fuel.FuelScreen
 import com.tasalo.android.ui.home.HomeScreen
 import com.tasalo.android.ui.settings.SettingsScreen
@@ -84,11 +86,14 @@ fun openUrl(context: android.content.Context, url: String) {
 
 private data class Tab(val label: String, val icon: String)
 
-private val TABS = listOf(Tab("Tasas", "💱"), Tab("Combustible", "⛽"), Tab("Ajustes", "⚙️"))
+private val TABS = listOf(Tab("Tasas", "💱"), Tab("Combustible", "⛽"), Tab("Blog", "📰"), Tab("Ajustes", "⚙️"))
+
+private const val BLOG_TAB = 2
 
 @Composable
 private fun TasaloRoot(vm: MainViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val blog by vm.blog.collectAsStateWithLifecycle()
     val settings = state.settings
     val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
     val dark = isDarkTheme(settings.theme)
@@ -110,6 +115,10 @@ private fun TasaloRoot(vm: MainViewModel) {
         var tab by rememberSaveable { mutableIntStateOf(0) }
         var showNotifications by rememberSaveable { mutableStateOf(false) }
         BackHandler(enabled = showNotifications) { showNotifications = false }
+        // Dentro de un post del blog, "atrás" vuelve a la lista (no cierra la app).
+        BackHandler(enabled = !showNotifications && tab == BLOG_TAB && blog.selected != null) { vm.closePost() }
+        // Al abrir la pestaña Blog: muestra lo guardado y descarga si hace falta (más de 15 min).
+        LaunchedEffect(tab) { if (tab == BLOG_TAB) vm.loadBlog() }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
         val update = state.update
@@ -185,6 +194,12 @@ private fun TasaloRoot(vm: MainViewModel) {
                     when (tab) {
                         0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
                         1 -> FuelScreen(state, vm::refresh)
+                        BLOG_TAB -> BlogScreen(
+                            state = blog,
+                            onRefresh = { vm.loadBlog(force = true) },
+                            onOpen = vm::openPost,
+                            onClose = vm::closePost,
+                        )
                         else -> SettingsScreen(state, vm)
                     }
                 }

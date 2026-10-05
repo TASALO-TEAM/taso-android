@@ -4,8 +4,10 @@ import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import com.tasalo.android.data.TasaloRepository
+import com.tasalo.android.data.local.BlogStore
 import com.tasalo.android.data.local.CacheStore
 import com.tasalo.android.data.local.SettingsStore
+import com.tasalo.android.data.remote.BlogClient
 import com.tasalo.android.data.remote.TasaloApi
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.update.UpdateChecker
@@ -36,6 +38,8 @@ class AppContainer(context: Context) {
 
     val updateChecker = UpdateChecker(http)
     val updateDownloader = UpdateDownloader(http)
+    val blogClient = BlogClient(http)
+    val blogStore = BlogStore(File(context.filesDir, "blog_posts.json"))
 
     private val apis = ConcurrentHashMap<String, TasaloApi>()
 
