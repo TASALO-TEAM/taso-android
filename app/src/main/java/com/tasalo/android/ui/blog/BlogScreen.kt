@@ -3,6 +3,7 @@ package com.tasalo.android.ui.blog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,11 +26,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -34,10 +44,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.tasalo.android.domain.BLOG_ACCOUNTS
 import com.tasalo.android.domain.BlogPost
 import com.tasalo.android.domain.blogAccountLabel
 import com.tasalo.android.openUrl
@@ -49,6 +59,7 @@ import com.tasalo.android.ui.components.MarkdownBlockView
 import com.tasalo.android.ui.components.SkeletonBlock
 import com.tasalo.android.ui.components.StatusBanner
 import com.tasalo.android.util.MarkdownParser
+import com.tasalo.android.util.MdDialect
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -60,6 +71,8 @@ fun BlogScreen(
     state: BlogUiState,
     onRefresh: () -> Unit,
     onSelectAccount: (String) -> Unit,
+    onSetCustom: (String) -> Boolean,
+    onClearCustom: () -> Unit,
     onOpen: (String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -68,7 +81,7 @@ fun BlogScreen(
     if (post != null) {
         PostDetail(post, onClose, modifier)
     } else {
-        PostList(state, onRefresh, onSelectAccount, onOpen, modifier)
+        PostList(state, onRefresh, onSelectAccount, onSetCustom, onClearCustom, onOpen, modifier)
     }
 }
 
@@ -78,9 +91,16 @@ private fun PostList(
     state: BlogUiState,
     onRefresh: () -> Unit,
     onSelectAccount: (String) -> Unit,
+    onSetCustom: (String) -> Boolean,
+    onClearCustom: () -> Unit,
     onOpen: (String) -> Unit,
     modifier: Modifier,
 ) {
+    var showCustomDialog by rememberSaveable { mutableStateOf(false) }
+    if (showCustomDialog) {
+        CustomAccountDialog(state.custom, onSetCustom, onClearCustom) { showCustomDialog = false }
+    }
+
     // Deslizar a izquierda/derecha cambia de cuenta, igual que entre fuentes de tasas.
     val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
 
@@ -99,14 +119,33 @@ private fun PostList(
                 Icon(Icons.Filled.Refresh, contentDescription = "Actualizar")
             }
         }
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-            BLOG_ACCOUNTS.forEachIndexed { index, handle ->
-                SegmentedButton(
-                    selected = handle == state.account,
-                    onClick = { onSelectAccount(handle) },
-                    shape = SegmentedButtonDefaults.itemShape(index, BLOG_ACCOUNTS.size),
-                ) {
-                    Text(blogAccountLabel(handle))
+        // Pestañas de cuentas + "+" para el blog de otro usuario de Hive (✎ para cambiarlo o quitarlo).
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val accounts = state.accounts
+            SingleChoiceSegmentedButtonRow(Modifier.weight(1f)) {
+                accounts.forEachIndexed { index, handle ->
+                    SegmentedButton(
+                        selected = handle == state.account,
+                        onClick = { onSelectAccount(handle) },
+                        shape = SegmentedButtonDefaults.itemShape(index, accounts.size),
+                    ) {
+                        Text(
+                            blogAccountLabel(handle),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            IconButton(onClick = { showCustomDialog = true }) {
+                if (state.custom == null) {
+                    Icon(Icons.Filled.Add, contentDescription = "Añadir el blog de otro usuario de Hive")
+                } else {
+                    Icon(Icons.Filled.Edit, contentDescription = "Cambiar o quitar el usuario personalizado")
                 }
             }
         }
@@ -120,13 +159,14 @@ private fun PostList(
                             onDragStart = { total = 0f },
                             onDragCancel = { total = 0f },
                             onDragEnd = {
-                                val current = BLOG_ACCOUNTS.indexOf(state.account)
+                                val accounts = state.accounts
+                                val current = accounts.indexOf(state.account)
                                 val target = when {
                                     total <= -swipeThreshold -> current + 1
                                     total >= swipeThreshold -> current - 1
                                     else -> current
                                 }
-                                BLOG_ACCOUNTS.getOrNull(target)?.let(onSelectAccount)
+                                accounts.getOrNull(target)?.let(onSelectAccount)
                             },
                             onHorizontalDrag = { _, dx -> total += dx },
                         )
@@ -137,7 +177,15 @@ private fun PostList(
                 when {
                     state.posts.isEmpty() && (!state.loaded || state.loading) -> items(3) { SkeletonBlock(height = 150) }
                     state.posts.isEmpty() && state.error -> item {
-                        ErrorState("No se pudieron cargar los posts. Revisa tu conexión.", onRetry = onRefresh)
+                        ErrorState(
+                            if (state.account == state.custom) {
+                                "No se pudieron cargar los posts de ${blogAccountLabel(state.account)}. " +
+                                    "Revisa tu conexión o que el usuario exista."
+                            } else {
+                                "No se pudieron cargar los posts. Revisa tu conexión."
+                            },
+                            onRetry = onRefresh,
+                        )
                     }
                     state.posts.isEmpty() -> item { EmptyMessage("Todavía no hay posts en ${blogAccountLabel(state.account)}.") }
                     else -> {
@@ -154,6 +202,56 @@ private fun PostList(
             }
         }
     }
+}
+
+/** Pide el usuario de Hive de la tercera pestaña; con uno ya elegido permite cambiarlo o quitarlo. */
+@Composable
+private fun CustomAccountDialog(
+    current: String?,
+    onSet: (String) -> Boolean,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var input by rememberSaveable { mutableStateOf(current.orEmpty()) }
+    var invalid by rememberSaveable { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Blog de otro usuario") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Escribe un usuario de Hive (con o sin @) o pega el enlace de su blog en Ecency.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = input,
+                    onValueChange = {
+                        input = it
+                        invalid = false
+                    },
+                    label = { Text("Usuario de Hive") },
+                    singleLine = true,
+                    isError = invalid,
+                    supportingText = if (invalid) ({ Text("Ese usuario de Hive no es válido.") }) else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { if (onSet(input)) onDismiss() else invalid = true }) { Text("Cargar") }
+        },
+        dismissButton = {
+            Row {
+                if (current != null) {
+                    TextButton(onClick = {
+                        onClear()
+                        onDismiss()
+                    }) { Text("Quitar") }
+                }
+                TextButton(onClick = onDismiss) { Text("Cancelar") }
+            }
+        },
+    )
 }
 
 /** Portada (si hay) + título + resumen + fecha. */
@@ -198,7 +296,7 @@ private fun PostCard(post: BlogPost, onClick: () -> Unit) {
 @Composable
 private fun PostDetail(post: BlogPost, onClose: () -> Unit, modifier: Modifier) {
     val context = LocalContext.current
-    val blocks = remember(post.body) { MarkdownParser.parse(post.body) }
+    val blocks = remember(post.body) { MarkdownParser.parse(post.body, MdDialect.FULL) }
 
     Column(modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {

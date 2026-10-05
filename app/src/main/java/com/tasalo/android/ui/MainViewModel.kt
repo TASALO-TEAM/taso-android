@@ -25,6 +25,7 @@ import com.tasalo.android.update.UpdateFlow
 import com.tasalo.android.update.UpdateInfo
 import com.tasalo.android.update.UpdatePhase
 import com.tasalo.android.update.UpdateResult
+import com.tasalo.android.util.HiveUser
 import com.tasalo.android.util.NetworkMonitor
 import com.tasalo.android.widget.WidgetUpdater
 import com.tasalo.android.work.RefreshScheduler
@@ -85,10 +86,14 @@ data class BlogFeed(
 data class BlogUiState(
     /** Cuenta de Hive que se está viendo (`BLOG_ACCOUNTS`). */
     val account: String = BLOG_ACCOUNTS.first(),
+    /** Usuario de Hive elegido por la persona (tercera pestaña), o null si no hay. */
+    val custom: String? = null,
     val feeds: Map<String, BlogFeed> = emptyMap(),
     /** `permlink` del post abierto, o null si se ve la lista. */
     val selected: String? = null,
 ) {
+    /** Pestañas del Blog: las del equipo y, si existe, la elegida por la persona. */
+    val accounts: List<String> get() = BLOG_ACCOUNTS + listOfNotNull(custom)
     private val feed: BlogFeed get() = feeds[account] ?: BlogFeed()
     val posts: List<BlogPost> get() = feed.posts
     val loaded: Boolean get() = feed.loaded
@@ -349,6 +354,15 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _blog = MutableStateFlow(BlogUiState())
     val blog: StateFlow<BlogUiState> = _blog
 
+    // Va después de `_blog` a propósito: los inicializadores se ejecutan en el orden del archivo.
+    init {
+        viewModelScope.launch {
+            settingsStore.current().blogCustomAccount?.let { handle ->
+                _blog.update { if (handle in BLOG_ACCOUNTS) it else it.copy(custom = handle) }
+            }
+        }
+    }
+
     private fun updateFeed(account: String, change: (BlogFeed) -> BlogFeed) {
         _blog.update { it.copy(feeds = it.feeds + (account to change(it.feeds[account] ?: BlogFeed()))) }
     }
@@ -387,8 +401,49 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
     /** Cambia de cuenta (pestañas o deslizar): vuelve a la lista y carga esa cuenta si hace falta. */
     fun selectBlogAccount(account: String) {
-        if (account !in BLOG_ACCOUNTS || account == _blog.value.account) return
+        if (account !in _blog.value.accounts || account == _blog.value.account) return
         _blog.update { it.copy(account = account, selected = null) }
+        loadBlog()
+    }
+
+    /**
+     * Pestaña con el blog de otro usuario de Hive (acepta `usuario`, `@usuario` o el enlace de Ecency).
+     * Devuelve false si el texto no es un usuario válido. Un usuario del equipo solo se selecciona.
+     */
+    fun setBlogCustom(input: String): Boolean {
+        val handle = HiveUser.normalize(input) ?: return false
+        if (handle in BLOG_ACCOUNTS) {
+            selectBlogAccount(handle)
+            return true
+        }
+        val previous = _blog.value.custom
+        _blog.update {
+            val feeds = if (previous != null && previous != handle) it.feeds - previous else it.feeds
+            it.copy(custom = handle, account = handle, selected = null, feeds = feeds)
+        }
+        viewModelScope.launch {
+            settingsStore.setBlogCustomAccount(handle)
+            if (previous != null && previous != handle) container.blogStore.delete(previous)
+        }
+        loadBlog()
+        return true
+    }
+
+    /** Quita la pestaña personalizada y vuelve a la primera cuenta. */
+    fun clearBlogCustom() {
+        val previous = _blog.value.custom ?: return
+        _blog.update {
+            it.copy(
+                custom = null,
+                account = if (it.account == previous) BLOG_ACCOUNTS.first() else it.account,
+                selected = null,
+                feeds = it.feeds - previous,
+            )
+        }
+        viewModelScope.launch {
+            settingsStore.setBlogCustomAccount(null)
+            container.blogStore.delete(previous)
+        }
         loadBlog()
     }
 

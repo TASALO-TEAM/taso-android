@@ -19,6 +19,9 @@ import kotlinx.serialization.json.put
  * Aquí también está el formato compacto con el que se guardan en el móvil (la respuesta de Hive pesa mucho más).
  */
 object BlogParser {
+    /** Sube cuando cambia la limpieza del texto: lo guardado con una versión anterior se descarga de nuevo. */
+    private const val CACHE_VERSION = 2
+
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     private fun obj(text: String): JsonObject? =
@@ -77,7 +80,7 @@ object BlogParser {
     // ---------- Caché local ----------
 
     fun encode(posts: List<BlogPost>, fetchedAt: Instant): String = buildJsonObject {
-        put("v", 1)
+        put("v", CACHE_VERSION)
         put("at", fetchedAt.toEpochMilli())
         put(
             "posts",
@@ -102,6 +105,7 @@ object BlogParser {
     /** Lo guardado por `encode`; null si el archivo está corrupto o es de otro formato. */
     fun decode(text: String): BlogCache? {
         val root = obj(text) ?: return null
+        if ((root["v"] as? JsonPrimitive)?.longOrNull != CACHE_VERSION.toLong()) return null
         val at = (root["at"] as? JsonPrimitive)?.longOrNull ?: return null
         val array = root["posts"] as? JsonArray ?: return null
         val posts = array.mapNotNull { element ->

@@ -6,16 +6,29 @@ data class MdSpan(
     val italic: Boolean = false,
     val code: Boolean = false,
     val url: String? = null,
+    val strike: Boolean = false,
 )
+
+/** Alineación de una columna de tabla. */
+enum class MdAlign { START, CENTER, END }
 
 sealed interface MdBlock {
     data class Heading(val level: Int, val spans: List<MdSpan>) : MdBlock
-    data class Bullet(val indent: Int, val spans: List<MdSpan>) : MdBlock
-    data class Numbered(val number: Int, val spans: List<MdSpan>) : MdBlock
+    /** `checked` solo en listas de tareas (`- [x]`): true = hecha, false = pendiente. */
+    data class Bullet(val indent: Int, val spans: List<MdSpan>, val checked: Boolean? = null) : MdBlock
+    data class Numbered(val number: Int, val spans: List<MdSpan>, val indent: Int = 0) : MdBlock
     data class Paragraph(val spans: List<MdSpan>) : MdBlock
     data class Code(val text: String) : MdBlock
     /** Imagen en su propia línea (`![alt](https://...)`); solo se admiten direcciones https. */
-    data class Image(val alt: String, val url: String) : MdBlock
+    data class Image(val alt: String, val url: String, val link: String? = null) : MdBlock
+    /** Cita (`> texto`): puede contener cualquier otro bloque, también otras citas. */
+    data class Quote(val blocks: List<MdBlock>) : MdBlock
+    /** Tabla: cabecera, filas (todas con tantas celdas como la cabecera) y alineación de cada columna. */
+    data class Table(
+        val header: List<List<MdSpan>>,
+        val rows: List<List<List<MdSpan>>>,
+        val aligns: List<MdAlign>,
+    ) : MdBlock
     data object Rule : MdBlock
 }
 
@@ -24,8 +37,10 @@ sealed interface MdBlock {
  * - STANDARD: Markdown habitual (notas de versión, posts del blog): `**negrita**`, `*cursiva*`, `# títulos`.
  * - TELEGRAM: Markdown legacy de Telegram, que es lo que escribe el admin con /msapp en el bot:
  *   `*negrita*`, `_cursiva_`, `` `código` ``, `[texto](url)`. No hay títulos y los saltos de línea cuentan.
+ * - FULL: Markdown completo de los posts del blog (tablas, citas, listas de tareas, enlaces sueltos, tachado...);
+ *   ver `BlogMarkdown`.
  */
-enum class MdDialect { STANDARD, TELEGRAM }
+enum class MdDialect { STANDARD, TELEGRAM, FULL }
 
 /**
  * Markdown mínimo para las notas de versión y los mensajes del equipo: títulos, listas, negrita,
@@ -49,6 +64,7 @@ object MarkdownParser {
     )
 
     fun parse(source: String, dialect: MdDialect = MdDialect.STANDARD): List<MdBlock> {
+        if (dialect == MdDialect.FULL) return BlogMarkdown.parse(source)
         val telegram = dialect == MdDialect.TELEGRAM
         val bulletRegex = if (telegram) telegramBullet else bullet
         val blocks = mutableListOf<MdBlock>()

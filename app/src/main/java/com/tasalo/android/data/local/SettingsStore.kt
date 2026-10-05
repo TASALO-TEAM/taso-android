@@ -13,6 +13,7 @@ import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.DEFAULT_BASE_URL
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
+import com.tasalo.android.util.HiveUser
 import com.tasalo.android.util.UrlValidator
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +40,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val REFRESH_MINUTES = intPreferencesKey("refresh_minutes")
         val LAST_BG_REFRESH = longPreferencesKey("last_bg_refresh")
         val LAST_SEEN_MESSAGE = longPreferencesKey("last_seen_message")
+        val BLOG_CUSTOM = stringPreferencesKey("blog_custom_account")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -57,6 +59,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 refreshMinutes = p[Keys.REFRESH_MINUTES]?.takeIf { it in REFRESH_OPTIONS } ?: 30,
                 lastBackgroundRefresh = p[Keys.LAST_BG_REFRESH] ?: 0L,
                 lastSeenMessageId = p[Keys.LAST_SEEN_MESSAGE] ?: 0L,
+                blogCustomAccount = p[Keys.BLOG_CUSTOM]?.let(HiveUser::normalize),
             )
         }
 
@@ -103,6 +106,10 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun setRefreshMinutes(minutes: Int) {
         store.edit { it[Keys.REFRESH_MINUTES] = if (minutes in REFRESH_OPTIONS) minutes else 30 }
+    }
+
+    suspend fun setBlogCustomAccount(handle: String?) {
+        store.edit { if (handle == null) it.remove(Keys.BLOG_CUSTOM) else it[Keys.BLOG_CUSTOM] = handle }
     }
 
     suspend fun setLastSeenMessageId(id: Long) {

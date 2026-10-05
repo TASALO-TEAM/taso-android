@@ -80,6 +80,8 @@ data class AppSettings(
     val lastBackgroundRefresh: Long = 0L,
     /** Último mensaje de Alertas que el usuario ya vio (para el punto de no leídos). */
     val lastSeenMessageId: Long = 0L,
+    /** Usuario de Hive elegido por la persona para la tercera pestaña del Blog (null = ninguno). */
+    val blogCustomAccount: String? = null,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

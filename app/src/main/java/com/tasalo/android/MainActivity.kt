@@ -198,6 +198,8 @@ private fun TasaloRoot(vm: MainViewModel) {
                             state = blog,
                             onRefresh = { vm.loadBlog(force = true) },
                             onSelectAccount = vm::selectBlogAccount,
+                            onSetCustom = vm::setBlogCustom,
+                            onClearCustom = vm::clearBlogCustom,
                             onOpen = vm::openPost,
                             onClose = vm::closePost,
                         )
