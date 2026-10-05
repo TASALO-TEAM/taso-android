@@ -10,6 +10,7 @@ import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.diag.ReportBuilder
 import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.AppSettings
+import com.tasalo.android.domain.BLOG_ACCOUNTS
 import com.tasalo.android.domain.BlogPost
 import com.tasalo.android.domain.FuelSnapshot
 import com.tasalo.android.domain.RatesSnapshot
@@ -69,8 +70,8 @@ data class UiState(
     val unreadAlerts: Int = 0,
 )
 
-/** Pestaña Blog: va aparte de `UiState` porque solo se carga al abrir la pestaña. */
-data class BlogUiState(
+/** Posts de una cuenta del blog y el estado de su descarga. */
+data class BlogFeed(
     val posts: List<BlogPost> = emptyList(),
     /** Ya se leyó lo guardado en el móvil (para no mostrar "sin posts" antes de tiempo). */
     val loaded: Boolean = false,
@@ -78,9 +79,22 @@ data class BlogUiState(
     /** El último intento de actualizar falló; si hay posts guardados se siguen mostrando. */
     val error: Boolean = false,
     val fetchedAt: Instant? = null,
+)
+
+/** Pestaña Blog: va aparte de `UiState` porque solo se carga al abrir la pestaña. Una lista por cuenta. */
+data class BlogUiState(
+    /** Cuenta de Hive que se está viendo (`BLOG_ACCOUNTS`). */
+    val account: String = BLOG_ACCOUNTS.first(),
+    val feeds: Map<String, BlogFeed> = emptyMap(),
     /** `permlink` del post abierto, o null si se ve la lista. */
     val selected: String? = null,
-)
+) {
+    private val feed: BlogFeed get() = feeds[account] ?: BlogFeed()
+    val posts: List<BlogPost> get() = feed.posts
+    val loaded: Boolean get() = feed.loaded
+    val loading: Boolean get() = feed.loading
+    val error: Boolean get() = feed.error
+}
 
 /** Estado de actualizaciones y reportes, separado para no pasar de 5 flujos en un solo `combine`. */
 private data class Extras(
@@ -335,33 +349,47 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _blog = MutableStateFlow(BlogUiState())
     val blog: StateFlow<BlogUiState> = _blog
 
+    private fun updateFeed(account: String, change: (BlogFeed) -> BlogFeed) {
+        _blog.update { it.copy(feeds = it.feeds + (account to change(it.feeds[account] ?: BlogFeed()))) }
+    }
+
     /**
-     * Al abrir la pestaña: muestra lo guardado y descarga los últimos posts si no hay nada o pasaron
-     * más de 15 min (o siempre con `force`, que es el gesto de refrescar).
+     * Al abrir la pestaña (o cambiar de cuenta): muestra lo guardado y descarga los últimos posts si no hay
+     * nada o pasaron más de 15 min (o siempre con `force`, que es el gesto de refrescar).
      */
     fun loadBlog(force: Boolean = false) {
+        val account = _blog.value.account
         viewModelScope.launch {
-            if (_blog.value.loading) return@launch
-            if (!_blog.value.loaded) {
-                val cached = container.blogStore.load()
-                _blog.update {
+            var feed = _blog.value.feeds[account] ?: BlogFeed()
+            if (feed.loading) return@launch
+            if (!feed.loaded) {
+                val cached = container.blogStore.load(account)
+                updateFeed(account) {
                     it.copy(posts = cached?.posts.orEmpty(), fetchedAt = cached?.fetchedAt, loaded = true)
                 }
+                feed = _blog.value.feeds[account] ?: BlogFeed()
             }
-            val at = _blog.value.fetchedAt
+            val at = feed.fetchedAt
             val fresh = at != null && Duration.between(at, Instant.now()).toMinutes() < 15
             if (!force && fresh) return@launch
 
-            _blog.update { it.copy(loading = true, error = false) }
-            val posts = container.blogClient.fetch()
+            updateFeed(account) { it.copy(loading = true, error = false) }
+            val posts = container.blogClient.fetch(account)
             if (posts != null) {
                 val now = Instant.now()
-                container.blogStore.save(posts, now)
-                _blog.update { it.copy(posts = posts, fetchedAt = now, loading = false, error = false) }
+                container.blogStore.save(account, posts, now)
+                updateFeed(account) { it.copy(posts = posts, fetchedAt = now, loading = false, error = false) }
             } else {
-                _blog.update { it.copy(loading = false, error = true) }
+                updateFeed(account) { it.copy(loading = false, error = true) }
             }
         }
+    }
+
+    /** Cambia de cuenta (pestañas o deslizar): vuelve a la lista y carga esa cuenta si hace falta. */
+    fun selectBlogAccount(account: String) {
+        if (account !in BLOG_ACCOUNTS || account == _blog.value.account) return
+        _blog.update { it.copy(account = account, selected = null) }
+        loadBlog()
     }
 
     fun openPost(permlink: String) = _blog.update { it.copy(selected = permlink) }

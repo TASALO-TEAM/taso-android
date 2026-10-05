@@ -13,10 +13,13 @@ import kotlinx.coroutines.withContext
  * Últimos posts del blog guardados en un archivo propio (no en el DataStore del caché: los cuerpos pesan
  * bastante y ese archivo se lee entero cada vez que cambia algo). Escritura atómica: tmp + renombrar.
  */
-class BlogStore(private val file: File) {
+class BlogStore(private val dir: File) {
 
-    suspend fun load(): BlogCache? = withContext(Dispatchers.IO) {
+    private fun fileFor(account: String) = File(dir, "blog_${account.filter { it.isLetterOrDigit() || it == '-' || it == '.' }}.json")
+
+    suspend fun load(account: String): BlogCache? = withContext(Dispatchers.IO) {
         try {
+            val file = fileFor(account)
             if (file.exists()) BlogParser.decode(file.readText()) else null
         } catch (e: Exception) {
             DiagnosticLog.w("Blog", "no se pudo leer el blog guardado", e)
@@ -24,9 +27,10 @@ class BlogStore(private val file: File) {
         }
     }
 
-    suspend fun save(posts: List<BlogPost>, at: Instant) = withContext(Dispatchers.IO) {
+    suspend fun save(account: String, posts: List<BlogPost>, at: Instant) = withContext(Dispatchers.IO) {
         try {
-            val tmp = File(file.parentFile, file.name + ".tmp")
+            val file = fileFor(account)
+            val tmp = File(dir, file.name + ".tmp")
             tmp.writeText(BlogParser.encode(posts, at))
             if (!tmp.renameTo(file)) {
                 file.writeText(BlogParser.encode(posts, at))

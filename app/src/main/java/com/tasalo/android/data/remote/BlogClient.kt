@@ -2,7 +2,6 @@ package com.tasalo.android.data.remote
 
 import com.tasalo.android.data.parse.BlogParser
 import com.tasalo.android.diag.DiagnosticLog
-import com.tasalo.android.domain.BLOG_ACCOUNT
 import com.tasalo.android.domain.BlogPost
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -21,11 +20,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 class BlogClient(
     private val client: OkHttpClient,
     private val nodes: List<String> = DEFAULT_NODES,
-    private val account: String = BLOG_ACCOUNT,
     private val limit: Int = 10,
 ) {
-    /** Los posts (más nuevos primero) o null si ningún nodo respondió bien. Una lista vacía es una respuesta válida. */
-    suspend fun fetch(): List<BlogPost>? = withContext(Dispatchers.IO) {
+    /** Los posts de `account` (más nuevos primero) o null si ningún nodo respondió bien. Una lista vacía es una respuesta válida. */
+    suspend fun fetch(account: String): List<BlogPost>? = withContext(Dispatchers.IO) {
         val payload = buildJsonObject {
             put("jsonrpc", "2.0")
             put("method", "bridge.get_account_posts")
