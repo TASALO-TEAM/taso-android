@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.6.1
+
+### Arreglos del nuevo aspecto
+- **Texto e iconos que no se veían en modo oscuro** (sobre todo en el Blog: el texto de los posts y los botones de actualizar, **+** y lápiz salían en negro sobre fondo oscuro). Ahora todo el contenido toma el color del tema: claro sobre fondo oscuro y oscuro sobre fondo claro.
+- **Mejor lectura en modo claro**: el verde de "baja", el rojo de "sube", el acento y los bordes se oscurecieron un paso para que se lean bien sobre las tarjetas (antes el verde casi se perdía).
+- **Iconos de las pestañas nuevos**: en lugar de emojis (que cada móvil dibuja distinto y no cambian con el tema), ahora son iconos vectoriales que siguen los colores de la app.
+
 ## 0.6.0
 
 ### Nuevo aspecto "Quiet Glass"

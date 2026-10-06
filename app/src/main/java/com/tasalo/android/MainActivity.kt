@@ -5,6 +5,12 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateOf
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
@@ -30,8 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -86,9 +91,14 @@ fun openUrl(context: android.content.Context, url: String) {
     }
 }
 
-private data class Tab(val label: String, val icon: String)
+private data class Tab(val label: String, val icon: ImageVector)
 
-private val TABS = listOf(Tab("Tasas", "💱"), Tab("Combustible", "⛽"), Tab("Blog", "📰"), Tab("Ajustes", "⚙️"))
+private val TABS = listOf(
+    Tab("Tasas", Icons.Filled.SwapHoriz),
+    Tab("Combustible", Icons.Filled.LocalGasStation),
+    Tab("Blog", Icons.AutoMirrored.Filled.Article),
+    Tab("Ajustes", Icons.Filled.Settings),
+)
 
 private const val BLOG_TAB = 2
 
@@ -169,6 +179,9 @@ private fun TasaloRoot(vm: MainViewModel) {
         Scaffold(
             modifier = Modifier.quietGlassBackground(),
             containerColor = Color.Transparent,
+            // Con el fondo transparente Material ya no deduce el color del contenido: sin esto, todo texto o icono
+            // sin color propio (Markdown del Blog, IconButton...) caía al negro por defecto y se perdía en modo oscuro.
+            contentColor = MaterialTheme.colorScheme.onBackground,
             bottomBar = {
                 NavigationBar {
                     TABS.forEachIndexed { index, item ->
@@ -178,7 +191,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                                 tab = index
                                 showNotifications = false
                             },
-                            icon = { Text(item.icon, modifier = Modifier.semantics { contentDescription = item.label }) },
+                            icon = { Icon(item.icon, contentDescription = null) },
                             label = { Text(item.label) },
                         )
                     }

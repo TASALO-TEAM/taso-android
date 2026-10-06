@@ -23,7 +23,7 @@ import com.tasalo.android.domain.ThemeMode
  * de la extensión (--bg, --text, --accent, --up, --down...). Las superficies de la extensión son
  * blanco/tinta con 3-6 % de opacidad; aquí se precalculan sobre el fondo para el esquema de Material.
  */
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = Color(0xFF6C81FF),
     onPrimary = Color(0xFF0A0A10),
     primaryContainer = Color(0xFF181B31),
@@ -46,7 +46,7 @@ private val DarkColors = darkColorScheme(
     surfaceContainer = Color(0xFF131319),
     surfaceContainerHigh = Color(0xFF181820),
     surfaceContainerHighest = Color(0xFF1D1D26),
-    outline = Color(0xFF55556A),
+    outline = Color(0xFF5C5C72),
     outlineVariant = Color(0xFF26262F),
     error = Color(0xFFF2555F),
     onError = Color(0xFF0A0A10),
@@ -54,12 +54,12 @@ private val DarkColors = darkColorScheme(
     onErrorContainer = Color(0xFFFFD9DC),
 )
 
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF4A63E0),
+internal val LightColors = lightColorScheme(
+    primary = Color(0xFF3B56DD),
     onPrimary = Color.White,
     primaryContainer = Color(0xFFD8DCEE),
     onPrimaryContainer = Color(0xFF1F2F8A),
-    secondary = Color(0xFF4A63E0),
+    secondary = Color(0xFF3B56DD),
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFD8DCEE),
     onSecondaryContainer = Color(0xFF1F2F8A),
@@ -69,7 +69,7 @@ private val LightColors = lightColorScheme(
     onSurface = Color(0xFF2B2C3A),
     surfaceVariant = Color(0xFFDBDDE4),
     onSurfaceVariant = Color(0xFF5E5F72),
-    surfaceTint = Color(0xFF4A63E0),
+    surfaceTint = Color(0xFF3B56DD),
     surfaceDim = Color(0xFFDADCE3),
     surfaceBright = Color(0xFFF6F7FA),
     surfaceContainerLowest = Color(0xFFF5F6FA),
@@ -77,9 +77,9 @@ private val LightColors = lightColorScheme(
     surfaceContainer = Color(0xFFEBECF2),
     surfaceContainerHigh = Color(0xFFF1F2F7),
     surfaceContainerHighest = Color(0xFFF6F7FA),
-    outline = Color(0xFF8D8EA0),
+    outline = Color(0xFF838498),
     outlineVariant = Color(0xFFCBCDD8),
-    error = Color(0xFFD13A4B),
+    error = Color(0xFFBC2C3C),
     onError = Color.White,
     errorContainer = Color(0xFFF8D9DD),
     onErrorContainer = Color(0xFF5C0F1B),
@@ -94,14 +94,14 @@ data class GlassTokens(
     val surfaceGlass: Color,
 )
 
-private val DarkGlass = GlassTokens(
+internal val DarkGlass = GlassTokens(
     border = Color(0x12FFFFFF),
     borderAccent = Color(0x596C81FF),
     accentSoft = Color(0x246C81FF),
     surfaceGlass = Color(0x08FFFFFF),
 )
 
-private val LightGlass = GlassTokens(
+internal val LightGlass = GlassTokens(
     border = Color(0x171E2030),
     borderAccent = Color(0x474A63E0),
     accentSoft = Color(0x1A4A63E0),
@@ -122,6 +122,21 @@ val LocalChangeColors = staticCompositionLocalOf {
     ChangeColors(Color(0xFFF2555F), Color(0xFF34D399), Color(0xFF86869C))
 }
 
+/**
+ * Convención de la extensión: sube = rojo, baja = verde (configurable). En oscuro son los --up / --down / --neutral
+ * de la extensión. En claro se oscurecen un paso respecto a ella (#d13a4b, #1a9c6b, #6b6b80) porque, a tamaño de
+ * texto normal, no llegaban a 4,5:1 sobre las tarjetas (el verde se quedaba en 2,7:1); aquí cumplen WCAG AA.
+ */
+internal fun changeColorsFor(dark: Boolean, invert: Boolean): ChangeColors {
+    val red = if (dark) Color(0xFFF2555F) else Color(0xFFBC2C3C)
+    val green = if (dark) Color(0xFF34D399) else Color(0xFF13724F)
+    return ChangeColors(
+        up = if (invert) green else red,
+        down = if (invert) red else green,
+        neutral = if (dark) Color(0xFF86869C) else Color(0xFF636376),
+    )
+}
+
 @Composable
 fun TasaloTheme(mode: ThemeMode, invertColors: Boolean, content: @Composable () -> Unit) {
     val dark = when (mode) {
@@ -130,16 +145,8 @@ fun TasaloTheme(mode: ThemeMode, invertColors: Boolean, content: @Composable () 
         ThemeMode.LIGHT -> false
     }
     val scheme = if (dark) DarkColors else LightColors
-    // Convención de la extensión: sube = rojo, baja = verde (configurable). Valores --up / --down / --neutral.
-    val red = if (dark) Color(0xFFF2555F) else Color(0xFFD13A4B)
-    val green = if (dark) Color(0xFF34D399) else Color(0xFF1A9C6B)
-    val colors = ChangeColors(
-        up = if (invertColors) green else red,
-        down = if (invertColors) red else green,
-        neutral = if (dark) Color(0xFF86869C) else Color(0xFF6B6B80),
-    )
     CompositionLocalProvider(
-        LocalChangeColors provides colors,
+        LocalChangeColors provides changeColorsFor(dark, invertColors),
         LocalGlass provides (if (dark) DarkGlass else LightGlass),
     ) {
         MaterialTheme(colorScheme = scheme, typography = TasaloTypography, shapes = TasaloShapes, content = content)
