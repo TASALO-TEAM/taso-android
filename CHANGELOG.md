@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.7.1
+
+### Actualizaciones
+- Si Android rechaza la instalación automática de una actualización (pasaba en algunos Samsung con "verificación fallida"), la app lo reintenta una vez pidiendo la confirmación normal de Android.
+- Si aun así falla, el mensaje explica qué revisar (Play Protect o Auto Blocker) y ofrece descargar con el navegador.
+
 ## 0.7.0
 
 ### Calculadora de tasas

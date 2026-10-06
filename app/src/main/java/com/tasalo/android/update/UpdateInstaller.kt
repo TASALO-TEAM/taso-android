@@ -36,6 +36,11 @@ object UpdateFlow {
     val phase = MutableStateFlow<UpdatePhase>(UpdatePhase.Idle)
 }
 
+/** Mensaje cuando la verificación del sistema (Play Protect, Auto Blocker de Samsung...) rechaza la instalación. */
+private const val VERIFICATION_TEXT =
+    "Android rechazó la verificación de la instalación. En Samsung suele deberse a Play Protect o al Auto Blocker " +
+        "(Ajustes › Seguridad y privacidad). Revísalos e inténtalo de nuevo, o usa «Descargar con el navegador»."
+
 object Sha256 {
     fun hex(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -154,6 +159,8 @@ object ApkVerifier {
 
 object ApkInstaller {
     const val ACTION_RESULT = "com.tasalo.android.INSTALL_RESULT"
+    const val EXTRA_APK_PATH = "com.tasalo.android.extra.APK_PATH"
+    const val EXTRA_ATTEMPT = "com.tasalo.android.extra.ATTEMPT"
 
     private fun isXiaomiFamily(): Boolean {
         val maker = Build.MANUFACTURER.lowercase()
@@ -166,15 +173,21 @@ object ApkInstaller {
      * (se respeta cuando se cumplen las condiciones del sistema: la app se actualiza a sí misma, etc.);
      * en versiones anteriores Android muestra su diálogo de confirmación.
      */
-    fun install(context: Context, apk: File) {
+    fun install(context: Context, apk: File, userAction: Boolean = false, attempt: Int = 0) {
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(context.packageName)
             setSize(apk.length())
             // En Xiaomi/Redmi/POCO (HyperOS/MIUI) la instalación sin confirmación se aborta con
             // "Permission denied" (reporte 0.3.0, Android 16): ahí se deja que Android muestre su confirmación.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !isXiaomiFamily()) {
-                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+            // Si el sistema rechazó la instalación silenciosa (p. ej. verificación en Samsung), el reintento
+            // pasa userAction = true y Android muestra su confirmación normal.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (userAction) {
+                    setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED)
+                } else if (!isXiaomiFamily()) {
+                    setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+                }
             }
         }
         val sessionId = installer.createSession(params)
@@ -186,7 +199,10 @@ object ApkInstaller {
                 }
             }
             // Intent explícito: obligatorio para PendingIntent mutables en Android 14+.
-            val intent = Intent(context, InstallResultReceiver::class.java).setAction(ACTION_RESULT)
+            val intent = Intent(context, InstallResultReceiver::class.java)
+                .setAction(ACTION_RESULT)
+                .putExtra(EXTRA_APK_PATH, apk.path)
+                .putExtra(EXTRA_ATTEMPT, attempt)
             val pending = PendingIntent.getBroadcast(
                 context,
                 sessionId,
@@ -195,7 +211,7 @@ object ApkInstaller {
             )
             session.commit(pending.intentSender)
         }
-        DiagnosticLog.i("Update", "sesión de instalación $sessionId enviada (API ${Build.VERSION.SDK_INT})")
+        DiagnosticLog.i("Update", "sesión de instalación $sessionId enviada (API ${Build.VERSION.SDK_INT}, intento ${attempt + 1}${if (userAction) ", con confirmación" else ""})")
     }
 }
 
@@ -227,7 +243,32 @@ class InstallResultReceiver : BroadcastReceiver() {
                 DiagnosticLog.i("Update", "instalación completada")
                 UpdateFlow.phase.value = UpdatePhase.Idle
             }
-            else -> fail(friendly(status), status, message)
+            else -> {
+                val apk = intent.getStringExtra(ApkInstaller.EXTRA_APK_PATH)?.let(::File)
+                val attempt = intent.getIntExtra(ApkInstaller.EXTRA_ATTEMPT, 0)
+                val verification = status == PackageInstaller.STATUS_FAILURE_ABORTED &&
+                    message.orEmpty().contains("VERIFICATION_FAILURE")
+                if (verification && attempt == 0 && apk?.exists() == true) {
+                    // Reporte 0.6.1 (Samsung, Android 16): la verificación del sistema rechazó la instalación
+                    // silenciosa. Se reintenta una vez pidiendo la confirmación normal de Android.
+                    DiagnosticLog.w("Update", "verificación del sistema rechazó la instalación; se reintenta con confirmación: ${message.orEmpty()}")
+                    val pending = goAsync()
+                    Thread {
+                        try {
+                            ApkInstaller.install(context.applicationContext, apk, userAction = true, attempt = 1)
+                        } catch (e: Exception) {
+                            DiagnosticLog.e("Update", "el reintento de instalación falló", e)
+                            UpdateFlow.phase.value = UpdatePhase.Failed(VERIFICATION_TEXT)
+                        } finally {
+                            pending.finish()
+                        }
+                    }.start()
+                } else if (verification) {
+                    fail(VERIFICATION_TEXT, status, message)
+                } else {
+                    fail(friendly(status), status, message)
+                }
+            }
         }
     }
 
