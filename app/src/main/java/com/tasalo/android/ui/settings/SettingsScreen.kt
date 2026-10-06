@@ -44,8 +44,8 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import com.tasalo.android.R
+import com.tasalo.android.ui.theme.TasaloMono
 import com.tasalo.android.update.CertInfo
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.REPO_URL
@@ -216,7 +216,7 @@ private fun AboutSection(context: Context) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             SelectionContainer {
-                Text(fingerprint ?: "no disponible", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelSmall)
+                Text(fingerprint ?: "no disponible", fontFamily = TasaloMono, style = MaterialTheme.typography.labelSmall)
             }
             Text(
                 "Las tasas son referenciales. TASALO no es una aplicación oficial.",

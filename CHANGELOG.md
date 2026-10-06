@@ -3,6 +3,15 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.6.0
+
+### Nuevo aspecto "Quiet Glass"
+- La app estrena el mismo estilo visual que las extensiones de TASALO: fondo casi negro (o gris azulado en modo claro) con un suave resplandor índigo arriba, un único color de acento y tarjetas de cristal con borde fino y esquinas más redondeadas.
+- Tipografías nuevas: **Space Grotesk** para el texto y **JetBrains Mono** para las cifras (tasas, precios, porcentaje del año y código), incluidas en la app, sin descargas adicionales.
+- Colores de subida y bajada más suaves (rojo y verde menos saturados), iguales a los de la extensión.
+- Los **widgets** usan la misma paleta y esquinas más redondeadas. Siguen con la fuente del sistema porque Android no permite fuentes propias en widgets.
+- Sin cambios en los datos ni en los ajustes: el modo Auto/Claro/Oscuro y la opción de invertir colores funcionan igual.
+
 ## 0.5.3
 
 ### Blog

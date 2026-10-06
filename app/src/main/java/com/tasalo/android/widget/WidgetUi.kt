@@ -76,31 +76,31 @@ data class WidgetPalette(
 
         // Fondo casi opaco: sobre fondos de pantalla claros/ruidosos el texto seguía ilegible con 90 %.
         val Auto = WidgetPalette(
-            bg = ColorProvider(day = Color(0xF5E8EAF3), night = Color(0xF509091E)),
-            text = ColorProvider(day = Color(0xFF1A1B2E), night = Color(0xFFE8EAF3)),
-            dim = ColorProvider(day = Color(0xFF5B5F7A), night = Color(0xFF9A9FC0)),
-            accent = ColorProvider(day = Color(0xFF3B6EE8), night = Color(0xFF5B8AFF)),
+            bg = ColorProvider(day = Color(0xF5E8EAF0), night = Color(0xF50A0A10)),
+            text = ColorProvider(day = Color(0xFF2B2C3A), night = Color(0xFFF2F2F7)),
+            dim = ColorProvider(day = Color(0xFF5E5F72), night = Color(0xFF8D8DA3)),
+            accent = ColorProvider(day = Color(0xFF4A63E0), night = Color(0xFF6C81FF)),
             track = ColorProvider(day = Color(0x33000000), night = Color(0x33FFFFFF)),
-            up = ColorProvider(day = Color(0xFFDC2626), night = Color(0xFFFF6B6B)),
-            down = ColorProvider(day = Color(0xFF16A34A), night = Color(0xFF4ADE80)),
+            up = ColorProvider(day = Color(0xFFD13A4B), night = Color(0xFFF2555F)),
+            down = ColorProvider(day = Color(0xFF1A9C6B), night = Color(0xFF34D399)),
         )
         val Light = WidgetPalette(
-            bg = fixed(0xF5E8EAF3),
-            text = fixed(0xFF1A1B2E),
-            dim = fixed(0xFF5B5F7A),
-            accent = fixed(0xFF3B6EE8),
+            bg = fixed(0xF5E8EAF0),
+            text = fixed(0xFF2B2C3A),
+            dim = fixed(0xFF5E5F72),
+            accent = fixed(0xFF4A63E0),
             track = fixed(0x33000000),
-            up = fixed(0xFFDC2626),
-            down = fixed(0xFF16A34A),
+            up = fixed(0xFFD13A4B),
+            down = fixed(0xFF1A9C6B),
         )
         val Dark = WidgetPalette(
-            bg = fixed(0xF509091E),
-            text = fixed(0xFFE8EAF3),
-            dim = fixed(0xFF9A9FC0),
-            accent = fixed(0xFF5B8AFF),
+            bg = fixed(0xF50A0A10),
+            text = fixed(0xFFF2F2F7),
+            dim = fixed(0xFF8D8DA3),
+            accent = fixed(0xFF6C81FF),
             track = fixed(0x33FFFFFF),
-            up = fixed(0xFFFF6B6B),
-            down = fixed(0xFF4ADE80),
+            up = fixed(0xFFF2555F),
+            down = fixed(0xFF34D399),
         )
 
         fun of(mode: ThemeMode): WidgetPalette = when (mode) {
@@ -244,7 +244,7 @@ fun WidgetFrame(onClick: Action, content: @Composable () -> Unit) {
     val shape = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         GlanceModifier.cornerRadius(android.R.dimen.system_app_widget_background_radius)
     } else {
-        GlanceModifier.cornerRadius(16.dp)
+        GlanceModifier.cornerRadius(22.dp)
     }
     Column(
         modifier = GlanceModifier

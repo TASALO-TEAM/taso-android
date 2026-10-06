@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.Lifecycle
@@ -40,6 +41,7 @@ import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.CrashReportDialog
 import com.tasalo.android.ui.UpdateDialog
 import com.tasalo.android.ui.notifications.NotificationsScreen
+import com.tasalo.android.ui.theme.quietGlassBackground
 import com.tasalo.android.update.UpdatePhase
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.blog.BlogScreen
@@ -165,7 +167,8 @@ private fun TasaloRoot(vm: MainViewModel) {
             )
         }
         Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
+            modifier = Modifier.quietGlassBackground(),
+            containerColor = Color.Transparent,
             bottomBar = {
                 NavigationBar {
                     TABS.forEachIndexed { index, item ->
