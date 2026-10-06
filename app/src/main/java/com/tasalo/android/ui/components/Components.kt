@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,21 +39,25 @@ import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.YearState
 import com.tasalo.android.ui.theme.LocalChangeColors
+import com.tasalo.android.ui.theme.LocalGlass
+import com.tasalo.android.ui.theme.TasaloMono
 import com.tasalo.android.util.Format
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-private val CardShape = RoundedCornerShape(18.dp)
-
-/** Tarjeta semitransparente con borde sutil y esquinas de 16–20 dp (plan §6). */
+/** Tarjeta "Quiet Glass": cristal casi transparente, borde fino y esquinas de 22 dp (como `--r` de la extensión). */
 @Composable
 fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val glass = LocalGlass.current
     Card(
         modifier = modifier,
-        shape = CardShape,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = glass.surfaceGlass,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        border = BorderStroke(1.dp, glass.border),
         content = content,
     )
 }
@@ -91,7 +94,7 @@ fun RateCard(rate: Rate, source: Source, modifier: Modifier = Modifier) {
             }
             Text(
                 Format.rate(rate.rate),
-                fontFamily = FontFamily.Monospace,
+                fontFamily = TasaloMono,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -101,7 +104,7 @@ fun RateCard(rate: Rate, source: Source, modifier: Modifier = Modifier) {
                 Text(
                     "Compra $buy · Venta $sell",
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = TasaloMono,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -132,7 +135,7 @@ fun FuelCard(price: FuelPrice, modifier: Modifier = Modifier) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     Format.fuelRange(price),
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = TasaloMono,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -158,7 +161,7 @@ fun YearCard(year: YearState, now: Instant, modifier: Modifier = Modifier) {
                 Text("Año ${year.year}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "${Format.percent(year.percent)} completado",
-                    fontFamily = FontFamily.Monospace,
+                    fontFamily = TasaloMono,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
@@ -212,7 +215,7 @@ fun StatusBanner(text: String, isError: Boolean, modifier: Modifier = Modifier) 
     val content = if (isError) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.small,
         color = container,
         contentColor = content,
     ) {
@@ -227,7 +230,7 @@ fun SkeletonBlock(modifier: Modifier = Modifier, height: Int = 96) {
         modifier
             .fillMaxWidth()
             .height(height.dp)
-            .clip(CardShape)
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
     )
 }

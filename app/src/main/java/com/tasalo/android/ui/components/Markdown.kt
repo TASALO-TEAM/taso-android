@@ -33,7 +33,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.tasalo.android.ui.theme.TasaloMono
 import com.tasalo.android.util.MarkdownParser
 import com.tasalo.android.util.MdAlign
 import com.tasalo.android.util.MdBlock
@@ -100,7 +100,7 @@ fun MarkdownBlockView(block: MdBlock, modifier: Modifier = Modifier, images: Boo
             Text(styled(block.spans, linkColor, codeBackground), modifier, style = MaterialTheme.typography.bodyMedium)
         is MdBlock.Code -> Text(
             block.text,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = TasaloMono,
             style = MaterialTheme.typography.bodySmall,
             modifier = modifier
                 .fillMaxWidth()
@@ -211,7 +211,7 @@ private fun styled(
         val style = SpanStyle(
             fontWeight = if (span.bold) FontWeight.Bold else null,
             fontStyle = if (span.italic) FontStyle.Italic else null,
-            fontFamily = if (span.code) FontFamily.Monospace else null,
+            fontFamily = if (span.code) TasaloMono else null,
             background = if (span.code) codeBackground else Color.Unspecified,
             textDecoration = if (span.strike) TextDecoration.LineThrough else null,
         )
