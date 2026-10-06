@@ -1,6 +1,7 @@
 package com.tasalo.android.ui.blog
 
 import androidx.compose.foundation.clickable
+import com.tasalo.android.ui.components.edgeAwareSwipe
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.KeyboardOptions
@@ -153,23 +154,8 @@ private fun PostList(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(state.account) {
-                        var total = 0f
-                        detectHorizontalDragGestures(
-                            onDragStart = { total = 0f },
-                            onDragCancel = { total = 0f },
-                            onDragEnd = {
-                                val accounts = state.accounts
-                                val current = accounts.indexOf(state.account)
-                                val target = when {
-                                    total <= -swipeThreshold -> current + 1
-                                    total >= swipeThreshold -> current - 1
-                                    else -> current
-                                }
-                                accounts.getOrNull(target)?.let(onSelectAccount)
-                            },
-                            onHorizontalDrag = { _, dx -> total += dx },
-                        )
+                    .edgeAwareSwipe(state.accounts.indexOf(state.account), state.accounts.size) { target ->
+                        state.accounts.getOrNull(target)?.let(onSelectAccount)
                     },
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),

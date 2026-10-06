@@ -3,6 +3,17 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.7.0
+
+### Calculadora de tasas
+- **Pantalla nueva en el centro de la barra**: escribe un monto y mira cuánto equivale. Por defecto USD → CUP con la tasa de El Toque, y puedes cambiar la fuente a BCC o CADECA.
+- Botón para **invertir** la conversión (CUP → USD) y tarjeta "Equivale a" con el resto de monedas de la fuente; toca una fila para fijarla como destino.
+- **Copiar y compartir** el resultado como un recibo de TASALO.
+
+### Nueva barra inferior
+- Ahora es una **isla flotante de cristal**, solo con iconos: Tasas, Combustible, Calculadora, Blog y Ajustes. Una burbuja sigue al dedo al cambiar de sección.
+- Puedes **deslizar con el dedo** para pasar de una sección a otra. En Tasas y Blog, el deslizamiento solo cambia de fuente o cuenta si hay otra en esa dirección; en la primera o la última, pasa a la sección vecina.
+
 ## 0.6.1
 
 ### Arreglos del nuevo aspecto

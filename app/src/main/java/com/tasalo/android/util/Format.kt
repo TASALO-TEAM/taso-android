@@ -33,6 +33,36 @@ object Format {
 
     fun percent(value: Double): String = decimal("0.0").format(value) + "%"
 
+    /**
+     * Importes de la calculadora: separador de miles (espacio duro) y decimales según el tamaño, para que una
+     * cantidad pequeña en cripto (0,00038 BTC) no se muestre como 0: >= 1 → hasta 2; >= 0,01 → hasta 4; menos → hasta 8.
+     */
+    fun amount(value: Double): String {
+        val abs = kotlin.math.abs(value)
+        val pattern = when {
+            abs >= 1.0 || abs == 0.0 -> "#,##0.##"
+            abs >= 0.01 -> "#,##0.####"
+            else -> "#,##0.########"
+        }
+        return DecimalFormat(
+            pattern,
+            DecimalFormatSymbols(locale).apply {
+                decimalSeparator = ','
+                groupingSeparator = '\u00A0'
+            },
+        ).apply { roundingMode = RoundingMode.HALF_UP }.format(value)
+    }
+
+    /**
+     * Lo que la persona teclea en el campo de monto: acepta coma o punto como decimal y devuelve null si está
+     * vacío o no es un número válido (por ejemplo "1.2.3").
+     */
+    fun parseAmount(text: String): Double? {
+        val clean = text.trim().replace(',', '.')
+        if (clean.isEmpty() || clean.count { it == '.' } > 1) return null
+        return clean.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }
+    }
+
     private fun signedPercent(value: Double): String {
         val body = decimal("0.0").format(kotlin.math.abs(value))
         return (if (value < 0) "-" else "+") + body + "%"

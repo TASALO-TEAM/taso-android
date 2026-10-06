@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.RefreshError
 import com.tasalo.android.ui.UiState
+import com.tasalo.android.ui.components.edgeAwareSwipe
 import com.tasalo.android.ui.components.EmptyMessage
 import com.tasalo.android.ui.components.ErrorState
 import com.tasalo.android.ui.components.QuoteCard
@@ -72,23 +73,7 @@ fun HomeScreen(
                 columns = GridCells.Fixed(columns),
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(source) {
-                        var total = 0f
-                        detectHorizontalDragGestures(
-                            onDragStart = { total = 0f },
-                            onDragCancel = { total = 0f },
-                            onDragEnd = {
-                                val current = sources.indexOf(source)
-                                val target = when {
-                                    total <= -swipeThreshold -> current + 1
-                                    total >= swipeThreshold -> current - 1
-                                    else -> current
-                                }
-                                sources.getOrNull(target)?.takeIf { it != source }?.let(onSelectSource)
-                            },
-                            onHorizontalDrag = { _, dx -> total += dx },
-                        )
-                    },
+                    .edgeAwareSwipe(sources.indexOf(source), sources.size) { target -> onSelectSource(sources[target]) },
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),

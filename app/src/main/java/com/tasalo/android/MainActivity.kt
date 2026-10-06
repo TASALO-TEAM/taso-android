@@ -5,12 +5,16 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.mutableStateOf
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
@@ -21,22 +25,21 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,6 +48,9 @@ import com.tasalo.android.diag.ReportSender
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.CrashReportDialog
 import com.tasalo.android.ui.UpdateDialog
+import com.tasalo.android.ui.calculator.CalculatorScreen
+import com.tasalo.android.ui.components.GlassIslandBar
+import com.tasalo.android.ui.components.IslandItem
 import com.tasalo.android.ui.notifications.NotificationsScreen
 import com.tasalo.android.ui.theme.quietGlassBackground
 import com.tasalo.android.update.UpdatePhase
@@ -55,6 +61,8 @@ import com.tasalo.android.ui.home.HomeScreen
 import com.tasalo.android.ui.settings.SettingsScreen
 import com.tasalo.android.ui.theme.TasaloTheme
 import com.tasalo.android.ui.theme.isDarkTheme
+import kotlin.math.abs
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -91,16 +99,17 @@ fun openUrl(context: android.content.Context, url: String) {
     }
 }
 
-private data class Tab(val label: String, val icon: ImageVector)
-
+/** Orden de la barra: Tasas · Combustible · Calculadora (centro) · Blog · Ajustes. */
 private val TABS = listOf(
-    Tab("Tasas", Icons.Filled.SwapHoriz),
-    Tab("Combustible", Icons.Filled.LocalGasStation),
-    Tab("Blog", Icons.AutoMirrored.Filled.Article),
-    Tab("Ajustes", Icons.Filled.Settings),
+    IslandItem("Tasas", Icons.Filled.SwapHoriz),
+    IslandItem("Combustible", Icons.Filled.LocalGasStation),
+    IslandItem("Calculadora", Icons.Filled.Calculate),
+    IslandItem("Blog", Icons.AutoMirrored.Filled.Article),
+    IslandItem("Ajustes", Icons.Filled.Settings),
 )
 
-private const val BLOG_TAB = 2
+private const val CALC_TAB = 2
+private const val BLOG_TAB = 3
 
 @Composable
 private fun TasaloRoot(vm: MainViewModel) {
@@ -124,13 +133,18 @@ private fun TasaloRoot(vm: MainViewModel) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshIfStale() }
 
     TasaloTheme(settings.theme, settings.invertColors) {
-        var tab by rememberSaveable { mutableIntStateOf(0) }
+        // Las secciones viven en un paginador: se cambia tocando la isla o deslizando con el dedo.
+        val pagerState = rememberPagerState(pageCount = { TABS.size })
+        val scope = rememberCoroutineScope()
         var showNotifications by rememberSaveable { mutableStateOf(false) }
         BackHandler(enabled = showNotifications) { showNotifications = false }
         // Dentro de un post del blog, "atrás" vuelve a la lista (no cierra la app).
-        BackHandler(enabled = !showNotifications && tab == BLOG_TAB && blog.selected != null) { vm.closePost() }
-        // Al abrir la pestaña Blog: muestra lo guardado y descarga si hace falta (más de 15 min).
-        LaunchedEffect(tab) { if (tab == BLOG_TAB) vm.loadBlog() }
+        BackHandler(enabled = !showNotifications && pagerState.currentPage == BLOG_TAB && blog.selected != null) {
+            vm.closePost()
+        }
+        // Al quedarse en la sección Blog: muestra lo guardado y descarga si hace falta (más de 15 min).
+        val settledTab = pagerState.settledPage
+        LaunchedEffect(settledTab) { if (settledTab == BLOG_TAB) vm.loadBlog() }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
         val update = state.update
@@ -183,43 +197,68 @@ private fun TasaloRoot(vm: MainViewModel) {
             // sin color propio (Markdown del Blog, IconButton...) caía al negro por defecto y se perdía en modo oscuro.
             contentColor = MaterialTheme.colorScheme.onBackground,
             bottomBar = {
-                NavigationBar {
-                    TABS.forEachIndexed { index, item ->
-                        NavigationBarItem(
-                            selected = tab == index,
-                            onClick = {
-                                tab = index
-                                showNotifications = false
-                            },
-                            icon = { Icon(item.icon, contentDescription = null) },
-                            label = { Text(item.label) },
-                        )
-                    }
-                }
+                GlassIslandBar(
+                    items = TABS,
+                    selected = pagerState.currentPage,
+                    position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
+                    onSelect = { index ->
+                        showNotifications = false
+                        scope.launch { pagerState.animateScrollToPage(index) }
+                    },
+                )
             },
         ) { padding ->
             Box(Modifier.padding(padding)) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1,
+                    userScrollEnabled = !showNotifications,
+                ) { page ->
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            // La sección que sale se desvanece y encoge un poco; la que entra hace lo contrario.
+                            .graphicsLayer {
+                                val distance = abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+                                    .coerceIn(0f, 1f)
+                                alpha = 1f - 0.4f * distance
+                                val scale = 1f - 0.04f * distance
+                                scaleX = scale
+                                scaleY = scale
+                            },
+                    ) {
+                        when (page) {
+                            0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
+                            1 -> FuelScreen(state, vm::refresh)
+                            CALC_TAB -> CalculatorScreen(state, vm::refresh)
+                            BLOG_TAB -> BlogScreen(
+                                state = blog,
+                                onRefresh = { vm.loadBlog(force = true) },
+                                onSelectAccount = vm::selectBlogAccount,
+                                onSetCustom = vm::setBlogCustom,
+                                onClearCustom = vm::clearBlogCustom,
+                                onOpen = vm::openPost,
+                                onClose = vm::closePost,
+                            )
+                            else -> SettingsScreen(state, vm)
+                        }
+                    }
+                }
                 if (showNotifications) {
-                    NotificationsScreen(
-                        state = state,
-                        vm = vm,
-                        onBack = { showNotifications = false },
-                        onUpdate = vm::showUpdateDialog,
-                    )
-                } else {
-                    when (tab) {
-                        0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
-                        1 -> FuelScreen(state, vm::refresh)
-                        BLOG_TAB -> BlogScreen(
-                            state = blog,
-                            onRefresh = { vm.loadBlog(force = true) },
-                            onSelectAccount = vm::selectBlogAccount,
-                            onSetCustom = vm::setBlogCustom,
-                            onClearCustom = vm::clearBlogCustom,
-                            onOpen = vm::openPost,
-                            onClose = vm::closePost,
+                    // Encima del paginador (que se queda como estaba) y tapando los toques de lo que hay debajo.
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .quietGlassBackground()
+                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+                    ) {
+                        NotificationsScreen(
+                            state = state,
+                            vm = vm,
+                            onBack = { showNotifications = false },
+                            onUpdate = vm::showUpdateDialog,
                         )
-                        else -> SettingsScreen(state, vm)
                     }
                 }
             }
