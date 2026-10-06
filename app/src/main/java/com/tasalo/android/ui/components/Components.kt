@@ -230,7 +230,7 @@ fun SkeletonBlock(modifier: Modifier = Modifier, height: Int = 96) {
         modifier
             .fillMaxWidth()
             .height(height.dp)
-            .clip(CardShape)
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
     )
 }
