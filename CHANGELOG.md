@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.8.1
+
+### Encabezado que se recoge en Tasas y Blog
+- Al bajar por la lista, la fila del título (nombre y botones) **se esconde** y las fuentes (Tasas) o las cuentas (Blog) se quedan **fijas arriba**, con el contenido pasando por detrás.
+- Al subir, el encabezado **reaparece en cuanto empiezas a subir**, aunque estés a mitad de la lista. Si lo sueltas a medias, se asienta con un resorte.
+- Al deslizar a los lados, solo cambia el contenido de debajo: las fuentes y las cuentas no se mueven. En la primera o la última, el gesto pasa a la sección vecina como antes.
+
 ## 0.8.0
 
 ### Barra flotante

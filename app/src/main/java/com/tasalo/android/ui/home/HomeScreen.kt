@@ -1,12 +1,12 @@
 package com.tasalo.android.ui.home
 
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -27,16 +27,17 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.RefreshError
 import com.tasalo.android.ui.UiState
-import com.tasalo.android.ui.components.edgeAwareSwipe
+import com.tasalo.android.ui.components.CollapsingHeader
 import com.tasalo.android.ui.components.EmptyMessage
 import com.tasalo.android.ui.components.ErrorState
 import com.tasalo.android.ui.components.QuoteCard
@@ -44,6 +45,10 @@ import com.tasalo.android.ui.components.RateCard
 import com.tasalo.android.ui.components.SkeletonBlock
 import com.tasalo.android.ui.components.StatusBanner
 import com.tasalo.android.ui.components.YearCard
+import com.tasalo.android.ui.components.collapsingHeaderInset
+import com.tasalo.android.ui.components.edgeAwareSwipe
+import com.tasalo.android.ui.components.floatingContentPadding
+import com.tasalo.android.ui.components.rememberCollapsingHeaderState
 import com.tasalo.android.util.Format
 import java.time.Instant
 
@@ -63,9 +68,27 @@ fun HomeScreen(
 
     // Deslizar a izquierda/derecha cambia de fuente (El Toque / BCC / CADECA), además de tocar el selector.
     val sources = Source.entries
-    val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
 
-    PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
+    // El encabezado flota sobre la lista: el título se esconde al bajar y reaparece al subir; el selector de
+    // fuentes se queda arriba y no se mueve con el gesto horizontal (solo cambia el contenido de debajo).
+    val header = rememberCollapsingHeaderState()
+    val pullState = rememberPullToRefreshState()
+    val headerInset = collapsingHeaderInset(header)
+
+    Box(modifier.fillMaxSize().nestedScroll(header.connection)) {
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = onRefresh,
+            state = pullState,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullState,
+                    isRefreshing = state.refreshing,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = headerInset),
+                )
+            },
+        ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             // 2 columnas en teléfono; 3 si el ancho es >= 600 dp (plan §4.1).
             val columns = if (maxWidth >= 600.dp) 3 else 2
@@ -74,24 +97,10 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .edgeAwareSwipe(sources.indexOf(source), sources.size) { target -> onSelectSource(sources[target]) },
-                contentPadding = floatingContentPadding(),
+                contentPadding = floatingContentPadding(top = headerInset),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Header(
-                        state.rates?.fetchedAt,
-                        state.now,
-                        state.refreshing,
-                        onRefresh,
-                        hasNotifications = state.update != null || state.unreadAlerts > 0,
-                        onBell = onOpenNotifications,
-                    )
-                }
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SourceSelector(source, onSelectSource)
-                }
-
                 val banner = bannerFor(state)
                 if (banner != null) {
                     item(span = { GridItemSpan(maxLineSpan) }) { StatusBanner(banner.first, banner.second) }
@@ -129,6 +138,23 @@ fun HomeScreen(
                 }
             }
         }
+        }
+        CollapsingHeader(
+            state = header,
+            title = {
+                Header(
+                    state.rates?.fetchedAt,
+                    state.now,
+                    state.refreshing,
+                    onRefresh,
+                    hasNotifications = state.update != null || state.unreadAlerts > 0,
+                    onBell = onOpenNotifications,
+                )
+            },
+            pinned = {
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { SourceSelector(source, onSelectSource) }
+            },
+        )
     }
 }
 
@@ -154,7 +180,7 @@ private fun Header(
     onBell: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {

@@ -62,9 +62,9 @@ val LocalBottomBarInset = compositionLocalOf { 0.dp }
 
 /** Relleno de las listas: 16 dp alrededor y, abajo, el hueco de la cápsula flotante para que no tape el final. */
 @Composable
-fun floatingContentPadding(): PaddingValues = PaddingValues(
+fun floatingContentPadding(top: androidx.compose.ui.unit.Dp = 16.dp): PaddingValues = PaddingValues(
     start = 16.dp,
-    top = 16.dp,
+    top = top,
     end = 16.dp,
     bottom = 16.dp + LocalBottomBarInset.current,
 )

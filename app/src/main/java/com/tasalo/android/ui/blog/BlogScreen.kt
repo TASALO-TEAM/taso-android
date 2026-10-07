@@ -1,19 +1,18 @@
 package com.tasalo.android.ui.blog
 
 import androidx.compose.foundation.clickable
-import com.tasalo.android.ui.components.edgeAwareSwipe
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -21,17 +20,20 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,10 +42,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,12 +54,17 @@ import com.tasalo.android.domain.BlogPost
 import com.tasalo.android.domain.blogAccountLabel
 import com.tasalo.android.openUrl
 import com.tasalo.android.ui.BlogUiState
+import com.tasalo.android.ui.components.CollapsingHeader
 import com.tasalo.android.ui.components.EmptyMessage
 import com.tasalo.android.ui.components.ErrorState
 import com.tasalo.android.ui.components.GlassCard
 import com.tasalo.android.ui.components.MarkdownBlockView
 import com.tasalo.android.ui.components.SkeletonBlock
 import com.tasalo.android.ui.components.StatusBanner
+import com.tasalo.android.ui.components.collapsingHeaderInset
+import com.tasalo.android.ui.components.edgeAwareSwipe
+import com.tasalo.android.ui.components.floatingContentPadding
+import com.tasalo.android.ui.components.rememberCollapsingHeaderState
 import com.tasalo.android.util.MarkdownParser
 import com.tasalo.android.util.MdDialect
 import java.time.ZoneId
@@ -102,62 +108,33 @@ private fun PostList(
         CustomAccountDialog(state.custom, onSetCustom, onClearCustom) { showCustomDialog = false }
     }
 
-    // Deslizar a izquierda/derecha cambia de cuenta, igual que entre fuentes de tasas.
-    val swipeThreshold = with(LocalDensity.current) { 72.dp.toPx() }
+    // Igual que en Tasas: el título se esconde al bajar y reaparece al subir; las pestañas de cuentas se quedan
+    // arriba y no se mueven con el gesto horizontal (solo cambia la lista de debajo).
+    val header = rememberCollapsingHeaderState()
+    val pullState = rememberPullToRefreshState()
+    val headerInset = collapsingHeaderInset(header)
 
-    Column(modifier.fillMaxSize()) {
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+    Box(modifier.fillMaxSize().nestedScroll(header.connection)) {
+        PullToRefreshBox(
+            isRefreshing = state.loading,
+            onRefresh = onRefresh,
+            state = pullState,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullState,
+                    isRefreshing = state.loading,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = headerInset),
+                )
+            },
         ) {
-            Text(
-                "Blog",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onRefresh, enabled = !state.loading) {
-                Icon(Icons.Filled.Refresh, contentDescription = "Actualizar")
-            }
-        }
-        // Pestañas de cuentas + "+" para el blog de otro usuario de Hive (✎ para cambiarlo o quitarlo).
-        Row(
-            Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val accounts = state.accounts
-            SingleChoiceSegmentedButtonRow(Modifier.weight(1f)) {
-                accounts.forEachIndexed { index, handle ->
-                    SegmentedButton(
-                        selected = handle == state.account,
-                        onClick = { onSelectAccount(handle) },
-                        shape = SegmentedButtonDefaults.itemShape(index, accounts.size),
-                    ) {
-                        Text(
-                            blogAccountLabel(handle),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
-            IconButton(onClick = { showCustomDialog = true }) {
-                if (state.custom == null) {
-                    Icon(Icons.Filled.Add, contentDescription = "Añadir el blog de otro usuario de Hive")
-                } else {
-                    Icon(Icons.Filled.Edit, contentDescription = "Cambiar o quitar el usuario personalizado")
-                }
-            }
-        }
-        PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .edgeAwareSwipe(state.accounts.indexOf(state.account), state.accounts.size) { target ->
                         state.accounts.getOrNull(target)?.let(onSelectAccount)
                     },
-                contentPadding = floatingContentPadding(),
+                contentPadding = floatingContentPadding(top = headerInset),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 when {
@@ -185,6 +162,65 @@ private fun PostList(
                         }
                     }
                 }
+            }
+        }
+        CollapsingHeader(
+            state = header,
+            title = { BlogHeader(state.loading, onRefresh) },
+            pinned = {
+                AccountTabs(
+                    state = state,
+                    onSelectAccount = onSelectAccount,
+                    onEditCustom = { showCustomDialog = true },
+                )
+            },
+        )
+    }
+}
+
+/** Fila del título del Blog: se esconde al bajar y reaparece al subir. */
+@Composable
+private fun BlogHeader(loading: Boolean, onRefresh: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text("Blog", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+        IconButton(onClick = onRefresh, enabled = !loading) {
+            if (loading) {
+                CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(Icons.Filled.Refresh, contentDescription = "Actualizar blog")
+            }
+        }
+    }
+}
+
+/** Cuentas del blog (fija arriba) y el botón + / lápiz para elegir otro usuario de Hive. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AccountTabs(state: BlogUiState, onSelectAccount: (String) -> Unit, onEditCustom: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SingleChoiceSegmentedButtonRow(Modifier.weight(1f)) {
+            state.accounts.forEachIndexed { index, account ->
+                SegmentedButton(
+                    selected = account == state.account,
+                    onClick = { onSelectAccount(account) },
+                    shape = SegmentedButtonDefaults.itemShape(index, state.accounts.size),
+                ) {
+                    Text(blogAccountLabel(account), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        IconButton(onClick = onEditCustom) {
+            if (state.custom != null) {
+                Icon(Icons.Filled.Edit, contentDescription = "Cambiar o quitar usuario")
+            } else {
+                Icon(Icons.Filled.Add, contentDescription = "Añadir usuario de Hive")
             }
         }
     }
