@@ -26,10 +26,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,9 +41,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.runtime.mutableIntStateOf
+import android.os.Build
+import com.tasalo.android.ui.components.LocalBottomBarInset
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -127,6 +138,9 @@ private fun TasaloRoot(vm: MainViewModel) {
             SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
         }
         activity.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        // Android 10+ pinta un velo translúcido tras la barra de navegación de 3 botones: sería una franja
+        // detrás de la cápsula flotante. Se quita (después de enableEdgeToEdge, que lo vuelve a fijar).
+        if (Build.VERSION.SDK_INT >= 29) activity.window.isNavigationBarContrastEnforced = false
         onDispose { }
     }
 
@@ -190,77 +204,117 @@ private fun TasaloRoot(vm: MainViewModel) {
                 },
             )
         }
+        // La cápsula flota sobre todo: el paginador ocupa la pantalla entera y cada lista reserva el hueco de abajo.
+        var barHeightPx by remember { mutableIntStateOf(0) }
+        val barInset = with(LocalDensity.current) { barHeightPx.toDp() }
+        val layoutDirection = LocalLayoutDirection.current
         Scaffold(
             modifier = Modifier.quietGlassBackground(),
             containerColor = Color.Transparent,
             // Con el fondo transparente Material ya no deduce el color del contenido: sin esto, todo texto o icono
             // sin color propio (Markdown del Blog, IconButton...) caía al negro por defecto y se perdía en modo oscuro.
             contentColor = MaterialTheme.colorScheme.onBackground,
-            bottomBar = {
+        ) { padding ->
+            Box(Modifier.fillMaxSize()) {
+                CompositionLocalProvider(LocalBottomBarInset provides barInset) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            // Solo se respeta el borde de arriba y los laterales: abajo manda la cápsula flotante.
+                            .padding(
+                                start = padding.calculateStartPadding(layoutDirection),
+                                top = padding.calculateTopPadding(),
+                                end = padding.calculateEndPadding(layoutDirection),
+                            ),
+                    ) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize(),
+                            beyondViewportPageCount = 1,
+                            userScrollEnabled = !showNotifications,
+                            // Al soltar, la sección se asienta con un resorte en vez del frenado lineal por defecto.
+                            flingBehavior = PagerDefaults.flingBehavior(
+                                state = pagerState,
+                                snapAnimationSpec = spring(dampingRatio = 0.85f, stiffness = 380f),
+                            ),
+                        ) { page ->
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    // Profundidad suave: la sección que se va se aleja y se apaga con una curva
+                                    // (no lineal) y se mueve un poco más despacio que el dedo (parallax).
+                                    .graphicsLayer {
+                                        val signed = (page - pagerState.currentPage - pagerState.currentPageOffsetFraction)
+                                            .coerceIn(-1f, 1f)
+                                        val d = abs(signed)
+                                        val eased = d * d * (3f - 2f * d)
+                                        alpha = 1f - 0.45f * eased
+                                        val scale = 1f - 0.06f * eased
+                                        scaleX = scale
+                                        scaleY = scale
+                                        // Parallax leve que vale 0 en reposo y a una página entera: nunca asoma una página vecina.
+                                        translationX = -signed * size.width * 0.18f * (1f - d)
+                                    },
+                            ) {
+                                when (page) {
+                                    0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
+                                    1 -> FuelScreen(state, vm::refresh)
+                                    CALC_TAB -> CalculatorScreen(state, vm::refresh)
+                                    BLOG_TAB -> BlogScreen(
+                                        state = blog,
+                                        onRefresh = { vm.loadBlog(force = true) },
+                                        onSelectAccount = vm::selectBlogAccount,
+                                        onSetCustom = vm::setBlogCustom,
+                                        onClearCustom = vm::clearBlogCustom,
+                                        onOpen = vm::openPost,
+                                        onClose = vm::closePost,
+                                    )
+                                    else -> SettingsScreen(state, vm)
+                                }
+                            }
+                        }
+                        if (showNotifications) {
+                            // Encima del paginador (que se queda como estaba) y tapando los toques de lo que hay debajo.
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .quietGlassBackground()
+                                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+                            ) {
+                                NotificationsScreen(
+                                    state = state,
+                                    vm = vm,
+                                    onBack = { showNotifications = false },
+                                    onUpdate = vm::showUpdateDialog,
+                                )
+                            }
+                        }
+                    }
+                }
                 GlassIslandBar(
                     items = TABS,
                     selected = pagerState.currentPage,
                     position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                     onSelect = { index ->
                         showNotifications = false
-                        scope.launch { pagerState.animateScrollToPage(index) }
-                    },
-                )
-            },
-        ) { padding ->
-            Box(Modifier.padding(padding)) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    beyondViewportPageCount = 1,
-                    userScrollEnabled = !showNotifications,
-                ) { page ->
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            // La sección que sale se desvanece y encoge un poco; la que entra hace lo contrario.
-                            .graphicsLayer {
-                                val distance = abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
-                                    .coerceIn(0f, 1f)
-                                alpha = 1f - 0.4f * distance
-                                val scale = 1f - 0.04f * distance
-                                scaleX = scale
-                                scaleY = scale
-                            },
-                    ) {
-                        when (page) {
-                            0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
-                            1 -> FuelScreen(state, vm::refresh)
-                            CALC_TAB -> CalculatorScreen(state, vm::refresh)
-                            BLOG_TAB -> BlogScreen(
-                                state = blog,
-                                onRefresh = { vm.loadBlog(force = true) },
-                                onSelectAccount = vm::selectBlogAccount,
-                                onSetCustom = vm::setBlogCustom,
-                                onClearCustom = vm::clearBlogCustom,
-                                onOpen = vm::openPost,
-                                onClose = vm::closePost,
+                        scope.launch {
+                            val from = pagerState.currentPage
+                            // Un salto largo no recorre las secciones del medio: se salta junto al destino
+                            // y solo el último tramo se anima.
+                            if (abs(index - from) > 1) {
+                                pagerState.scrollToPage(if (index > from) index - 1 else index + 1)
+                            }
+                            pagerState.animateScrollToPage(
+                                index,
+                                animationSpec = spring(dampingRatio = 0.85f, stiffness = 380f),
                             )
-                            else -> SettingsScreen(state, vm)
                         }
-                    }
-                }
-                if (showNotifications) {
-                    // Encima del paginador (que se queda como estaba) y tapando los toques de lo que hay debajo.
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .quietGlassBackground()
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
-                    ) {
-                        NotificationsScreen(
-                            state = state,
-                            vm = vm,
-                            onBack = { showNotifications = false },
-                            onUpdate = vm::showUpdateDialog,
-                        )
-                    }
-                }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .onSizeChanged { barHeightPx = it.height },
+                )
             }
         }
     }

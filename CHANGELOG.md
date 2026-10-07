@@ -3,6 +3,16 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.8.0
+
+### Barra flotante
+- La barra inferior es ahora una **cápsula que flota sobre el contenido**, sin la franja de fondo detrás ni el velo de la barra de navegación de Android. Las listas pasan por debajo y siempre puedes llegar al último elemento.
+- La burbuja de la barra se puede **arrastrar con el dedo**: crece un poco al agarrarla y se asienta con un resorte (y una vibración ligera) en la sección más cercana.
+
+### Transiciones más fluidas
+- Al deslizar entre secciones, la sección se asienta con un **resorte** y el efecto de profundidad es más suave. Al tocar un icono lejano ya no recorre las secciones del medio.
+- En **Tasas** (fuente) y **Blog** (cuenta), el contenido ahora **sigue al dedo** y se desliza al cambiar, en vez de cambiar de golpe.
+
 ## 0.7.1
 
 ### Actualizaciones

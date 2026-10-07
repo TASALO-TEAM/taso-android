@@ -3,7 +3,7 @@ package com.tasalo.android.ui.notifications
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -104,7 +104,7 @@ private fun UpdatesTab(state: UiState, onUpdate: () -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = floatingContentPadding(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         items(releases, key = { it.version }) { release ->
@@ -173,7 +173,7 @@ private fun AlertsTab(state: UiState, vm: MainViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = floatingContentPadding(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         items(state.messages, key = { it.id }) { message ->

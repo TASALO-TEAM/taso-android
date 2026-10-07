@@ -14,7 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -118,7 +118,7 @@ fun CalculatorScreen(state: UiState, onRefresh: () -> Unit, modifier: Modifier =
     PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = floatingContentPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {

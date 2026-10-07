@@ -3,7 +3,7 @@ package com.tasalo.android.ui.home
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.PaddingValues
+import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,7 +74,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .edgeAwareSwipe(sources.indexOf(source), sources.size) { target -> onSelectSource(sources[target]) },
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = floatingContentPadding(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {

@@ -6,7 +6,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -157,7 +157,7 @@ private fun PostList(
                     .edgeAwareSwipe(state.accounts.indexOf(state.account), state.accounts.size) { target ->
                         state.accounts.getOrNull(target)?.let(onSelectAccount)
                     },
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = floatingContentPadding(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 when {
@@ -293,7 +293,7 @@ private fun PostDetail(post: BlogPost, onClose: () -> Unit, modifier: Modifier) 
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = floatingContentPadding(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {

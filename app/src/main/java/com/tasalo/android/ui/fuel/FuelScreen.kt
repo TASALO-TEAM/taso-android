@@ -2,7 +2,7 @@ package com.tasalo.android.ui.fuel
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,7 +30,7 @@ fun FuelScreen(state: UiState, onRefresh: () -> Unit, modifier: Modifier = Modif
     PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = onRefresh, modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = floatingContentPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
