@@ -182,8 +182,8 @@ class RepositoryTest {
     fun client_errors_are_not_retried() = runBlocking {
         route { code(404) }
         repo().refreshAll()
-        // latest + 3 fallbacks + fuel + year + mensajes = 7 llamadas, una sola vez cada una.
-        assertEquals(7, server.requestCount)
+        // latest + 4 fallbacks (con QvaPay) + fuel + year + mensajes = 8 llamadas, una sola vez cada una.
+        assertEquals(8, server.requestCount)
     }
 
     @Test
