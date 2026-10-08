@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.9.1
+
+### Letra grande del sistema
+- Los selectores de **fuente** (Tasas y Calculadora), las **cuentas del Blog** y las opciones de **Ajustes** (tema, fuente por defecto, actualización en segundo plano) ya no se deforman con un tamaño de letra grande: si las etiquetas no caben en una fila, las opciones pasan a **dos por fila** (o una) en vez de partir el texto y dejar una cápsula más alta que las demás. El texto nunca se recorta.
+- En pantallas justas, la marca de selección (✓) puede no mostrarse para dar espacio a las etiquetas; la opción elegida sigue resaltada.
+- En **Ajustes**, los botones de *Avanzado* y *Actualizaciones* se acomodan en varias líneas con la misma altura cuando no caben juntos.
+- La tarjeta del **año** apila "Año 2026" y el porcentaje cuando no caben en la misma línea.
+
 ## 0.9.0
 
 ### Nueva fuente: QvaPay

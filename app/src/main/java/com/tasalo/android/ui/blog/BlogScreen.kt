@@ -26,9 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -50,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.domain.BlogPost
 import com.tasalo.android.domain.blogAccountLabel
 import com.tasalo.android.openUrl
@@ -205,17 +203,13 @@ private fun AccountTabs(state: BlogUiState, onSelectAccount: (String) -> Unit, o
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SingleChoiceSegmentedButtonRow(Modifier.weight(1f)) {
-            state.accounts.forEachIndexed { index, account ->
-                SegmentedButton(
-                    selected = account == state.account,
-                    onClick = { onSelectAccount(account) },
-                    shape = SegmentedButtonDefaults.itemShape(index, state.accounts.size),
-                ) {
-                    Text(blogAccountLabel(account), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-        }
+        AdaptiveSegmentedChoice(
+            options = state.accounts,
+            isSelected = { it == state.account },
+            label = { blogAccountLabel(it) },
+            onSelect = onSelectAccount,
+            modifier = Modifier.weight(1f),
+        )
         IconButton(onClick = onEditCustom) {
             if (state.custom != null) {
                 Icon(Icons.Filled.Edit, contentDescription = "Cambiar o quitar usuario")

@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,9 +41,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -187,15 +185,13 @@ fun CalculatorScreen(state: UiState, onRefresh: () -> Unit, modifier: Modifier =
 
 @Composable
 private fun CalcSourceSelector(selected: Source, onSelect: (Source) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        Source.entries.forEachIndexed { index, source ->
-            SegmentedButton(
-                selected = source == selected,
-                onClick = { onSelect(source) },
-                shape = SegmentedButtonDefaults.itemShape(index, Source.entries.size),
-            ) { Text(source.title) }
-        }
-    }
+    AdaptiveSegmentedChoice(
+        options = Source.entries,
+        isSelected = { it == selected },
+        label = { it.title },
+        onSelect = onSelect,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

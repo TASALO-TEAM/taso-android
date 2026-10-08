@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,9 +21,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,29 +72,25 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
         item {
             Section("Tema") {
                 val options = listOf(ThemeMode.AUTO to "Auto", ThemeMode.DARK to "Oscuro", ThemeMode.LIGHT to "Claro")
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    options.forEachIndexed { index, (mode, label) ->
-                        SegmentedButton(
-                            selected = settings.theme == mode,
-                            onClick = { vm.setTheme(mode) },
-                            shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                        ) { Text(label) }
-                    }
-                }
+                AdaptiveSegmentedChoice(
+                    options = options,
+                    isSelected = { settings.theme == it.first },
+                    label = { it.second },
+                    onSelect = { vm.setTheme(it.first) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
         item {
             Section("Fuente por defecto") {
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    Source.entries.forEachIndexed { index, source ->
-                        SegmentedButton(
-                            selected = settings.defaultSource == source,
-                            onClick = { vm.setDefaultSource(source) },
-                            shape = SegmentedButtonDefaults.itemShape(index, Source.entries.size),
-                        ) { Text(source.title) }
-                    }
-                }
+                AdaptiveSegmentedChoice(
+                    options = Source.entries,
+                    isSelected = { settings.defaultSource == it },
+                    label = { it.title },
+                    onSelect = vm::setDefaultSource,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
@@ -161,6 +155,7 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AdvancedSection(currentUrl: String, vm: MainViewModel) {
     var text by remember(currentUrl) { mutableStateOf(currentUrl) }
@@ -181,14 +176,14 @@ private fun AdvancedSection(currentUrl: String, vm: MainViewModel) {
                 supportingText = { Text(error ?: "Solo https. Por defecto: tasalo.duckdns.org") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = {
                     scope.launch {
                         val ok = vm.saveBaseUrl(text)
                         if (!ok) error = "URL no válida: debe empezar por https:// y tener host"
                     }
-                }) { Text("Guardar") }
-                OutlinedButton(onClick = { vm.resetBaseUrl() }) { Text("Restaurar por defecto") }
+                }, modifier = Modifier.fillMaxRowHeight()) { Text("Guardar") }
+                OutlinedButton(onClick = { vm.resetBaseUrl() }, modifier = Modifier.fillMaxRowHeight()) { Text("Restaurar por defecto") }
             }
         }
     }
@@ -228,19 +223,20 @@ private fun AboutSection(context: Context) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun UpdateSection(state: UiState, vm: MainViewModel) {
     val context = LocalContext.current
     Section("Actualizaciones") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Versión instalada: ${state.currentVersion}")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = { vm.checkForUpdates(manual = true) }, enabled = !state.checkingUpdate) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { vm.checkForUpdates(manual = true) }, enabled = !state.checkingUpdate, modifier = Modifier.fillMaxRowHeight()) {
                     Text(if (state.checkingUpdate) "Buscando…" else "Buscar actualizaciones")
                 }
                 val update = state.update
                 if (update != null) {
-                    OutlinedButton(onClick = { vm.showUpdateDialog() }) { Text("Ver novedades de ${update.version}") }
+                    OutlinedButton(onClick = { vm.showUpdateDialog() }, modifier = Modifier.fillMaxRowHeight()) { Text("Ver novedades de ${update.version}") }
                 }
             }
             state.updateMessage?.let {
@@ -299,15 +295,13 @@ private fun RefreshSection(state: UiState, vm: MainViewModel) {
     val options = listOf(15 to "15 min", 30 to "30 min", 60 to "1 h", 0 to "Manual")
     Section("Actualización en segundo plano") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                options.forEachIndexed { index, (minutes, label) ->
-                    SegmentedButton(
-                        selected = state.settings.refreshMinutes == minutes,
-                        onClick = { vm.setRefreshMinutes(minutes) },
-                        shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                    ) { Text(label) }
-                }
-            }
+            AdaptiveSegmentedChoice(
+                options = options,
+                isSelected = { state.settings.refreshMinutes == it.first },
+                label = { it.second },
+                onSelect = { vm.setRefreshMinutes(it.first) },
+                modifier = Modifier.fillMaxWidth(),
+            )
             Text(
                 "Cada cuánto se descargan las tasas aunque la app esté cerrada (los widgets leen de aquí). " +
                     "Más tiempo = menos batería, datos y consultas a la API. Al abrir la app siempre se actualiza si hace falta.",

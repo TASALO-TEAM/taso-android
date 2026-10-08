@@ -22,9 +22,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -34,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.RefreshError
 import com.tasalo.android.ui.UiState
@@ -210,18 +208,13 @@ private fun Header(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SourceSelector(selected: Source, onSelect: (Source) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        Source.entries.forEachIndexed { index, source ->
-            SegmentedButton(
-                selected = source == selected,
-                onClick = { onSelect(source) },
-                shape = SegmentedButtonDefaults.itemShape(index, Source.entries.size),
-            ) {
-                Text(source.title)
-            }
-        }
-    }
+    AdaptiveSegmentedChoice(
+        options = Source.entries,
+        isSelected = { it == selected },
+        label = { it.title },
+        onSelect = onSelect,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }

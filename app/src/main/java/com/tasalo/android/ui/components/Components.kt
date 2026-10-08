@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -156,12 +158,17 @@ fun FuelCard(price: FuelPrice, modifier: Modifier = Modifier) {
 
 private val MONTH_LETTERS = listOf("E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun YearCard(year: YearState, now: Instant, modifier: Modifier = Modifier) {
     val currentMonth = now.atZone(ZoneId.systemDefault()).monthValue
     GlassCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
                 Text("Año ${year.year}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
                     "${Format.percent(year.percent)} completado",
