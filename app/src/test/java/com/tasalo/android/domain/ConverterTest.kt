@@ -51,4 +51,34 @@ class ConverterTest {
     fun codes_put_cup_first_then_the_usual_order() {
         assertEquals(listOf("CUP", "EUR", "USD", "BTC"), Converter.codes(table))
     }
+
+    // QvaPay: cada valor es "cuanto de ese metodo por 1 USD"; el pivote es el USD.
+    private val qvapay = Converter.table(
+        listOf(
+            rate("CUP", 980.0),
+            rate("ZELLE", 1.02),
+            rate("MLC", 1.5),
+            rate("USD", 7.0), // el USD siempre vale 1 en QvaPay
+            rate("BAD", 0.0), // tasa invalida: se descarta
+        ),
+        Source.QVAPAY,
+    )
+
+    @Test
+    fun qvapay_pivots_on_usd_and_cup_is_a_normal_method() {
+        assertEquals(1.0, qvapay.getValue("USD"), 0.0)
+        assertEquals(19600.0, Converter.convert(20.0, "USD", "CUP", qvapay)!!, 1e-6)
+        assertEquals(20.0, Converter.convert(19600.0, "CUP", "USD", qvapay)!!, 1e-9)
+        assertFalse("BAD" in qvapay)
+    }
+
+    @Test
+    fun qvapay_converts_between_methods_through_usd() {
+        assertEquals(100.0 / 980.0 * 1.5, Converter.convert(100.0, "CUP", "MLC", qvapay)!!, 1e-9)
+    }
+
+    @Test
+    fun qvapay_codes_put_usd_first_then_the_method_order() {
+        assertEquals(listOf("USD", "CUP", "MLC", "ZELLE"), Converter.codes(qvapay, Source.QVAPAY))
+    }
 }

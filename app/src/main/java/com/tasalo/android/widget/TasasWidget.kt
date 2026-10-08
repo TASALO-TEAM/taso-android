@@ -22,6 +22,8 @@ import androidx.glance.layout.height
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.metaFor
+import com.tasalo.android.domain.widgetTitle
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.Format
 import com.tasalo.android.work.RefreshScheduler
@@ -86,7 +88,7 @@ private fun TasasContent(context: Context, data: WidgetData, source: Source, sav
 
         when {
             chosen.isEmpty() -> {
-                WidgetHeader(source.title, subtitle)
+                WidgetHeader(source.widgetTitle(), subtitle)
                 WText("Sin datos para esta fuente", color = WidgetColors.dim, size = 12)
             }
 
@@ -99,14 +101,14 @@ private fun TasasContent(context: Context, data: WidgetData, source: Source, sav
             }
 
             else -> {
-                WidgetHeader(source.title, subtitle)
+                WidgetHeader(source.widgetTitle(), subtitle)
                 Spacer(GlanceModifier.height(4.dp))
                 val bodyH = usableH - 28f * scale
                 val bigFits = bodyH >= 78f * scale
                 val lines = (bodyH / (28f * scale)).toInt().coerceAtLeast(1)
                 when {
                     chosen.size == 1 && bigFits ->
-                        BigRate(chosen.first(), stale, invert, showName = bodyH >= 96f * scale)
+                        BigRate(chosen.first(), source, stale, invert, showName = bodyH >= 96f * scale)
                     usableW >= 200f && chosen.size >= 3 -> {
                         val gridRows = (bodyH / (44f * scale)).toInt().coerceAtLeast(1)
                         chosen.chunked(2).take(gridRows).forEach { pair ->
@@ -162,8 +164,8 @@ private fun CompactRow(
 }
 
 @Composable
-private fun BigRate(rate: Rate, stale: Boolean, invert: Boolean, showName: Boolean) {
-    val meta = Currencies.META[rate.currency]
+private fun BigRate(rate: Rate, source: Source, stale: Boolean, invert: Boolean, showName: Boolean) {
+    val meta = metaFor(source, rate.currency)
     val main = if (stale) WidgetColors.dim else WidgetColors.text
     Row(verticalAlignment = Alignment.CenterVertically) {
         WText(rate.currency, size = 14, bold = true, color = main)

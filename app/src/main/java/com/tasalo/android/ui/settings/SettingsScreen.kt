@@ -50,6 +50,7 @@ import com.tasalo.android.update.CertInfo
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.REPO_URL
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.defaultCodes
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.UiState
@@ -120,7 +121,7 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Source.entries.forEach { source ->
                         val available = state.rates?.bySource?.get(source).orEmpty().map { it.currency }
-                            .ifEmpty { Currencies.PREFERRED_ORDER }
+                            .ifEmpty { source.defaultCodes() }
                         Text(source.title, style = MaterialTheme.typography.labelLarge)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             available.forEach { code ->

@@ -8,8 +8,12 @@ const val REPO_URL = "https://github.com/TASALO-TEAM/taso-android"
 
 enum class Source(val id: String, val title: String) {
     ELTOQUE("eltoque", "El Toque"),
+    QVAPAY("qvapay", "QvaPay"),
     BCC("bcc", "BCC"),
     CADECA("cadeca", "CADECA");
+
+    /** CADECA y QvaPay traen compra y venta por separado (en QvaPay, `rate` es el promedio). */
+    val hasBuySell: Boolean get() = this == CADECA || this == QVAPAY
 
     companion object {
         fun fromId(value: String?): Source? =
@@ -136,3 +140,35 @@ object Fuel {
         "Gas_LP" to FuelMeta("Gas licuado", "Balón", "CUP/balón"),
     )
 }
+
+/**
+ * Metodos de pago de QvaPay P2P. Cada valor de la API es cuanto de ese metodo se obtiene por 1 USD de QvaPay
+ * (no todos son CUP por unidad: MLC ronda 1,4 y ZELLE 1,02).
+ */
+object QvaPay {
+    val ORDER = listOf("CUP", "MLC", "TROPIPAY", "ETECSA", "ZELLE", "CLASICA", "BOLSATM", "BANDECPREPAGO", "SBERBANK")
+
+    val META: Map<String, CurrencyMeta> = mapOf(
+        "CUP" to CurrencyMeta("Banco CUP", "🏦"),
+        "MLC" to CurrencyMeta("Banco MLC", "💳"),
+        "TROPIPAY" to CurrencyMeta("Tropipay", "💸"),
+        "ETECSA" to CurrencyMeta("Saldo ETECSA", "📱"),
+        "ZELLE" to CurrencyMeta("Zelle", "⚡"),
+        "CLASICA" to CurrencyMeta("Tarjeta Clásica", "💳"),
+        "BOLSATM" to CurrencyMeta("Bolsa TM", "👛"),
+        "BANDECPREPAGO" to CurrencyMeta("Bandec Prepago", "💳"),
+        "SBERBANK" to CurrencyMeta("Sberbank", "🏦"),
+    )
+
+    fun orderIndex(code: String): Int = ORDER.indexOf(code).let { if (it < 0) Int.MAX_VALUE else it }
+}
+
+/** Nombre e icono de una moneda segun la fuente: en QvaPay los codigos son metodos de pago, no monedas. */
+fun metaFor(source: Source, code: String): CurrencyMeta? =
+    if (source == Source.QVAPAY) QvaPay.META[code] ?: Currencies.META[code] else Currencies.META[code]
+
+/** Codigos a ofrecer cuando todavia no hay datos de la fuente. */
+fun Source.defaultCodes(): List<String> = if (this == Source.QVAPAY) QvaPay.ORDER else Currencies.PREFERRED_ORDER
+
+/** Titulo en los widgets: en QvaPay aclara la unidad. */
+fun Source.widgetTitle(): String = if (this == Source.QVAPAY) "$title · por 1 USD" else title

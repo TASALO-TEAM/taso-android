@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SwapVert
@@ -53,6 +54,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -68,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import com.tasalo.android.domain.Converter
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.metaFor
 import com.tasalo.android.ui.UiState
 import com.tasalo.android.ui.components.ErrorState
 import com.tasalo.android.ui.components.GlassCard
@@ -93,13 +97,13 @@ fun CalculatorScreen(state: UiState, onRefresh: () -> Unit, modifier: Modifier =
     val snapshot = state.rates
     val hidden = state.settings.hidden
     val table = remember(snapshot, source, hidden) {
-        Converter.table(snapshot?.bySource?.get(source).orEmpty().filter { !state.settings.isHidden(source, it.currency) })
+        Converter.table(snapshot?.bySource?.get(source).orEmpty().filter { !state.settings.isHidden(source, it.currency) }, source)
     }
-    val codes = remember(table) { Converter.codes(table) }
+    val codes = remember(table, source) { Converter.codes(table, source) }
 
     // Si la fuente elegida no trae la moneda guardada, se cae a una válida sin tocar lo que escribió la persona.
     val from = if (fromCode in codes) fromCode else codes.firstOrNull { it != Converter.CUP } ?: Converter.CUP
-    val to = (if (toCode in codes) toCode else Converter.CUP)
+    val to = (if (toCode in codes) toCode else if (Converter.CUP in codes) Converter.CUP else codes.firstOrNull { it != from } ?: Converter.CUP)
         .let { t -> if (t == from) codes.firstOrNull { it != from } ?: t else t }
 
     val amount = Format.parseAmount(amountText)
@@ -149,6 +153,7 @@ fun CalculatorScreen(state: UiState, onRefresh: () -> Unit, modifier: Modifier =
                         from = from,
                         to = to,
                         codes = codes,
+                        source = source,
                         resultText = result?.let(Format::amount) ?: "—",
                         unitRate = Converter.convert(1.0, from, to, table)?.let(Format::amount),
                         sourceTitle = source.title,
@@ -166,6 +171,7 @@ fun CalculatorScreen(state: UiState, onRefresh: () -> Unit, modifier: Modifier =
                     val receipt = amount?.let { Receipt.build(it, from, source.title, table, rowCodes) }
                     InvoiceCard(
                         amount = amount,
+                        source = source,
                         from = from,
                         to = to,
                         rows = rows,
@@ -199,6 +205,7 @@ private fun ConverterCard(
     from: String,
     to: String,
     codes: List<String>,
+    source: Source,
     resultText: String,
     unitRate: String?,
     sourceTitle: String,
@@ -208,6 +215,7 @@ private fun ConverterCard(
 ) {
     val glass = LocalGlass.current
     val focus = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
     val amountStyle = TextStyle(
         fontFamily = TasaloMono,
         fontSize = 30.sp,
@@ -218,13 +226,14 @@ private fun ConverterCard(
     GlassCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CurrencyPicker(from, codes, onPickFrom)
+                CurrencyPicker(from, codes, source, onPickFrom)
                 Spacer(Modifier.width(12.dp))
                 BasicTextField(
                     value = amountText,
                     onValueChange = onAmountChange,
                     modifier = Modifier
                         .weight(1f)
+                        .focusRequester(focusRequester)
                         .semantics { contentDescription = "Monto en $from" },
                     textStyle = amountStyle,
                     singleLine = true,
@@ -240,6 +249,14 @@ private fun ConverterCard(
                         }
                     },
                 )
+                if (amountText.isNotEmpty()) {
+                    IconButton(onClick = {
+                        onAmountChange("")
+                        focusRequester.requestFocus()
+                    }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Borrar monto")
+                    }
+                }
             }
 
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -251,7 +268,7 @@ private fun ConverterCard(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CurrencyPicker(to, codes, onPickTo)
+                CurrencyPicker(to, codes, source, onPickTo)
                 Spacer(Modifier.width(12.dp))
                 Text(
                     resultText,
@@ -279,7 +296,7 @@ private fun ConverterCard(
 }
 
 @Composable
-private fun CurrencyPicker(selected: String, options: List<String>, onSelect: (String) -> Unit) {
+private fun CurrencyPicker(selected: String, options: List<String>, source: Source, onSelect: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val glass = LocalGlass.current
     Box {
@@ -288,10 +305,10 @@ private fun CurrencyPicker(selected: String, options: List<String>, onSelect: (S
             shape = RoundedCornerShape(16.dp),
             color = glass.accentSoft,
             border = BorderStroke(1.dp, glass.borderAccent),
-            modifier = Modifier.semantics { contentDescription = "Moneda ${nameOf(selected)}. Cambiar" },
+            modifier = Modifier.semantics { contentDescription = "Moneda ${nameOf(selected, source)}. Cambiar" },
         ) {
             Row(Modifier.padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(flagOf(selected), fontSize = 18.sp)
+                Text(flagOf(selected, source), fontSize = 18.sp)
                 Spacer(Modifier.width(6.dp))
                 Text(selected, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
@@ -300,7 +317,7 @@ private fun CurrencyPicker(selected: String, options: List<String>, onSelect: (S
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { code ->
                 DropdownMenuItem(
-                    text = { Text("${flagOf(code)}  $code · ${nameOf(code)}") },
+                    text = { Text("${flagOf(code, source)}  $code · ${nameOf(code, source)}") },
                     onClick = {
                         onSelect(code)
                         open = false
@@ -314,6 +331,7 @@ private fun CurrencyPicker(selected: String, options: List<String>, onSelect: (S
 @Composable
 private fun InvoiceCard(
     amount: Double?,
+    source: Source,
     from: String,
     to: String,
     rows: List<Pair<String, Double?>>,
@@ -350,12 +368,12 @@ private fun InvoiceCard(
                         .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(flagOf(code), fontSize = 18.sp)
+                    Text(flagOf(code, source), fontSize = 18.sp)
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
                         Text(code, fontWeight = FontWeight.Bold)
                         Text(
-                            nameOf(code),
+                            nameOf(code, source),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -374,9 +392,11 @@ private fun InvoiceCard(
     }
 }
 
-private fun flagOf(code: String): String = if (code == Converter.CUP) "🇨🇺" else Currencies.META[code]?.flag.orEmpty()
+private fun flagOf(code: String, source: Source): String =
+    if (source != Source.QVAPAY && code == Converter.CUP) "🇨🇺" else metaFor(source, code)?.flag.orEmpty()
 
-private fun nameOf(code: String): String = if (code == Converter.CUP) "Peso cubano" else Currencies.META[code]?.name ?: code
+private fun nameOf(code: String, source: Source): String =
+    if (source != Source.QVAPAY && code == Converter.CUP) "Peso cubano" else metaFor(source, code)?.name ?: code
 
 /** Deja solo dígitos y un separador decimal (coma o punto, se muestra coma). */
 private fun sanitize(input: String): String {

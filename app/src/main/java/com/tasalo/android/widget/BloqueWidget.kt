@@ -20,11 +20,12 @@ import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.widgetTitle
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.Format
 import com.tasalo.android.work.RefreshScheduler
 
-/** W2 — "Bloque": las monedas de El Toque, BCC o CADECA, en una o dos columnas según el ancho. */
+/** W2 — "Bloque": las monedas de El Toque, QvaPay, BCC o CADECA, en una o dos columnas según el ancho. */
 class BloqueWidget : SafeGlanceWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -66,7 +67,7 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         val stale = Format.isStale(rates.fetchedAt, data.now)
         val invert = data.settings.invertColors
         val textColor = if (stale) WidgetColors.dim else WidgetColors.text
-        val isCadeca = source == Source.CADECA
+        val isCadeca = source.hasBuySell
         val list = rates.bySource[source].orEmpty().filter { !data.settings.isHidden(source, it.currency) }
 
         val scale = fontScale().coerceAtMost(1.15f)
@@ -80,7 +81,7 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         val headerDp = 24f * scale + if (isCadeca) 14f else 4f
         val maxRows = ((usableH - headerDp) / rowDp).toInt().coerceIn(1, 15)
 
-        WidgetHeader(source.title, subtitleFor(rates.fetchedAt, data.now))
+        WidgetHeader(source.widgetTitle(), subtitleFor(rates.fetchedAt, data.now))
         if (isCadeca && list.isNotEmpty()) {
             Row(GlanceModifier.fillMaxWidth()) {
                 repeat(columns) { index ->

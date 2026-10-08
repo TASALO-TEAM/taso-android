@@ -37,6 +37,7 @@ import com.tasalo.android.data.local.CacheStore
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.defaultCodes
 import com.tasalo.android.ui.theme.TasaloTheme
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val rates = com.tasalo.android.data.Snapshots.from(cached, java.time.Instant.now()).rates
         val available = rates?.bySource?.get(source).orEmpty().map { it.currency }
-            .ifEmpty { Currencies.PREFERRED_ORDER }
+            .ifEmpty { source.defaultCodes() }
 
         Column(
             Modifier.fillMaxSize().safeDrawingPadding().padding(20.dp),

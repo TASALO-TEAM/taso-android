@@ -5,6 +5,7 @@ import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.Fuel
 import com.tasalo.android.domain.FuelPrice
+import com.tasalo.android.domain.QvaPay
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.YearApi
@@ -69,17 +70,19 @@ object Parsers {
         return Rate(code, rate, buy, sell, change(o["change"]), number(o["prev_rate"]))
     }
 
-    fun sortRates(list: List<Rate>): List<Rate> =
-        list.sortedWith(compareBy<Rate>({ Currencies.orderIndex(it.currency) }, { it.currency }))
+    fun sortRates(list: List<Rate>, source: Source? = null): List<Rate> {
+        val index: (String) -> Int = if (source == Source.QVAPAY) QvaPay::orderIndex else Currencies::orderIndex
+        return list.sortedWith(compareBy<Rate>({ index(it.currency) }, { it.currency }))
+    }
 
     /** Fuente vacía, ausente o `null` = lista vacía, no error. */
-    fun source(e: JsonElement?): List<Rate> {
+    fun source(e: JsonElement?, which: Source? = null): List<Rate> {
         val o = e as? JsonObject ?: return emptyList()
-        return sortRates(
-            o.entries.mapNotNull { (code, value) ->
-                if (code.uppercase() in Currencies.IGNORED) null else rate(code, value)
-            },
-        )
+        // En QvaPay "CUP" es un metodo de pago (Banco CUP), no la moneda base: se conserva.
+        val parsed = o.entries.mapNotNull { (code, value) ->
+            if (which != Source.QVAPAY && code.uppercase() in Currencies.IGNORED) null else rate(code, value)
+        }
+        return sortRates(parsed, which)
     }
 
     /** `/tasas/latest` -> ok == true && data != null; si no, null. */
@@ -87,7 +90,7 @@ object Parsers {
         val r = root(text) ?: return null
         if (!isOk(r)) return null
         val data = r["data"] as? JsonObject ?: return null
-        return Source.entries.associateWith { source(data[it.id]) }
+        return Source.entries.associateWith { source(data[it.id], it) }
     }
 
     /** Endpoints por fuente (`{source, rates, updated_at}` sin `ok`): devuelve el objeto `rates`. */

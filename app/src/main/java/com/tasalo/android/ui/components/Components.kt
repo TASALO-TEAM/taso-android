@@ -37,6 +37,7 @@ import com.tasalo.android.domain.FuelPrice
 import com.tasalo.android.domain.Fuel
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
+import com.tasalo.android.domain.metaFor
 import com.tasalo.android.domain.YearState
 import com.tasalo.android.ui.theme.LocalChangeColors
 import com.tasalo.android.ui.theme.LocalGlass
@@ -77,7 +78,7 @@ fun ChangeText(change: Change, text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun RateCard(rate: Rate, source: Source, modifier: Modifier = Modifier) {
-    val meta = Currencies.META[rate.currency]
+    val meta = metaFor(source, rate.currency)
     GlassCard(modifier) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -98,7 +99,10 @@ fun RateCard(rate: Rate, source: Source, modifier: Modifier = Modifier) {
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
             )
-            if (source == Source.CADECA && (rate.buy != null || rate.sell != null)) {
+            if (source == Source.QVAPAY) {
+                Text("por 1 USD", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (source.hasBuySell && (rate.buy != null || rate.sell != null)) {
                 val buy = rate.buy?.let(Format::rate) ?: "—"
                 val sell = rate.sell?.let(Format::rate) ?: "—"
                 Text(

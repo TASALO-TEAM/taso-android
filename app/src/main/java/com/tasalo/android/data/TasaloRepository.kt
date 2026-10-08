@@ -69,14 +69,16 @@ class TasaloRepository(
         return true
     }
 
-    /** Si /latest falla, pide las tres fuentes por separado y combina las que respondan. */
+    /** Si /latest falla, pide las fuentes por separado y combina las que respondan. */
     private suspend fun fallbackLatest(api: TasaloApi): String? = coroutineScope {
         val eltoque = async { fetch { api.eltoque().string() }?.let(Parsers::ratesObject) }
         val bcc = async { fetch { api.bcc().string() }?.let(Parsers::ratesObject) }
         val cadeca = async { fetch { api.cadeca().string() }?.let(Parsers::ratesObject) }
+        val qvapay = async { fetch { api.qvapay().string() }?.let(Parsers::ratesObject) }
         val results: Map<Source, JsonObject?> = mapOf(
             Source.ELTOQUE to eltoque.await(),
             Source.BCC to bcc.await(),
+            Source.QVAPAY to qvapay.await(),
             Source.CADECA to cadeca.await(),
         )
         if (results.values.all { it == null }) return@coroutineScope null

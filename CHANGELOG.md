@@ -3,6 +3,19 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.9.0
+
+### Nueva fuente: QvaPay
+- En **Tasas** hay una cuarta fuente, **QvaPay**, con los promedios P2P por método de pago: Banco CUP, Banco MLC, Tropipay, saldo ETECSA, Zelle, Clásica, Bolsa TM, Bandec Prepago y Sberbank. Cada tarjeta muestra el **promedio** y, debajo, **compra y venta**.
+- Ojo con la unidad: cada valor es **cuánto de ese método recibes por 1 USD de QvaPay** (no todos son CUP por unidad: Zelle ronda 1,02 y MLC 1,4). Los métodos sin operaciones recientes no aparecen.
+- QvaPay también está en la **calculadora** (con el USD como base), en los **widgets** y en **Ajustes** (fuente por defecto y monedas visibles). Necesita la API actualizada; con la anterior, esa fuente simplemente aparece vacía.
+
+### Calculadora
+- Nuevo botón **×** junto al monto para borrarlo de un toque y escribir otro.
+
+### Datos
+- La API ahora actualiza las tasas cada **15 minutos** (antes 5), así que la flecha ▲ ▼ compara contra 15 minutos atrás.
+
 ## 0.8.1
 
 ### Encabezado que se recoge en Tasas y Blog
