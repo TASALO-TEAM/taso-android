@@ -1,11 +1,14 @@
 package com.tasalo.android.widget
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -98,11 +101,17 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
             return@WidgetFrame
         }
 
+        // Con una sola columna y ancho de sobra, cada fila lleva su curva de 30 dias (sale del resumen guardado).
+        val showSpark = columns == 1 && !isCadeca && usableW >= 170f
+        val sparkFor: (Rate) -> Bitmap? = { r ->
+            if (showSpark) WidgetChart.rowSpark(context, data, source, r.currency, 44f, 18f) else null
+        }
+
         list.take(maxRows * columns).chunked(columns).forEach { chunk ->
             Row(GlanceModifier.fillMaxWidth()) {
                 chunk.forEachIndexed { index, rate ->
                     if (index > 0) Spacer(GlanceModifier.width(10.dp))
-                    RateCellRow(rate, isCadeca, textColor, invert, GlanceModifier.defaultWeight())
+                    RateCellRow(rate, isCadeca, textColor, invert, sparkFor(rate), GlanceModifier.defaultWeight())
                 }
                 // Última fila incompleta: se reserva el hueco para que la columna no se estire.
                 repeat(columns - chunk.size) {
@@ -131,10 +140,18 @@ private fun RateCellRow(
     isCadeca: Boolean,
     textColor: androidx.glance.unit.ColorProvider,
     invert: Boolean,
+    spark: Bitmap?,
     modifier: GlanceModifier,
 ) {
     Row(modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         WText(rate.currency, size = 13, bold = true, color = textColor, modifier = GlanceModifier.defaultWeight())
+        if (spark != null) {
+            Image(
+                provider = ImageProvider(spark),
+                contentDescription = null,
+                modifier = GlanceModifier.width(44.dp).height(18.dp),
+            )
+        }
         if (isCadeca) {
             WText(rate.buy?.let(Format::rate) ?: "—", size = 13, mono = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())
             WText(rate.sell?.let(Format::rate) ?: Format.rate(rate.rate), size = 13, mono = true, bold = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())

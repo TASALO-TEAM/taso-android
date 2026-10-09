@@ -7,4 +7,8 @@
     <string name="widget_tasas_desc">De 1 a 4 monedas de El Toque, BCC o CADECA</string>
     <string name="widget_bloque_desc">Todas las monedas de una fuente</string>
     <string name="widget_anio_desc">Progreso del año y frase del día</string>
+    <string name="widget_tendencia_label">TASALO &#183; Tendencia</string>
+    <string name="widget_tendencia_desc">Una moneda con su curva de 30 d&#237;as, variaci&#243;n, m&#237;nimo y m&#225;ximo</string>
+    <string name="widget_mini_label">TASALO &#183; Mini tasas</string>
+    <string name="widget_mini_desc">Hasta 3 monedas con su curva de 30 d&#237;as en cada fila</string>
 </resources>

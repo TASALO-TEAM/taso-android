@@ -3,6 +3,17 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.11.0
+
+### Barra inferior
+- Iconos nuevos de trazo fino y extremos redondeados en la barra flotante (Tasas, Combustible, Calculadora, Blog y Ajustes).
+
+### Widgets con gráficos
+- Los widgets **Tasas** muestran de fondo, muy tenue, la curva de los **últimos 30 días** de su primera moneda (el color sigue la tendencia y la convención de sube/baja de Ajustes).
+- El widget **Bloque** muestra una **mini curva de 30 días** en cada fila cuando tiene ancho de sobra (una sola columna).
+- Widgets nuevos: **Tendencia** (una moneda con su curva de 30 días, variación del periodo, mínimo y máximo) y **Mini tasas** (hasta 3 monedas con su curva en la misma fila).
+- Los widgets solo usan el resumen de 30 días que ya está guardado en el móvil (la app lo actualiza en el refresco en segundo plano; los widgets nunca usan la red). Mientras la API no ofrezca `/tasas/history/summary`, se ven como siempre, sin curva.
+
 ## 0.10.0
 
 ### Historial de precios

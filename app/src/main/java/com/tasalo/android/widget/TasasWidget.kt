@@ -67,7 +67,13 @@ private fun valueSizeFor(usableWidthDp: Float): Int = when {
 private fun TasasContent(context: Context, data: WidgetData, source: Source, saved: String?) {
     val rates = data.snapshot.rates
     val size = LocalSize.current
-    WidgetFrame(openApp(context, source)) {
+    val backdropCode = run {
+        val all = rates?.bySource?.get(source).orEmpty()
+        val wanted = saved?.split(",")?.filter { it.isNotBlank() }.orEmpty()
+        wanted.firstOrNull { c -> all.any { it.currency == c } } ?: all.firstOrNull()?.currency
+    }
+    val backdrop = if (backdropCode != null) WidgetChart.backdrop(context, data, source, backdropCode, size) else null
+    WidgetFrame(openApp(context, source), backdrop) {
         if (rates == null) {
             EmptyWidget()
             return@WidgetFrame

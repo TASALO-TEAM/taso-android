@@ -2,6 +2,7 @@ package com.tasalo.android.widget
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import androidx.compose.runtime.Composable
@@ -13,6 +14,8 @@ import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.action.Action
 import androidx.glance.action.ActionParameters
@@ -28,6 +31,8 @@ import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -45,6 +50,7 @@ import com.tasalo.android.container
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.Change
+import com.tasalo.android.domain.PricePoint
 import com.tasalo.android.domain.Snapshot
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
@@ -138,12 +144,19 @@ fun WidgetRoot(theme: ThemeMode, content: @Composable () -> Unit) {
 }
 
 /** Lo que leen los widgets: solo el caché, nunca la red (plan §3). */
-data class WidgetData(val snapshot: Snapshot, val settings: AppSettings, val now: Instant) {
+data class WidgetData(
+    val snapshot: Snapshot,
+    val settings: AppSettings,
+    val now: Instant,
+    /** Resumen de 30 dias guardado (clave `FUENTE:MONEDA`); vacio si aun no se ha descargado. */
+    val history: Map<String, List<PricePoint>> = emptyMap(),
+) {
     companion object {
         suspend fun load(context: Context): WidgetData {
             val c = context.container
             val now = Instant.now()
-            return WidgetData(c.repository.snapshot(now), c.settingsStore.current(), now)
+            val history = runCatching { c.historyRepository.cachedSummary() }.getOrDefault(emptyMap())
+            return WidgetData(c.repository.snapshot(now), c.settingsStore.current(), now, history)
         }
 
         /** Si algo falla al leer, el widget muestra "Abre TASALO" en lugar de romperse. */
@@ -176,6 +189,8 @@ object WidgetUpdater {
         try {
             TasasWidget().updateAll(context)
             BloqueWidget().updateAll(context)
+            TendenciaWidget().updateAll(context)
+            MiniTasasWidget().updateAll(context)
             AnioFraseWidget().updateAll(context)
         } catch (e: Exception) {
             DiagnosticLog.e("Widget", "updateAll falló", e)
@@ -240,22 +255,32 @@ fun WText(
  * choque con las esquinas grandes de Android 12+.
  */
 @Composable
-fun WidgetFrame(onClick: Action, content: @Composable () -> Unit) {
+fun WidgetFrame(onClick: Action, backdrop: Bitmap? = null, content: @Composable () -> Unit) {
     val shape = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         GlanceModifier.cornerRadius(android.R.dimen.system_app_widget_background_radius)
     } else {
         GlanceModifier.cornerRadius(22.dp)
     }
-    Column(
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
             .background(WidgetColors.bg)
             .then(shape)
-            .padding(12.dp)
             .clickable(onClick),
     ) {
-        content()
+        // La curva va detras del contenido; su margen interno evita que choque con las esquinas redondeadas.
+        if (backdrop != null) {
+            Image(
+                provider = ImageProvider(backdrop),
+                contentDescription = null,
+                modifier = GlanceModifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds,
+            )
+        }
+        Column(modifier = GlanceModifier.fillMaxSize().padding(12.dp)) {
+            content()
+        }
     }
 }
 

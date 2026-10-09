@@ -31,6 +31,10 @@ class HistoryRepository(
     /** Si el endpoint de resumen no existe (404), no se reintenta en cada refresco de esta sesión. */
     @Volatile private var summaryUnavailable = false
 
+    /** Resumen ya guardado en el movil, aunque este viejo. No usa la red: es lo que leen los widgets. */
+    suspend fun cachedSummary(): Map<String, List<PricePoint>> =
+        readFresh(SUMMARY_FILE, SUMMARY_TTL, allowStale = true).orEmpty()
+
     private fun file(name: String) = File(dir, name)
 
     private suspend fun readFresh(name: String, ttl: Duration, allowStale: Boolean): Map<String, List<PricePoint>>? =

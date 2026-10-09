@@ -23,6 +23,8 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         return try {
             val container = applicationContext.container
             val result = container.repository.refreshAll()
+            // El fondo de grafico de los widgets sale del resumen de 30 dias guardado; se refresca aqui (los widgets no usan la red).
+            container.historyRepository.summary()
             if (result.allOk) {
                 DiagnosticLog.i("Worker", "refresco en segundo plano correcto")
             } else {

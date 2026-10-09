@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
  */
 class WidgetConfigActivity : ComponentActivity() {
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+    private var kind = "bloque"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +61,13 @@ class WidgetConfigActivity : ComponentActivity() {
             return
         }
         val provider = AppWidgetManager.getInstance(this).getAppWidgetInfo(appWidgetId)?.provider?.className.orEmpty()
-        val multi = provider.endsWith("TasasWidgetReceiver")
+        kind = when {
+            provider.endsWith("MiniTasasWidgetReceiver") -> "mini"
+            provider.endsWith("TendenciaWidgetReceiver") -> "tendencia"
+            provider.endsWith("TasasWidgetReceiver") -> "tasas"
+            else -> "bloque"
+        }
+        val multi = kind != "bloque"
 
         setContent {
             val settings by container.settingsStore.settings.collectAsState(initial = AppSettings())
@@ -79,8 +86,12 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs[WidgetKeys.SOURCE] = source.name
                 if (multi) prefs[WidgetKeys.CURRENCIES] = currencies.joinToString(",")
             }
-            if (multi) TasasWidget().update(this@WidgetConfigActivity, glanceId)
-            else BloqueWidget().update(this@WidgetConfigActivity, glanceId)
+            when (kind) {
+                "mini" -> MiniTasasWidget().update(this@WidgetConfigActivity, glanceId)
+                "tendencia" -> TendenciaWidget().update(this@WidgetConfigActivity, glanceId)
+                "tasas" -> TasasWidget().update(this@WidgetConfigActivity, glanceId)
+                else -> BloqueWidget().update(this@WidgetConfigActivity, glanceId)
+            }
             setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
             finish()
         }
@@ -92,6 +103,11 @@ class WidgetConfigActivity : ComponentActivity() {
         val cached by container.repository.raw.collectAsState(initial = CacheStore.Raw())
         var source by remember { mutableStateOf(Source.ELTOQUE) }
         var selected by remember { mutableStateOf(listOf<String>()) }
+        val maxSel = when (kind) {
+            "tendencia" -> 1
+            "mini" -> 3
+            else -> 4
+        }
 
         val rates = com.tasalo.android.data.Snapshots.from(cached, java.time.Instant.now()).rates
         val available = rates?.bySource?.get(source).orEmpty().map { it.currency }
@@ -102,7 +118,12 @@ class WidgetConfigActivity : ComponentActivity() {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                if (multi) "Widget de tasas" else "Widget de bloque",
+                when (kind) {
+                    "mini" -> "Widget mini tasas"
+                    "tendencia" -> "Widget de tendencia"
+                    "tasas" -> "Widget de tasas"
+                    else -> "Widget de bloque"
+                },
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -117,7 +138,7 @@ class WidgetConfigActivity : ComponentActivity() {
                 }
             }
             if (multi) {
-                Text("Monedas (máximo 4)", style = MaterialTheme.typography.titleSmall)
+                Text(if (maxSel == 1) "Moneda" else "Monedas (m\u00E1ximo $maxSel)", style = MaterialTheme.typography.titleSmall)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     available.forEach { code ->
                         val on = code in selected
@@ -126,7 +147,7 @@ class WidgetConfigActivity : ComponentActivity() {
                             onClick = {
                                 selected = when {
                                     on -> selected - code
-                                    selected.size < 4 -> selected + code
+                                    selected.size < maxSel -> selected + code
                                     else -> selected
                                 }
                             },

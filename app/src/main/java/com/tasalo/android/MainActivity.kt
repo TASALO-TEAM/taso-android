@@ -71,6 +71,7 @@ import com.tasalo.android.ui.CrashReportDialog
 import com.tasalo.android.ui.UpdateDialog
 import com.tasalo.android.ui.calculator.CalculatorScreen
 import com.tasalo.android.ui.components.GlassIslandBar
+import com.tasalo.android.ui.components.NavIcons
 import com.tasalo.android.ui.components.IslandItem
 import com.tasalo.android.ui.notifications.NotificationsScreen
 import com.tasalo.android.ui.theme.quietGlassBackground
@@ -122,11 +123,11 @@ fun openUrl(context: android.content.Context, url: String) {
 
 /** Orden de la barra: Tasas · Combustible · Calculadora (centro) · Blog · Ajustes. */
 private val TABS = listOf(
-    IslandItem("Tasas", Icons.Filled.SwapHoriz),
-    IslandItem("Combustible", Icons.Filled.LocalGasStation),
-    IslandItem("Calculadora", Icons.Filled.Calculate),
-    IslandItem("Blog", Icons.AutoMirrored.Filled.Article),
-    IslandItem("Ajustes", Icons.Filled.Settings),
+    IslandItem("Tasas", NavIcons.Rates),
+    IslandItem("Combustible", NavIcons.Fuel),
+    IslandItem("Calculadora", NavIcons.Calculator),
+    IslandItem("Blog", NavIcons.Blog),
+    IslandItem("Ajustes", NavIcons.Settings),
 )
 
 private const val CALC_TAB = 2
