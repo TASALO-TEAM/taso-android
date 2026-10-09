@@ -36,4 +36,27 @@ interface TasaloApi {
     /** Fuente nueva: con una API antigua da 404 y simplemente no hay datos de QvaPay. */
     @GET("api/v1/tasas/qvapay")
     suspend fun qvapay(): ResponseBody
+
+    /**
+     * Resumen liviano (un precio por día, todas las fuentes y monedas) para el fondo de las tarjetas.
+     * Endpoint propuesto: con la API actual da 404 y las tarjetas se ven sin fondo.
+     */
+    @GET("api/v1/tasas/history/summary")
+    suspend fun historySummary(@Query("days") days: Int): ResponseBody
+
+    /** Serie diaria de una fuente y moneda (precio de las 7:00 de Cuba). Endpoint propuesto; 404 = se usa `/history`. */
+    @GET("api/v1/tasas/history/daily")
+    suspend fun historyDaily(
+        @Query("source") source: String,
+        @Query("currency") currency: String,
+        @Query("days") days: Int,
+    ): ResponseBody
+
+    /** Endpoint que ya existe: lecturas sueltas cada 15 min (pesado en rangos largos; solo es el plan B del detalle). */
+    @GET("api/v1/tasas/history")
+    suspend fun historyRaw(
+        @Query("source") source: String,
+        @Query("currency") currency: String,
+        @Query("days") days: Int,
+    ): ResponseBody
 }

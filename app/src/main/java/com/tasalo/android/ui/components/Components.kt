@@ -2,6 +2,7 @@ package com.tasalo.android.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,10 +38,13 @@ import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.FuelPrice
 import com.tasalo.android.domain.Fuel
+import com.tasalo.android.domain.PriceHistory
+import com.tasalo.android.domain.PricePoint
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.metaFor
 import com.tasalo.android.domain.YearState
+import com.tasalo.android.ui.history.SparklineBackground
 import com.tasalo.android.ui.theme.LocalChangeColors
 import com.tasalo.android.ui.theme.LocalGlass
 import com.tasalo.android.ui.theme.TasaloMono
@@ -78,10 +82,31 @@ fun ChangeText(change: Change, text: String, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * Tarjeta de una moneda. Con `history` (últimos 30 días) dibuja de fondo la tendencia, muy tenue y difuminada, y
+ * con `onClick` se abre el detalle histórico. Sin ninguno de los dos se ve y se comporta como antes.
+ */
 @Composable
-fun RateCard(rate: Rate, source: Source, modifier: Modifier = Modifier) {
+fun RateCard(
+    rate: Rate,
+    source: Source,
+    modifier: Modifier = Modifier,
+    history: List<PricePoint> = emptyList(),
+    onClick: (() -> Unit)? = null,
+) {
     val meta = metaFor(source, rate.currency)
-    GlassCard(modifier) {
+    val trend = PriceHistory.trend(history)
+    val sparkColor = if (trend == Change.NEUTRAL) MaterialTheme.colorScheme.primary else LocalChangeColors.current.of(trend)
+    val cardModifier = if (onClick != null) {
+        modifier
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClickLabel = "Ver historial de ${rate.currency}", onClick = onClick)
+    } else {
+        modifier
+    }
+    GlassCard(cardModifier) {
+      Box(Modifier.fillMaxWidth()) {
+        SparklineBackground(history, sparkColor, Modifier.matchParentSize())
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(meta?.flag.orEmpty(), fontSize = 20.sp)
@@ -116,6 +141,7 @@ fun RateCard(rate: Rate, source: Source, modifier: Modifier = Modifier) {
             }
             ChangeText(rate.change, Format.change(rate))
         }
+      }
     }
 }
 

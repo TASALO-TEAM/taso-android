@@ -18,67 +18,67 @@ import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.ThemeMode
 
 /*
- * Línea visual "Quiet Glass" v2, portada de `taso-ext`/`taso-extmf` (popup.css): un solo acento índigo,
- * fondo casi negro / gris azulado, rojo y verde desaturados. Los valores salen de las variables CSS
+ * Línea visual "Quiet Glass" v3 (0.10.0): un solo acento turquesa sobre fondo azul noche, tarjetas de cristal
+ * y rojo/verde desaturados para sube/baja (la convención sigue siendo configurable). Los valores salen de las variables CSS
  * de la extensión (--bg, --text, --accent, --up, --down...). Las superficies de la extensión son
  * blanco/tinta con 3-6 % de opacidad; aquí se precalculan sobre el fondo para el esquema de Material.
  */
 internal val DarkColors = darkColorScheme(
-    primary = Color(0xFF6C81FF),
-    onPrimary = Color(0xFF0A0A10),
-    primaryContainer = Color(0xFF181B31),
-    onPrimaryContainer = Color(0xFFD5DBFF),
-    secondary = Color(0xFF6C81FF),
-    onSecondary = Color(0xFF0A0A10),
-    secondaryContainer = Color(0xFF181B31),
-    onSecondaryContainer = Color(0xFFD5DBFF),
-    background = Color(0xFF0A0A10),
-    onBackground = Color(0xFFF2F2F7),
-    surface = Color(0xFF111117),
-    onSurface = Color(0xFFF2F2F7),
-    surfaceVariant = Color(0xFF16161C),
-    onSurfaceVariant = Color(0xFF8D8DA3),
-    surfaceTint = Color(0xFF6C81FF),
-    surfaceDim = Color(0xFF0A0A10),
-    surfaceBright = Color(0xFF1D1D26),
-    surfaceContainerLowest = Color(0xFF0A0A10),
-    surfaceContainerLow = Color(0xFF0F0F16),
-    surfaceContainer = Color(0xFF131319),
-    surfaceContainerHigh = Color(0xFF181820),
-    surfaceContainerHighest = Color(0xFF1D1D26),
-    outline = Color(0xFF5C5C72),
-    outlineVariant = Color(0xFF26262F),
+    primary = Color(0xFF3DD6C0),
+    onPrimary = Color(0xFF06201C),
+    primaryContainer = Color(0xFF123A38),
+    onPrimaryContainer = Color(0xFFC9F5EE),
+    secondary = Color(0xFF3DD6C0),
+    onSecondary = Color(0xFF06201C),
+    secondaryContainer = Color(0xFF123A38),
+    onSecondaryContainer = Color(0xFFC9F5EE),
+    background = Color(0xFF0E1621),
+    onBackground = Color(0xFFE8EEF5),
+    surface = Color(0xFF121C28),
+    onSurface = Color(0xFFE8EEF5),
+    surfaceVariant = Color(0xFF16212F),
+    onSurfaceVariant = Color(0xFF9FB0C3),
+    surfaceTint = Color(0xFF3DD6C0),
+    surfaceDim = Color(0xFF0E1621),
+    surfaceBright = Color(0xFF1E2B3A),
+    surfaceContainerLowest = Color(0xFF0E1621),
+    surfaceContainerLow = Color(0xFF101A25),
+    surfaceContainer = Color(0xFF131E2B),
+    surfaceContainerHigh = Color(0xFF1C2937),
+    surfaceContainerHighest = Color(0xFF22313F),
+    outline = Color(0xFF5F7389),
+    outlineVariant = Color(0xFF223246),
     error = Color(0xFFF2555F),
-    onError = Color(0xFF0A0A10),
+    onError = Color(0xFF0E1621),
     errorContainer = Color(0xFF3A1A20),
     onErrorContainer = Color(0xFFFFD9DC),
 )
 
 internal val LightColors = lightColorScheme(
-    primary = Color(0xFF3B56DD),
+    primary = Color(0xFF09665B),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD8DCEE),
-    onPrimaryContainer = Color(0xFF1F2F8A),
-    secondary = Color(0xFF3B56DD),
+    primaryContainer = Color(0xFFCDEDE8),
+    onPrimaryContainer = Color(0xFF0A4D45),
+    secondary = Color(0xFF09665B),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFD8DCEE),
-    onSecondaryContainer = Color(0xFF1F2F8A),
-    background = Color(0xFFE8EAF0),
-    onBackground = Color(0xFF2B2C3A),
-    surface = Color(0xFFE0E2E8),
-    onSurface = Color(0xFF2B2C3A),
-    surfaceVariant = Color(0xFFDBDDE4),
-    onSurfaceVariant = Color(0xFF5E5F72),
-    surfaceTint = Color(0xFF3B56DD),
-    surfaceDim = Color(0xFFDADCE3),
-    surfaceBright = Color(0xFFF6F7FA),
-    surfaceContainerLowest = Color(0xFFF5F6FA),
-    surfaceContainerLow = Color(0xFFEFF0F5),
-    surfaceContainer = Color(0xFFEBECF2),
-    surfaceContainerHigh = Color(0xFFF1F2F7),
-    surfaceContainerHighest = Color(0xFFF6F7FA),
-    outline = Color(0xFF838498),
-    outlineVariant = Color(0xFFCBCDD8),
+    secondaryContainer = Color(0xFFCDEDE8),
+    onSecondaryContainer = Color(0xFF0A4D45),
+    background = Color(0xFFE6EEF1),
+    onBackground = Color(0xFF1B2A33),
+    surface = Color(0xFFDDE7EB),
+    onSurface = Color(0xFF1B2A33),
+    surfaceVariant = Color(0xFFD6E1E6),
+    onSurfaceVariant = Color(0xFF4F6470),
+    surfaceTint = Color(0xFF09665B),
+    surfaceDim = Color(0xFFD7E2E7),
+    surfaceBright = Color(0xFFF4F8FA),
+    surfaceContainerLowest = Color(0xFFF3F7F9),
+    surfaceContainerLow = Color(0xFFECF2F5),
+    surfaceContainer = Color(0xFFE8EFF2),
+    surfaceContainerHigh = Color(0xFFEEF4F6),
+    surfaceContainerHighest = Color(0xFFF4F8FA),
+    outline = Color(0xFF6E818C),
+    outlineVariant = Color(0xFFC2D0D7),
     error = Color(0xFFBC2C3C),
     onError = Color.White,
     errorContainer = Color(0xFFF8D9DD),
@@ -95,17 +95,17 @@ data class GlassTokens(
 )
 
 internal val DarkGlass = GlassTokens(
-    border = Color(0x12FFFFFF),
-    borderAccent = Color(0x596C81FF),
-    accentSoft = Color(0x246C81FF),
-    surfaceGlass = Color(0x08FFFFFF),
+    border = Color(0x14FFFFFF),
+    borderAccent = Color(0x593DD6C0),
+    accentSoft = Color(0x243DD6C0),
+    surfaceGlass = Color(0x0DFFFFFF),
 )
 
 internal val LightGlass = GlassTokens(
-    border = Color(0x171E2030),
-    borderAccent = Color(0x474A63E0),
-    accentSoft = Color(0x1A4A63E0),
-    surfaceGlass = Color(0x0A1E2030),
+    border = Color(0x171E3040),
+    borderAccent = Color(0x4709665B),
+    accentSoft = Color(0x1A09665B),
+    surfaceGlass = Color(0x0A1E3040),
 )
 
 val LocalGlass = staticCompositionLocalOf { DarkGlass }
@@ -119,7 +119,7 @@ data class ChangeColors(val up: Color, val down: Color, val neutral: Color) {
 }
 
 val LocalChangeColors = staticCompositionLocalOf {
-    ChangeColors(Color(0xFFF2555F), Color(0xFF34D399), Color(0xFF86869C))
+    ChangeColors(Color(0xFFF2555F), Color(0xFF34D399), Color(0xFF8FA0B3))
 }
 
 /**
@@ -133,7 +133,7 @@ internal fun changeColorsFor(dark: Boolean, invert: Boolean): ChangeColors {
     return ChangeColors(
         up = if (invert) green else red,
         down = if (invert) red else green,
-        neutral = if (dark) Color(0xFF86869C) else Color(0xFF636376),
+        neutral = if (dark) Color(0xFF8FA0B3) else Color(0xFF566873),
     )
 }
 
@@ -161,7 +161,7 @@ fun isDarkTheme(mode: ThemeMode): Boolean = when (mode) {
 }
 
 /**
- * Fondo de la app: color base más un único halo índigo discreto arriba a la izquierda, como el
+ * Fondo de la app: color base más un único halo turquesa discreto arriba a la izquierda, como el
  * `body::before` de la extensión (radial-gradient ... var(--accent-soft)).
  */
 @Composable

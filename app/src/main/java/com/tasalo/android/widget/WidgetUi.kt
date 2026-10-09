@@ -76,28 +76,28 @@ data class WidgetPalette(
 
         // Fondo casi opaco: sobre fondos de pantalla claros/ruidosos el texto seguía ilegible con 90 %.
         val Auto = WidgetPalette(
-            bg = ColorProvider(day = Color(0xF5E8EAF0), night = Color(0xF50A0A10)),
-            text = ColorProvider(day = Color(0xFF2B2C3A), night = Color(0xFFF2F2F7)),
-            dim = ColorProvider(day = Color(0xFF5E5F72), night = Color(0xFF8D8DA3)),
-            accent = ColorProvider(day = Color(0xFF3B56DD), night = Color(0xFF6C81FF)),
+            bg = ColorProvider(day = Color(0xF5E6EEF1), night = Color(0xF50E1621)),
+            text = ColorProvider(day = Color(0xFF1B2A33), night = Color(0xFFE8EEF5)),
+            dim = ColorProvider(day = Color(0xFF4F6470), night = Color(0xFF9FB0C3)),
+            accent = ColorProvider(day = Color(0xFF09665B), night = Color(0xFF3DD6C0)),
             track = ColorProvider(day = Color(0x33000000), night = Color(0x33FFFFFF)),
             up = ColorProvider(day = Color(0xFFBC2C3C), night = Color(0xFFF2555F)),
             down = ColorProvider(day = Color(0xFF13724F), night = Color(0xFF34D399)),
         )
         val Light = WidgetPalette(
-            bg = fixed(0xF5E8EAF0),
-            text = fixed(0xFF2B2C3A),
-            dim = fixed(0xFF5E5F72),
-            accent = fixed(0xFF3B56DD),
+            bg = fixed(0xF5E6EEF1),
+            text = fixed(0xFF1B2A33),
+            dim = fixed(0xFF4F6470),
+            accent = fixed(0xFF09665B),
             track = fixed(0x33000000),
             up = fixed(0xFFBC2C3C),
             down = fixed(0xFF13724F),
         )
         val Dark = WidgetPalette(
-            bg = fixed(0xF50A0A10),
-            text = fixed(0xFFF2F2F7),
-            dim = fixed(0xFF8D8DA3),
-            accent = fixed(0xFF6C81FF),
+            bg = fixed(0xF50E1621),
+            text = fixed(0xFFE8EEF5),
+            dim = fixed(0xFF9FB0C3),
+            accent = fixed(0xFF3DD6C0),
             track = fixed(0x33FFFFFF),
             up = fixed(0xFFF2555F),
             down = fixed(0xFF34D399),

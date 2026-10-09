@@ -32,6 +32,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.tasalo.android.ui.history.HistoryDetailScreen
+import com.tasalo.android.ui.history.HistoryViewModel
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -128,6 +136,9 @@ private const val BLOG_TAB = 3
 private fun TasaloRoot(vm: MainViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val blog by vm.blog.collectAsStateWithLifecycle()
+    val historyVm: HistoryViewModel = viewModel()
+    val summary by historyVm.summary.collectAsStateWithLifecycle()
+    val detail by historyVm.detail.collectAsStateWithLifecycle()
     val settings = state.settings
     val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
     val dark = isDarkTheme(settings.theme)
@@ -153,7 +164,18 @@ private fun TasaloRoot(vm: MainViewModel) {
         val pagerState = rememberPagerState(pageCount = { TABS.size })
         val scope = rememberCoroutineScope()
         var showNotifications by rememberSaveable { mutableStateOf(false) }
+        // Detalle histórico abierto ("FUENTE:MONEDA") o null. Va encima de las secciones, como Notificaciones.
+        var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
+        val detailSource = detailKey?.substringBefore(':')?.let { Source.fromId(it) }
+        val detailCurrency = detailKey?.substringAfter(':').orEmpty()
         BackHandler(enabled = showNotifications) { showNotifications = false }
+        BackHandler(enabled = detailKey != null && !showNotifications) { detailKey = null }
+        // Resumen de 30 días para el fondo de las tarjetas: una sola llamada liviana (el caché evita repetirla).
+        LaunchedEffect(state.rates?.fetchedAt) { historyVm.loadSummary() }
+        LaunchedEffect(detailKey) {
+            val s = detailSource
+            if (s != null && detailCurrency.isNotEmpty()) historyVm.openDetail(s, detailCurrency) else historyVm.closeDetail()
+        }
         // Dentro de un post del blog, "atrás" vuelve a la lista (no cierra la app).
         BackHandler(enabled = !showNotifications && pagerState.currentPage == BLOG_TAB && blog.selected != null) {
             vm.closePost()
@@ -233,7 +255,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                             state = pagerState,
                             modifier = Modifier.fillMaxSize(),
                             beyondViewportPageCount = 1,
-                            userScrollEnabled = !showNotifications,
+                            userScrollEnabled = !showNotifications && detailKey == null,
                             // Al soltar, la sección se asienta con un resorte en vez del frenado lineal por defecto.
                             flingBehavior = PagerDefaults.flingBehavior(
                                 state = pagerState,
@@ -259,7 +281,14 @@ private fun TasaloRoot(vm: MainViewModel) {
                                     },
                             ) {
                                 when (page) {
-                                    0 -> HomeScreen(state, vm::refresh, vm::selectSource, onOpenNotifications = { showNotifications = true })
+                                    0 -> HomeScreen(
+                                        state,
+                                        vm::refresh,
+                                        vm::selectSource,
+                                        onOpenNotifications = { showNotifications = true },
+                                        summary = summary,
+                                        onOpenDetail = { source, currency -> detailKey = "${source.name}:$currency" },
+                                    )
                                     1 -> FuelScreen(state, vm::refresh)
                                     CALC_TAB -> CalculatorScreen(state, vm::refresh)
                                     BLOG_TAB -> BlogScreen(
@@ -272,6 +301,31 @@ private fun TasaloRoot(vm: MainViewModel) {
                                         onClose = vm::closePost,
                                     )
                                     else -> SettingsScreen(state, vm)
+                                }
+                            }
+                        }
+                        if (detailKey != null && detailSource != null && detailCurrency.isNotEmpty()) {
+                            // Entra con un fundido y un leve deslizamiento con resorte; cubre las secciones y sus toques.
+                            val enter = remember(detailKey) { MutableTransitionState(false).apply { targetState = true } }
+                            AnimatedVisibility(
+                                visibleState = enter,
+                                enter = fadeIn(tween(200)) + slideInVertically(spring(dampingRatio = 0.85f, stiffness = 380f)) { it / 14 },
+                            ) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .quietGlassBackground()
+                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+                                ) {
+                                    HistoryDetailScreen(
+                                        source = detailSource,
+                                        currency = detailCurrency,
+                                        rate = state.rates?.bySource?.get(detailSource)?.firstOrNull { it.currency == detailCurrency },
+                                        state = detail,
+                                        now = state.now,
+                                        onRetry = { historyVm.openDetail(detailSource, detailCurrency, force = true) },
+                                        onBack = { detailKey = null },
+                                    )
                                 }
                             }
                         }
@@ -299,6 +353,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                     position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                     onSelect = { index ->
                         showNotifications = false
+                        detailKey = null
                         scope.launch {
                             val from = pagerState.currentPage
                             // Un salto largo no recorre las secciones del medio: se salta junto al destino

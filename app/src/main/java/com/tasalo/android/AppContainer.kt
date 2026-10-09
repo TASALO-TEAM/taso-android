@@ -3,6 +3,7 @@ package com.tasalo.android
 import android.app.Application
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
+import com.tasalo.android.data.HistoryRepository
 import com.tasalo.android.data.TasaloRepository
 import com.tasalo.android.data.local.BlogStore
 import com.tasalo.android.data.local.CacheStore
@@ -56,6 +57,12 @@ class AppContainer(context: Context) {
         cache = cacheStore,
         apiFor = ::api,
         baseUrl = { settingsStore.current().baseUrl },
+    )
+
+    val historyRepository = HistoryRepository(
+        apiFor = ::api,
+        baseUrl = { settingsStore.current().baseUrl },
+        dir = File(context.filesDir, "history"),
     )
 }
 

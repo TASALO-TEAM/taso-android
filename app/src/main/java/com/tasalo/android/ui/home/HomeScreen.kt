@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
+import com.tasalo.android.domain.PricePoint
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.RefreshError
 import com.tasalo.android.ui.UiState
@@ -58,6 +59,9 @@ fun HomeScreen(
     onSelectSource: (Source) -> Unit,
     onOpenNotifications: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Últimos 30 días por tarjeta (clave `FUENTE:MONEDA`); vacío = tarjetas sin fondo. */
+    summary: Map<String, List<PricePoint>> = emptyMap(),
+    onOpenDetail: (Source, String) -> Unit = { _, _ -> },
 ) {
     val source = state.settings.source
     val snapshot = state.rates
@@ -124,7 +128,14 @@ fun HomeScreen(
                         item(span = { GridItemSpan(maxLineSpan) }) { EmptyMessage("Sin datos para esta fuente") }
                     }
                     else -> {
-                        items(rates, key = { "${source.name}:${it.currency}" }) { RateCard(it, source) }
+                        items(rates, key = { "${source.name}:${it.currency}" }) { rate ->
+                            RateCard(
+                                rate,
+                                source,
+                                history = summary["${source.name}:${rate.currency}"].orEmpty(),
+                                onClick = { onOpenDetail(source, rate.currency) },
+                            )
+                        }
                     }
                 }
 

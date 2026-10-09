@@ -3,6 +3,18 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.10.0
+
+### Historial de precios
+- Toca cualquier tarjeta de **Tasas** para abrir su **detalle**: precio actual, gráfico de evolución (6 meses por defecto) y lista de precios por día (hoy y 6 días hacia atrás).
+- Rangos **7D / 30D / 90D / 6M** o **fechas a elección** (solo dentro de los datos que existen); la lista se amplía a 14 o 30 días. Toca o desliza el dedo sobre el gráfico para ver la fecha y el valor; arriba se ven la variación del periodo, el valor inicial y final, el máximo y el mínimo.
+- El precio de cada día es el de las **7:00 a. m. de Cuba** (o la lectura más cercana) y los días se agrupan por fecha de Cuba. Si un día no tiene dato se muestra «sin dato»: no se interpola ni se inventa. En el gráfico, el hueco se une con trazo discontinuo.
+- Fuentes con poco historial (QvaPay): aviso de «historial corto» y el gráfico y la lista siguen funcionando con 1 o 2 días.
+- Las tarjetas muestran de fondo, muy tenue y difuminada, la tendencia de los **últimos 30 días**. Esto necesita un endpoint nuevo en la API (`/tasas/history/summary`, ver `docs/HISTORIAL_DE_PRECIOS.md`); con la API actual las tarjetas se ven como siempre, sin fondo.
+
+### Nuevo aspecto
+- Paleta **turquesa sobre azul noche** en toda la app y en los widgets (reemplaza al índigo). La convención de sube/baja sigue siendo la de Ajustes (por defecto, sube rojo y baja verde).
+
 ## 0.9.1
 
 ### Letra grande del sistema
