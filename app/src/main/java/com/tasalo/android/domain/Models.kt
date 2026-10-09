@@ -86,6 +86,8 @@ data class AppSettings(
     val lastSeenMessageId: Long = 0L,
     /** Usuario de Hive elegido por la persona para la tercera pestaña del Blog (null = ninguno). */
     val blogCustomAccount: String? = null,
+    /** true = Tasas en lista (una tarjeta por fila); false = cuadricula de tarjetas. */
+    val ratesListView: Boolean = false,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

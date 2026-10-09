@@ -60,8 +60,9 @@ Estilo: fondo `#0E1621`, tarjetas `#16212F`, acento `#3DD6C0`, coral `#FF8F7E`, 
 - [x] v0.10.0 historial + paleta turquesa publicada (CI verde, run 37874660220).
 - [x] Endpoints `daily`/`summary` en taso-api: commit 6ede75b (v0.8.0.0) subido a `main`. Falta que el usuario los despliegue en el VPS (git pull + restart) y corra pytest allí. `uv.lock` quedó modificado en su disco por `uv` y NO se commiteó (no es parte de esto).
 - [x] Blog en la maqueta (2026-10-08). La URL anterior no era accesible, se creó una nueva desde el tipo Design: https://claude.ai/artifact/3HRLajTbpMkCpjuEYRCiV9 (tableros `Main`=Blog lista, `BlogPost`, `Widgets`; este último ya define los 2 widgets mejorados y los 2 nuevos: «Tendencia» 30D y «Mini tasas» con sparklines).
-- [ ] Widgets con fondo de gráfico + widgets nuevos.
-- [ ] Versión siguiente (0.11.0) compilada en GitHub.
+- [x] Widgets con fondo de gráfico + widgets nuevos (Tendencia, Mini tasas) + iconos nuevos de la barra (`ui/components/NavIcons.kt`, los de la maqueta). Código en `widget/WidgetChart.kt`; los widgets leen `HistoryRepository.cachedSummary()`.
+- [x] Tasas: selector tarjetas/lista (v0.12.0): ajuste `ratesListView` en SettingsStore, `RateCard(listMode)`, `ViewToggle` en la cabecera de HomeScreen, iconos `NavIcons.CardsView/ListView`. Maqueta: tableros TasasGrid y TasasLista del mismo artefacto Design. Pendiente: comprobar en un móvil.
+- [x] v0.11.0 compilada en GitHub (commit ce84ac3): lint, tests y APK verdes, Release v0.11.0 publicada. Pendiente del usuario: desplegar taso-api (daily/summary) para que se vean las curvas; hasta entonces los widgets salen sin curva. Pendiente de comprobar en un móvil real: aspecto de los widgets.
 
 ## Cosas que NO se hicieron y se dijeron al usuario
 - La skill `.claude/skills/ui-ux-pro-max` existe pero no se leyó.

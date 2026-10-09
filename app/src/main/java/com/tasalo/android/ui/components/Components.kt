@@ -93,6 +93,8 @@ fun RateCard(
     modifier: Modifier = Modifier,
     history: List<PricePoint> = emptyList(),
     onClick: (() -> Unit)? = null,
+    /** true = fila a todo el ancho (vista en lista); false = tarjeta compacta de la cuadricula. */
+    listMode: Boolean = false,
 ) {
     val meta = metaFor(source, rate.currency)
     val trend = PriceHistory.trend(history)
@@ -107,7 +109,50 @@ fun RateCard(
     GlassCard(cardModifier) {
       Box(Modifier.fillMaxWidth()) {
         SparklineBackground(history, sparkColor, Modifier.matchParentSize())
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (listMode) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(meta?.flag.orEmpty(), fontSize = 20.sp)
+                        if (meta != null) Spacer(Modifier.width(6.dp))
+                        Text(rate.currency, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    if (meta != null) {
+                        Text(
+                            meta.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    ChangeText(rate.change, Format.change(rate))
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        Format.rate(rate.rate),
+                        fontFamily = TasaloMono,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (source == Source.QVAPAY) {
+                        Text("por 1 USD", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (source.hasBuySell && (rate.buy != null || rate.sell != null)) {
+                        val buy = rate.buy?.let(Format::rate) ?: "-"
+                        val sell = rate.sell?.let(Format::rate) ?: "-"
+                        Text(
+                            "Compra $buy \u00B7 Venta $sell",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = TasaloMono,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        } else Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(meta?.flag.orEmpty(), fontSize = 20.sp)
                 if (meta != null) Spacer(Modifier.width(6.dp))

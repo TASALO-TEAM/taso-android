@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.12.0
+
+### Tasas: tarjetas o lista
+- Nuevo selector en la cabecera de **Tasas** para ver las monedas como **tarjetas** (cuadrícula, como hasta ahora) o como **lista** (la misma tarjeta a todo el ancho, una por fila, como Combustible).
+- La vista elegida se recuerda. En la lista cada fila conserva la curva de fondo, la variación y, si la fuente lo tiene, compra y venta.
+
 ## 0.11.0
 
 ### Barra inferior

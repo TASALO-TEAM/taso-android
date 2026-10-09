@@ -496,6 +496,10 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { settingsStore.setInvertColors(value); WidgetUpdater.updateAll(app) }
     }
 
+    fun setRatesListView(value: Boolean) {
+        viewModelScope.launch { settingsStore.setRatesListView(value) }
+    }
+
     fun setCurrencyVisible(source: Source, currency: String, visible: Boolean) {
         viewModelScope.launch {
             settingsStore.setCurrencyVisible(source, currency, visible)

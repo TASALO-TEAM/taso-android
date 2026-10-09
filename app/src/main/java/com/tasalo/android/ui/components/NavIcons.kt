@@ -43,6 +43,28 @@ object NavIcons {
         )
     }
 
+    val CardsView: ImageVector by lazy {
+        build(
+            "Tarjetas",
+            roundRect(4.0, 4.0, 6.0, 6.0, 1.5),
+            roundRect(14.0, 4.0, 6.0, 6.0, 1.5),
+            roundRect(4.0, 14.0, 6.0, 6.0, 1.5),
+            roundRect(14.0, 14.0, 6.0, 6.0, 1.5),
+        )
+    }
+
+    val ListView: ImageVector by lazy {
+        build("Lista", roundRect(4.0, 4.0, 16.0, 6.0, 2.0), roundRect(4.0, 14.0, 16.0, 6.0, 2.0))
+    }
+
+    /** Rectangulo redondeado como trazo SVG (x, y, ancho, alto, radio). */
+    private fun roundRect(x: Double, y: Double, w: Double, h: Double, r: Double): String =
+        "M${x + r} ${y}h${w - 2 * r}a$r $r 0 0 1 $r $r" +
+            "v${h - 2 * r}a$r $r 0 0 1 -$r $r" +
+            "h-${w - 2 * r}a$r $r 0 0 1 -$r -$r" +
+            "v-${h - 2 * r}a$r $r 0 0 1 $r -$r" +
+            "z"
+
     private fun build(name: String, vararg paths: String): ImageVector =
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
             paths.forEach { d ->

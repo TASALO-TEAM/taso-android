@@ -41,6 +41,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val LAST_BG_REFRESH = longPreferencesKey("last_bg_refresh")
         val LAST_SEEN_MESSAGE = longPreferencesKey("last_seen_message")
         val BLOG_CUSTOM = stringPreferencesKey("blog_custom_account")
+        val RATES_LIST = booleanPreferencesKey("rates_list_view")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -60,6 +61,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 lastBackgroundRefresh = p[Keys.LAST_BG_REFRESH] ?: 0L,
                 lastSeenMessageId = p[Keys.LAST_SEEN_MESSAGE] ?: 0L,
                 blogCustomAccount = p[Keys.BLOG_CUSTOM]?.let(HiveUser::normalize),
+                ratesListView = p[Keys.RATES_LIST] ?: false,
             )
         }
 
@@ -83,6 +85,10 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun setInvertColors(value: Boolean) {
         store.edit { it[Keys.INVERT] = value }
+    }
+
+    suspend fun setRatesListView(value: Boolean) {
+        store.edit { it[Keys.RATES_LIST] = value }
     }
 
     /** Devuelve false (sin guardar) si la URL no es https válida. */
