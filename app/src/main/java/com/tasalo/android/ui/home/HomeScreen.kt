@@ -29,12 +29,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.tasalo.android.ui.components.NavIcons
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
@@ -68,9 +62,8 @@ fun HomeScreen(
     /** Últimos 30 días por tarjeta (clave `FUENTE:MONEDA`); vacío = tarjetas sin fondo. */
     summary: Map<String, List<PricePoint>> = emptyMap(),
     onOpenDetail: (Source, String) -> Unit = { _, _ -> },
-    /** true = Tasas en lista (una tarjeta por fila). */
+    /** true = Tasas en lista (una tarjeta por fila); se elige en Ajustes > Apariencia. */
     listView: Boolean = false,
-    onToggleListView: (Boolean) -> Unit = {},
 ) {
     val source = state.settings.source
     val snapshot = state.rates
@@ -168,8 +161,6 @@ fun HomeScreen(
                     onRefresh,
                     hasNotifications = state.update != null || state.unreadAlerts > 0,
                     onBell = onOpenNotifications,
-                    listView = listView,
-                    onToggleListView = onToggleListView,
                 )
             },
             pinned = {
@@ -199,8 +190,6 @@ private fun Header(
     onRefresh: () -> Unit,
     hasNotifications: Boolean,
     onBell: () -> Unit,
-    listView: Boolean,
-    onToggleListView: (Boolean) -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
@@ -216,7 +205,6 @@ private fun Header(
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ViewToggle(listView, onToggleListView)
             // Campana a la izquierda del botón de actualizar; el punto indica que hay algo nuevo.
             IconButton(onClick = onBell) {
                 BadgedBox(badge = { if (hasNotifications) Badge() }) {
@@ -245,36 +233,3 @@ private fun SourceSelector(selected: Source, onSelect: (Source) -> Unit) {
     )
 }
 
-/** Selector de vista de Tasas: tarjetas (cuadricula) o lista. La eleccion se guarda en Ajustes. */
-@Composable
-private fun ViewToggle(listView: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ViewToggleButton(NavIcons.CardsView, "Ver en tarjetas", selected = !listView) { onChange(false) }
-        ViewToggleButton(NavIcons.ListView, "Ver en lista", selected = listView) { onChange(true) }
-    }
-}
-
-@Composable
-private fun ViewToggleButton(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier
-            .size(48.dp, 40.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (selected) primary.copy(alpha = 0.18f) else Color.Transparent),
-    ) {
-        Icon(
-            icon,
-            contentDescription = label,
-            tint = if (selected) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(22.dp),
-        )
-    }
-}

@@ -23,6 +23,31 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import coil.compose.SubcomposeAsyncImage
+import com.tasalo.android.ui.components.GlassCard
+import com.tasalo.android.ui.components.NavIcons
+import com.tasalo.android.ui.components.SocialIcons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,8 +66,6 @@ import com.tasalo.android.diag.ReportSender
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.res.painterResource
-import com.tasalo.android.R
 import com.tasalo.android.ui.theme.TasaloMono
 import com.tasalo.android.update.CertInfo
 import com.tasalo.android.domain.Currencies
@@ -61,91 +84,207 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modifier) {
     val settings = state.settings
     val context = LocalContext.current
+    val version = remember { appVersion(context) }
+    val summaries = settingsSummaries(settings, version, state.update?.version)
+    // Una sola categoria abierta a la vez (como en Notificaciones); todas cerradas al entrar.
+    var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    fun toggle(key: String) { expanded = if (expanded == key) null else key }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = floatingContentPadding(),
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        item { Text("Ajustes", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary) }
-
         item {
-            Section("Tema") {
-                val options = listOf(ThemeMode.AUTO to "Auto", ThemeMode.DARK to "Oscuro", ThemeMode.LIGHT to "Claro")
-                AdaptiveSegmentedChoice(
-                    options = options,
-                    isSelected = { settings.theme == it.first },
-                    label = { it.second },
-                    onSelect = { vm.setTheme(it.first) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            Text(
+                "Ajustes",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
         }
 
-        item {
-            Section("Fuente por defecto") {
-                AdaptiveSegmentedChoice(
-                    options = Source.entries,
-                    isSelected = { settings.defaultSource == it },
-                    label = { it.title },
-                    onSelect = vm::setDefaultSource,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-
-        item {
-            Section("Colores de subida y bajada") {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Invertir colores")
-                        Text(
-                            if (settings.invertColors) "Sube en verde, baja en rojo" else "Sube en rojo, baja en verde (como la extensión)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+        item(key = SettingsCategories.APPEARANCE) {
+            SettingsCategory(
+                title = SettingsCategories.APPEARANCE,
+                summary = summaries.getValue(SettingsCategories.APPEARANCE),
+                icon = NavIcons.Appearance,
+                expanded = expanded == SettingsCategories.APPEARANCE,
+                onToggle = { toggle(SettingsCategories.APPEARANCE) },
+            ) {
+                Section("Tema") {
+                    val options = listOf(ThemeMode.AUTO to "Auto", ThemeMode.DARK to "Oscuro", ThemeMode.LIGHT to "Claro")
+                    AdaptiveSegmentedChoice(
+                        options = options,
+                        isSelected = { settings.theme == it.first },
+                        label = { it.second },
+                        onSelect = { vm.setTheme(it.first) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Section("Vista de Tasas") {
+                    AdaptiveSegmentedChoice(
+                        options = listOf(false to "Tarjetas", true to "Lista"),
+                        isSelected = { settings.ratesListView == it.first },
+                        label = { it.second },
+                        onSelect = { vm.setRatesListView(it.first) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        "C\u00F3mo se muestran las monedas en la pantalla Tasas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Section("Colores de subida y bajada") {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Invertir colores")
+                            Text(
+                                if (settings.invertColors) "Sube en verde, baja en rojo" else "Sube en rojo, baja en verde (como la extensi\u00F3n)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(checked = settings.invertColors, onCheckedChange = vm::setInvertColors)
                     }
-                    Switch(checked = settings.invertColors, onCheckedChange = vm::setInvertColors)
                 }
             }
         }
 
-        item {
-            Section("Monedas visibles") {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Source.entries.forEach { source ->
-                        val available = state.rates?.bySource?.get(source).orEmpty().map { it.currency }
-                            .ifEmpty { source.defaultCodes() }
-                        Text(source.title, style = MaterialTheme.typography.labelLarge)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            available.forEach { code ->
-                                val visible = !settings.isHidden(source, code)
-                                FilterChip(
-                                    selected = visible,
-                                    onClick = { vm.setCurrencyVisible(source, code, !visible) },
-                                    label = { Text(code) },
-                                )
+        item(key = SettingsCategories.RATES) {
+            SettingsCategory(
+                title = SettingsCategories.RATES,
+                summary = summaries.getValue(SettingsCategories.RATES),
+                icon = NavIcons.Rates,
+                expanded = expanded == SettingsCategories.RATES,
+                onToggle = { toggle(SettingsCategories.RATES) },
+            ) {
+                Section("Fuente por defecto") {
+                    AdaptiveSegmentedChoice(
+                        options = Source.entries,
+                        isSelected = { settings.defaultSource == it },
+                        label = { it.title },
+                        onSelect = vm::setDefaultSource,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Section("Monedas visibles") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Source.entries.forEach { source ->
+                            val available = state.rates?.bySource?.get(source).orEmpty().map { it.currency }
+                                .ifEmpty { source.defaultCodes() }
+                            Text(source.title, style = MaterialTheme.typography.labelLarge)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                available.forEach { code ->
+                                    val visible = !settings.isHidden(source, code)
+                                    FilterChip(
+                                        selected = visible,
+                                        onClick = { vm.setCurrencyVisible(source, code, !visible) },
+                                        label = { Text(code) },
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                RefreshSection(state, vm)
             }
         }
 
-        item { RefreshSection(state, vm) }
+        item(key = SettingsCategories.UPDATES) {
+            SettingsCategory(
+                title = SettingsCategories.UPDATES,
+                summary = summaries.getValue(SettingsCategories.UPDATES),
+                icon = NavIcons.Download,
+                expanded = expanded == SettingsCategories.UPDATES,
+                onToggle = { toggle(SettingsCategories.UPDATES) },
+            ) {
+                UpdateSection(state, vm)
+            }
+        }
 
-        item { UpdateSection(state, vm) }
+        item(key = SettingsCategories.ADVANCED) {
+            SettingsCategory(
+                title = SettingsCategories.ADVANCED,
+                summary = summaries.getValue(SettingsCategories.ADVANCED),
+                icon = NavIcons.Terminal,
+                expanded = expanded == SettingsCategories.ADVANCED,
+                onToggle = { toggle(SettingsCategories.ADVANCED) },
+            ) {
+                DiagnosticsSection(state, vm)
+                AdvancedSection(currentUrl = settings.baseUrl, vm = vm)
+            }
+        }
 
-        item { DiagnosticsSection(state, vm) }
-
-        item { AdvancedSection(currentUrl = settings.baseUrl, vm = vm) }
-
+        // Acerca de no es una categoria: seccion fija al final, centrada.
         item {
-            HorizontalDivider()
-            AboutSection(context)
+            Column(Modifier.padding(top = 10.dp)) {
+                HorizontalDivider()
+                Spacer(Modifier.height(20.dp))
+                AboutSection(context, version)
+            }
         }
     }
 }
+
+/** Categoria colapsable con el estilo de Notificaciones: tarjeta con titulo, resumen y chevron; se abre al tocar la cabecera. */
+@Composable
+private fun SettingsCategory(
+    title: String,
+    summary: String,
+    icon: ImageVector,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+    GlassCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)
+                    .clickable(
+                        onClickLabel = if (expanded) "Contraer $title" else "Expandir $title",
+                        role = Role.Button,
+                        onClick = onToggle,
+                    )
+                    .semantics { stateDescription = if (expanded) "Expandido" else "Contra\u00EDdo" }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    NavIcons.Chevron,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(rotation),
+                )
+            }
+            if (expanded) {
+                Column(
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    content()
+                }
+            }
+        }
+    }
+}
+
+private fun appVersion(context: Context): String =
+    runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
@@ -189,37 +328,117 @@ private fun AdvancedSection(currentUrl: String, vm: MainViewModel) {
     }
 }
 
+private const val DEVELOPER_GITHUB = "ersus93"
+private const val DEVELOPER_PROFILE_URL = "https://github.com/$DEVELOPER_GITHUB"
+
+/** GitHub redirige a la foto actual del perfil: si ersus93 la cambia, la app la sigue sin tocar nada. */
+private const val DEVELOPER_AVATAR_URL = "https://github.com/$DEVELOPER_GITHUB.png?size=160"
+
 @Composable
-private fun AboutSection(context: Context) {
+private fun AboutSection(context: Context, version: String) {
     val uriHandler = LocalUriHandler.current
-    val version = remember {
-        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
-    }
-    Section("Acerca de") {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
-            Text("TASALO Android · versión $version")
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                SOCIAL_LINKS.forEach { link ->
-                    IconButton(onClick = { runCatching { uriHandler.openUri(link.url) } }) {
-                        Icon(painterResource(link.icon), contentDescription = link.label, tint = MaterialTheme.colorScheme.primary)
-                    }
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("Acerca de", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        GlassCard(
+            Modifier
+                .padding(top = 8.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .clickable(onClickLabel = "Abrir el perfil de GitHub de $DEVELOPER_GITHUB") {
+                    runCatching { uriHandler.openUri(DEVELOPER_PROFILE_URL) }
+                },
+        ) {
+            Column(
+                Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                DeveloperAvatar()
+                Spacer(Modifier.height(6.dp))
+                Text(DEVELOPER_GITHUB, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Desarrollador de TASALO",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(SocialIcons.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Text(
+                        "github.com/$DEVELOPER_GITHUB",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
-            val fingerprint = remember { CertInfo.installedFingerprint(context) }
-            Text(
-                "Huella SHA-256 del certificado de firma (debe coincidir con la de la Release en GitHub):",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            SelectionContainer {
-                Text(fingerprint ?: "no disponible", fontFamily = TasaloMono, style = MaterialTheme.typography.labelSmall)
-            }
-            Text(
-                "Las tasas son referenciales. TASALO no es una aplicación oficial.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
+        Text("TASALO Android \u00B7 versi\u00F3n $version", modifier = Modifier.padding(top = 8.dp))
+        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            SOCIAL_LINKS.forEach { link ->
+                IconButton(onClick = { runCatching { uriHandler.openUri(link.url) } }) {
+                    Icon(link.icon, contentDescription = link.label, tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+        val fingerprint = remember { CertInfo.installedFingerprint(context) }
+        Text(
+            "Huella SHA-256 del certificado de firma (debe coincidir con la de la Release en GitHub):",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        SelectionContainer {
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+            ) {
+                Text(
+                    fingerprint ?: "no disponible",
+                    fontFamily = TasaloMono,
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+        Text(
+            "Las tasas son referenciales. TASALO no es una aplicaci\u00F3n oficial.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+/** Foto de perfil de GitHub en circulo; sin conexion o si falla, un circulo neutro con icono (sin errores visibles). */
+@Composable
+private fun DeveloperAvatar() {
+    val shape = CircleShape
+    SubcomposeAsyncImage(
+        model = DEVELOPER_AVATAR_URL,
+        contentDescription = "Foto de perfil de $DEVELOPER_GITHUB en GitHub",
+        modifier = Modifier
+            .size(64.dp)
+            .clip(shape)
+            .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), shape),
+        contentScale = ContentScale.Crop,
+        loading = { AvatarFallback() },
+        error = { AvatarFallback() },
+    )
+}
+
+@Composable
+private fun AvatarFallback() {
+    Box(
+        Modifier.size(64.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(SocialIcons.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -227,7 +446,7 @@ private fun AboutSection(context: Context) {
 @Composable
 private fun UpdateSection(state: UiState, vm: MainViewModel) {
     val context = LocalContext.current
-    Section("Actualizaciones") {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Versión instalada: ${state.currentVersion}")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -311,12 +530,12 @@ private fun RefreshSection(state: UiState, vm: MainViewModel) {
         }
     }
 }
-private data class SocialLink(val label: String, val url: String, val icon: Int)
+private data class SocialLink(val label: String, val url: String, val icon: ImageVector)
 
-/** Iconos genéricos (no logos de marca). Más canales de Telegram (grupo, canal) se añaden aquí con `R.drawable.ic_social_send`. */
+/** Iconos de trazo de la maqueta (`SocialIcons`). Más canales de Telegram (grupo, canal) se añaden aquí con `SocialIcons.Telegram`. */
 private val SOCIAL_LINKS = listOf(
-    SocialLink("Bot de Telegram (@tasalobot)", "https://t.me/tasalobot", R.drawable.ic_social_send),
-    SocialLink("GitHub", "https://github.com/TASALO-TEAM", R.drawable.ic_social_code),
-    SocialLink("Blog de TASALO en Ecency", "https://ecency.com/@tasalo", R.drawable.ic_social_article),
-    SocialLink("Correo del equipo", "mailto:tasaloteam@gmail.com", R.drawable.ic_social_mail),
+    SocialLink("Bot de Telegram (@tasalobot)", "https://t.me/tasalobot", SocialIcons.Telegram),
+    SocialLink("GitHub", "https://github.com/TASALO-TEAM", SocialIcons.Code),
+    SocialLink("Blog de TASALO en Ecency", "https://ecency.com/@tasalo", SocialIcons.Article),
+    SocialLink("Correo del equipo", "mailto:tasaloteam@gmail.com", SocialIcons.Mail),
 )

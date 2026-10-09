@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.13.0
+
+### Ajustes por categorías
+- Ajustes se organiza en 4 categorías colapsables, con el estilo de Notificaciones: **Apariencia**, **Tasas**, **Actualizaciones** y **Diagnóstico y avanzado**. Cada una muestra un resumen cuando está cerrada y se abre al tocarla (una a la vez).
+- El selector **tarjetas / lista** pasa de la cabecera de Tasas a **Ajustes → Apariencia → Vista de Tasas**.
+- **Acerca de** sale de las tarjetas y queda como sección centrada al final: perfil del desarrollador (ersus93, con su foto de GitHub y enlace a su perfil), redes, versión, huella de la firma y aviso.
+- Iconos de redes nuevos, de trazo fino, a juego con la barra inferior.
+
 ## 0.12.0
 
 ### Tasas: tarjetas o lista

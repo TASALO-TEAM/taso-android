@@ -290,7 +290,6 @@ private fun TasaloRoot(vm: MainViewModel) {
                                         summary = summary,
                                         onOpenDetail = { source, currency -> detailKey = "${source.name}:$currency" },
                                         listView = state.settings.ratesListView,
-                                        onToggleListView = vm::setRatesListView,
                                     )
                                     1 -> FuelScreen(state, vm::refresh)
                                     CALC_TAB -> CalculatorScreen(state, vm::refresh)
