@@ -20,11 +20,11 @@ Herramientas útiles: Desktop Commander (`start_process` con PowerShell, `edit_b
 
 ## App Android (taso-android)
 - Compose + Material 3 (BOM 2024.12.01), Kotlin 2.0.21, `minSdk` 26, DI manual (`AppContainer`), sin librería de navegación.
-- Navegación: `MainActivity` con un `HorizontalPager` de 5 secciones (Tasas · Combustible · Calculadora · Blog · Ajustes) + `GlassIslandBar`. Las pantallas
+- Navegación: `MainActivity` con un `HorizontalPager` de 5 secciones (Tasas · Efectivo · Calculadora · Blog · Ajustes) + `GlassIslandBar`. Las pantallas
   que van «encima» (Notificaciones y el **detalle histórico**) son overlays dentro de `TasaloRoot`, con `BackHandler`.
 - Tema: `ui/theme/Theme.kt` («Quiet Glass» v3: **turquesa `#3DD6C0` sobre azul noche `#0E1621`**). `ContrastTest` exige WCAG (4,5:1 texto, 3:1 UI): al tocar colores,
   recalcular. Sube/baja: `ChangeColors` + ajuste `invertColors` (por defecto **sube rojo, baja verde**). Widgets: `widget/WidgetUi.kt` (`WidgetPalette`).
-- Datos: `TasaloRepository` (tasas, combustible, año, mensajes; caché en DataStore) y **`HistoryRepository`** (historial, caché en `filesDir/history/*.csv`).
+- Datos: `TasaloRepository` (tasas, año, mensajes; caché en DataStore) y **`HistoryRepository`** (historial, caché en `filesDir/history/*.csv`).
 - Historial (v0.10.0, en `main`, CI verde):
   - `domain/PriceHistory.kt`: `PricePoint`, `RawPoint`, `PriceHistory.daily/rows/stats/between/lastDays/trend/encode/decode`. Día = fecha de **America/Havana**; precio = lectura más cercana a las **7:00** de Cuba.
   - `data/parse/HistoryParsers.kt` (`summary`, `daily`, `raw`), `TasaloApi` (`historySummary`, `historyDaily`, `historyRaw`).
@@ -52,11 +52,12 @@ Ver la sección «Estado» abajo para marcar lo hecho.
 5. Todo se compila en GitHub: subir a `main` con versión nueva y comprobar `gh run list`.
 
 ## Maqueta (artefacto Design)
-URL: https://claude.ai/artifact/Ba4ZDY9C3rqD9As8L7jWKx (tipo Design: **no cambiar a otro tipo**). Tableros: `Main` (detalle), `Tasas`, `Combustible`, `Calculadora`, `Ajustes`, `Corto` (historial corto QvaPay).
+URL: https://claude.ai/artifact/Ba4ZDY9C3rqD9As8L7jWKx (tipo Design: **no cambiar a otro tipo**). Tableros: `Main` (detalle), `Tasas`, `Combustible` (la sección ya no existe en la app: la sustituye Efectivo desde v0.14.0), `Calculadora`, `Ajustes`, `Corto` (historial corto QvaPay).
 Se genera con scripts Python (`/tmp/gen.py`, `/tmp/gen2.py` del sandbox, pueden no existir): HTML estático por tablero (`*.dc.html`) + `canvas.json`, publicado con la herramienta `Artifact` (action publish, `url` del artefacto, `file_path` + `files`).
 Estilo: fondo `#0E1621`, tarjetas `#16212F`, acento `#3DD6C0`, coral `#FF8F7E`, texto `#E8EEF5`/`#9FB0C3`, Manrope, esquinas 20 px, barra inferior tipo cápsula.
 
 ## Estado
+- [~] **v0.14.0 Efectivo (2026-10-13).** Se partió de v0.13.0 (HEAD `12e77a7`). Hecho: `domain/CashCalc.kt` (+ `CashReceipt`, recibo `.txt` de 50 columnas) con `CashCalcTest`, `ui/cash/CashScreen.kt` (selector CUP/USD/EUR, billetes, cápsula de total, **Limpiar** con confirmación y **Guardar** individual/total con vista previa y `CreateDocument`), icono `NavIcons.Cash`, barra Tasas · Efectivo · Calculadora · Blog · Ajustes, y **eliminada toda la cadena de combustible** (pantalla, tarjeta, repositorio, API, parser, caché, modelos, tests y `fuel.json`; los datos viejos de DataStore se ignoran). Sin cambios en `taso-api`. No se pudo compilar en local: **comprobar el CI** (`gh run list -L 3`). Probar en el móvil: Efectivo en la 2.ª posición; cantidades conservadas al cambiar de moneda y al rotar; máximo 6 dígitos; Limpiar; Guardar individual y total (abrir el `.txt`); fuente al 130/150/200 % (las filas deben apilarse sin recortar; es lo que más puede fallar: `FlowRow` con `weight`); claro y oscuro. Diseño aprobado: https://claude.ai/artifact/K1Ygwf9ZKG46sNzBhncvHj. Pendiente aparte: comparar los tokens de `taso-app/docs/DISENO.md` con `Theme.kt` (taso-app copia el diseño de esta app; no se cambió el tema).
 - [x] v0.10.0 historial + paleta turquesa publicada (CI verde, run 37874660220).
 - [x] Endpoints `daily`/`summary` en taso-api: commit 6ede75b (v0.8.0.0) subido a `main`. Falta que el usuario los despliegue en el VPS (git pull + restart) y corra pytest allí. `uv.lock` quedó modificado en su disco por `uv` y NO se commiteó (no es parte de esto).
 - [x] Blog en la maqueta (2026-10-08). La URL anterior no era accesible, se creó una nueva desde el tipo Design: https://claude.ai/artifact/3HRLajTbpMkCpjuEYRCiV9 (tableros `Main`=Blog lista, `BlogPost`, `Widgets`; este último ya define los 2 widgets mejorados y los 2 nuevos: «Tendencia» 30D y «Mini tasas» con sparklines).

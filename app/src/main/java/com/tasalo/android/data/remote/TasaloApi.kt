@@ -16,9 +16,6 @@ interface TasaloApi {
     @GET("api/v1/year/state")
     suspend fun yearState(): ResponseBody
 
-    @GET("api/v1/tasas/fuel")
-    suspend fun fuel(): ResponseBody
-
     /** Mensajes del equipo (Alertas). Endpoint nuevo: con una API antigua da 404 y se ignora. */
     @GET("api/v1/app/messages")
     suspend fun appMessages(@Query("limit") limit: Int): ResponseBody

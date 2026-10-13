@@ -1,6 +1,6 @@
 # TASO-ANDROID
 
-App Android nativa de **TASALO**: tasas de **El Toque**, **QvaPay**, **BCC** y **CADECA**, precios de combustible, frase del día y progreso del año, con **widgets** de pantalla de inicio.
+App Android nativa de **TASALO**: tasas de **El Toque**, **QvaPay**, **BCC** y **CADECA**, calculadora de efectivo, frase del día y progreso del año, con **widgets** de pantalla de inicio.
 
 Consume únicamente la [`taso-api`](https://github.com/TASALO-TEAM/taso-api) ya desplegada. **No hace scraping, no tiene analytics ni trackers, no usa API keys.**
 
@@ -9,7 +9,7 @@ Consume únicamente la [`taso-api`](https://github.com/TASALO-TEAM/taso-api) ya 
 ## Características
 
 - **Tasas**: selector El Toque | QvaPay | BCC | CADECA, tarjetas con cambio (▲ ▼ —) y %, CADECA y QvaPay con compra y venta.
-- **Combustible**: B-94, B-90, B-83, Petróleo y Gas licuado.
+- **Efectivo**: cuenta tus billetes de CUP, USD o EUR y ve el total al instante (sin conexión); limpia el conteo y guárdalo como `.txt` tipo recibo.
 - **Año y frase del día**: barra de progreso, días y semanas restantes.
 - **Widgets** (Jetpack Glance): Tasas (1–4 monedas), Bloque (fuente completa) y Año y frase.
 - Funciona sin red mostrando el último caché, con banner de estado.

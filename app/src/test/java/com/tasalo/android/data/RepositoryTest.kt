@@ -88,11 +88,10 @@ class RepositoryTest {
     }
 
     @Test
-    fun everything_ok_saves_rates_fuel_and_year() = runBlocking {
+    fun everything_ok_saves_rates_and_year() = runBlocking {
         route {
             when (it) {
                 "/api/v1/tasas/latest" -> ok(fixture("latest.json"))
-                "/api/v1/tasas/fuel" -> ok(fixture("fuel.json"))
                 "/api/v1/year/state" -> ok(fixture("year_state.json"))
                 else -> code(404)
             }
@@ -102,27 +101,7 @@ class RepositoryTest {
         val snap = repo().snapshot()
         assertNotNull(snap.rates)
         assertEquals(750.0, snap.rates!!.bySource.getValue(Source.ELTOQUE).first { it.currency == "USD" }.rate, 0.0)
-        assertEquals(4, snap.fuel!!.items.size)
         assertEquals(93, snap.year.daysLeft)
-    }
-
-    @Test
-    fun a_failing_fuel_endpoint_does_not_prevent_saving_rates_and_year() = runBlocking {
-        route {
-            when (it) {
-                "/api/v1/tasas/latest" -> ok(fixture("latest.json"))
-                "/api/v1/tasas/fuel" -> code(500)
-                "/api/v1/year/state" -> ok(fixture("year_state.json"))
-                else -> code(404)
-            }
-        }
-        val result = repo().refreshAll()
-        assertTrue(result.rates)
-        assertTrue(result.year)
-        assertFalse(result.fuel)
-        val snap = repo().snapshot()
-        assertNotNull(snap.rates)
-        assertNull(snap.fuel)
     }
 
     @Test
@@ -157,16 +136,14 @@ class RepositoryTest {
         route {
             when (it) {
                 "/api/v1/tasas/latest" -> ok(fixture("latest.json"))
-                "/api/v1/tasas/fuel" -> MockResponse().apply { socketPolicy = SocketPolicy.NO_RESPONSE }
-                "/api/v1/year/state" -> ok(fixture("year_state.json"))
+                "/api/v1/year/state" -> MockResponse().apply { socketPolicy = SocketPolicy.NO_RESPONSE }
                 else -> code(404)
             }
         }
         val client = OkHttpClient.Builder().readTimeout(300, TimeUnit.MILLISECONDS).build()
         val result = repo(client).refreshAll()
         assertTrue(result.rates)
-        assertTrue(result.year)
-        assertFalse(result.fuel)
+        assertFalse(result.year)
     }
 
     @Test
@@ -182,8 +159,8 @@ class RepositoryTest {
     fun client_errors_are_not_retried() = runBlocking {
         route { code(404) }
         repo().refreshAll()
-        // latest + 4 fallbacks (con QvaPay) + fuel + year + mensajes = 8 llamadas, una sola vez cada una.
-        assertEquals(8, server.requestCount)
+        // latest + 4 fallbacks (con QvaPay) + year + mensajes = 7 llamadas, una sola vez cada una.
+        assertEquals(7, server.requestCount)
     }
 
     @Test
@@ -206,7 +183,6 @@ class RepositoryTest {
         route {
             when (it) {
                 "/api/v1/tasas/latest" -> ok(fixture("latest.json"))
-                "/api/v1/tasas/fuel" -> ok(fixture("fuel.json"))
                 "/api/v1/year/state" -> ok(fixture("year_state.json"))
                 else -> code(404)
             }

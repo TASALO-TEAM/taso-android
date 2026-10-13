@@ -2,7 +2,6 @@ package com.tasalo.android.data
 
 import com.tasalo.android.data.local.CacheStore
 import com.tasalo.android.data.parse.Parsers
-import com.tasalo.android.domain.FuelSnapshot
 import com.tasalo.android.domain.RatesSnapshot
 import com.tasalo.android.domain.Snapshot
 import com.tasalo.android.domain.YearMath
@@ -22,13 +21,7 @@ object Snapshots {
             if (json == null || at == null) return@run null
             Parsers.latest(json)?.let { RatesSnapshot(it, at) }
         }
-        val fuel = run {
-            val json = raw.fuelJson
-            val at = raw.fuelAt
-            if (json == null || at == null) return@run null
-            Parsers.fuel(json)?.let { FuelSnapshot(it, at) }
-        }
-        return Snapshot(rates, fuel, year(raw, now, zone))
+        return Snapshot(rates, year(raw, now, zone))
     }
 
     fun year(raw: CacheStore.Raw, now: Instant, zone: ZoneId = ZoneId.systemDefault()): YearState {

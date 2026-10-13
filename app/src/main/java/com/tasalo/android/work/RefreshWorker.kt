@@ -28,7 +28,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             if (result.allOk) {
                 DiagnosticLog.i("Worker", "refresco en segundo plano correcto")
             } else {
-                DiagnosticLog.w("Worker", "refresco parcial: tasas=${result.rates} combustible=${result.fuel} año=${result.year}")
+                DiagnosticLog.w("Worker", "refresco parcial: tasas=${result.rates} año=${result.year}")
             }
             if (result.anyOk) container.settingsStore.setLastBackgroundRefresh(System.currentTimeMillis())
             // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.

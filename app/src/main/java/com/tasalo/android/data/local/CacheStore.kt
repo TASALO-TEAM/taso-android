@@ -23,8 +23,6 @@ class CacheStore(private val store: DataStore<Preferences>) {
     data class Raw(
         val latestJson: String? = null,
         val latestAt: Instant? = null,
-        val fuelJson: String? = null,
-        val fuelAt: Instant? = null,
         val yearJson: String? = null,
         val yearAt: Instant? = null,
         val quote: String? = null,
@@ -38,8 +36,6 @@ class CacheStore(private val store: DataStore<Preferences>) {
     private object Keys {
         val LATEST_JSON = stringPreferencesKey("latest_json")
         val LATEST_AT = longPreferencesKey("latest_at")
-        val FUEL_JSON = stringPreferencesKey("fuel_json")
-        val FUEL_AT = longPreferencesKey("fuel_at")
         val YEAR_JSON = stringPreferencesKey("year_json")
         val YEAR_AT = longPreferencesKey("year_at")
         val QUOTE = stringPreferencesKey("quote_text")
@@ -56,8 +52,6 @@ class CacheStore(private val store: DataStore<Preferences>) {
             Raw(
                 latestJson = p[Keys.LATEST_JSON],
                 latestAt = p[Keys.LATEST_AT]?.let(Instant::ofEpochMilli),
-                fuelJson = p[Keys.FUEL_JSON],
-                fuelAt = p[Keys.FUEL_AT]?.let(Instant::ofEpochMilli),
                 yearJson = p[Keys.YEAR_JSON],
                 yearAt = p[Keys.YEAR_AT]?.let(Instant::ofEpochMilli),
                 quote = p[Keys.QUOTE],
@@ -89,13 +83,6 @@ class CacheStore(private val store: DataStore<Preferences>) {
         store.edit {
             it[Keys.RELEASES_JSON] = json
             it[Keys.RELEASES_AT] = at.toEpochMilli()
-        }
-    }
-
-    suspend fun saveFuel(json: String, at: Instant) {
-        store.edit {
-            it[Keys.FUEL_JSON] = json
-            it[Keys.FUEL_AT] = at.toEpochMilli()
         }
     }
 

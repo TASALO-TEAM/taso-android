@@ -26,9 +26,9 @@ import retrofit2.HttpException
  * `messages` es opcional: con una API sin el endpoint (404) falla en silencio y no cuenta para `allOk`,
  * así no aparecen avisos de error por algo que la app puede no necesitar.
  */
-data class RefreshResult(val rates: Boolean, val fuel: Boolean, val year: Boolean, val messages: Boolean = true) {
-    val anyOk: Boolean get() = rates || fuel || year
-    val allOk: Boolean get() = rates && fuel && year
+data class RefreshResult(val rates: Boolean, val year: Boolean, val messages: Boolean = true) {
+    val anyOk: Boolean get() = rates || year
+    val allOk: Boolean get() = rates && year
 }
 
 private const val MESSAGES_LIMIT = 20
@@ -46,16 +46,15 @@ class TasaloRepository(
     suspend fun snapshot(at: Instant = now()): Snapshot = Snapshots.from(cache.current(), at, zone())
 
     /**
-     * Lanza /latest, /year/state y /fuel en paralelo con fallo independiente
+     * Lanza /latest, /year/state y los mensajes en paralelo con fallo independiente
      * (equivale al Promise.allSettled de la extensión): si uno falla, los otros se guardan igual.
      */
     suspend fun refreshAll(): RefreshResult = coroutineScope {
         val api = apiFor(baseUrl())
         val rates = async { safe { refreshRates(api) } }
         val year = async { safe { refreshYear(api) } }
-        val fuel = async { safe { refreshFuel(api) } }
         val messages = async { safe { refreshMessages(api) } }
-        RefreshResult(rates = rates.await(), fuel = fuel.await(), year = year.await(), messages = messages.await())
+        RefreshResult(rates = rates.await(), year = year.await(), messages = messages.await())
     }
 
     private suspend fun refreshRates(api: TasaloApi): Boolean {
@@ -89,13 +88,6 @@ class TasaloRepository(
             }
         }.toString()
         json.takeIf { Parsers.latest(it) != null }
-    }
-
-    private suspend fun refreshFuel(api: TasaloApi): Boolean {
-        val text = fetch { api.fuel().string() } ?: return false
-        if (Parsers.fuel(text) == null) return false
-        cache.saveFuel(text, now())
-        return true
     }
 
     private suspend fun refreshMessages(api: TasaloApi): Boolean {

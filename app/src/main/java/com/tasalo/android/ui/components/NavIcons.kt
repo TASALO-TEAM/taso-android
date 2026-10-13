@@ -15,12 +15,13 @@ import androidx.compose.ui.unit.dp
 object NavIcons {
     val Rates: ImageVector by lazy { build("Tasas", "M3 17l6-6 4 4 8-8", "M15 7h6v6") }
 
-    val Fuel: ImageVector by lazy {
+    /** Billete: rectangulo redondeado, circulo central y dos puntos laterales. */
+    val Cash: ImageVector by lazy {
         build(
-            "Combustible",
-            "M5 21V4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v17",
-            "M3 21h13M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3",
-            "M8 8h3",
+            "Efectivo",
+            roundRect(2.0, 6.0, 20.0, 12.0, 2.0),
+            "M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0",
+            "M6 12h.01M18 12h.01",
         )
     }
 

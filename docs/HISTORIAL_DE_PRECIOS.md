@@ -56,4 +56,3 @@ Cuando `daily` exista, el cliente lo usa solo, sin cambios de la app (cae al end
 
 - Implementar los dos endpoints en `taso-api` (esperando visto bueno).
 - Recordar el último rango y los días de la lista en `SettingsStore`.
-- Historial y fondo también en Combustible (la API guarda esos precios en `rate_snapshots` con `source='fuel'`, pero la app aún no los usa).

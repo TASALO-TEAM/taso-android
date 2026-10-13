@@ -3,6 +3,16 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.14.0
+
+### Efectivo
+- Nueva pestaña **Efectivo**, en el lugar de Combustible: cuenta tus billetes de CUP, USD o EUR y mira el total al instante. Funciona sin conexión.
+- Las cantidades de cada moneda se conservan al cambiar de moneda y al girar el teléfono.
+- **Limpiar** pone todo en 0 (te pide confirmar) y **Guardar** crea un archivo de texto tipo recibo con el conteo: solo de la moneda que estás contando o de las tres, con un resumen final.
+
+### Cambios
+- Se quita la sección **Combustible**.
+
 ## 0.13.0
 
 ### Ajustes por categorías

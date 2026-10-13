@@ -2,7 +2,6 @@ package com.tasalo.android.data
 
 import com.tasalo.android.data.parse.Parsers
 import com.tasalo.android.domain.Change
-import com.tasalo.android.domain.Fuel
 import java.time.Instant
 import com.tasalo.android.domain.Source
 import org.junit.Assert.assertEquals
@@ -112,26 +111,6 @@ class ParsersTest {
         assertNull(Parsers.latest("""{"ok":true,"data":null}"""))
         assertNull(Parsers.latest("{esto no es json"))
         assertNull(Parsers.latest(""))
-    }
-
-    // ---------- /tasas/fuel ----------
-
-    @Test
-    fun fuel_fixture_is_ordered_and_uses_buy_as_min_and_sell_as_max() {
-        val fuel = Parsers.fuel(fixture("fuel.json"))!!
-        assertEquals(listOf("B-94", "B-90", "B-83", "Petroleo"), fuel.map { it.key })
-        val b94 = fuel.first { it.key == "B-94" }
-        assertEquals(2500.0, b94.min!!, 0.0)
-        assertEquals(5100.0, b94.max!!, 0.0)
-    }
-
-    @Test
-    fun fuel_requires_rates_and_ignores_unknown_keys() {
-        assertNull(Parsers.fuel("""{"source":"fuel"}"""))
-        val fuel = Parsers.fuel("""{"rates":{"Gas_LP":{"rate":2000},"Otro":{"rate":1}}}""")!!
-        assertEquals(listOf("Gas_LP"), fuel.map { it.key })
-        assertEquals("CUP/balón", Fuel.META.getValue("Gas_LP").unit)
-        assertEquals("CUP/L", Fuel.META.getValue("B-90").unit)
     }
 
     // ---------- /year/state ----------

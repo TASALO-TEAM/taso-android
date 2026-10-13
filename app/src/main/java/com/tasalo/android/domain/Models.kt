@@ -37,10 +37,6 @@ data class Rate(
 
 data class RatesSnapshot(val bySource: Map<Source, List<Rate>>, val fetchedAt: Instant)
 
-data class FuelPrice(val key: String, val min: Double?, val max: Double?, val change: Change)
-
-data class FuelSnapshot(val items: List<FuelPrice>, val fetchedAt: Instant)
-
 data class YearState(
     val year: Int,
     val percent: Double,
@@ -52,7 +48,7 @@ data class YearState(
     val fetchedAt: Instant?,
 )
 
-data class Snapshot(val rates: RatesSnapshot?, val fuel: FuelSnapshot?, val year: YearState)
+data class Snapshot(val rates: RatesSnapshot?, val year: YearState)
 
 /** Mensaje del equipo para la sección Alertas (se publica desde el bot con /msapp). */
 data class AppMessage(
@@ -126,21 +122,6 @@ object Currencies {
 
     fun orderIndex(code: String): Int =
         PREFERRED_ORDER.indexOf(code).let { if (it < 0) Int.MAX_VALUE else it }
-}
-
-data class FuelMeta(val name: String, val subtype: String, val unit: String)
-
-/** El router de la API descarta unidad/subtipo/nombre, por eso se fijan aquí (ver plan §2.4). */
-object Fuel {
-    val ORDER = listOf("B-94", "B-90", "B-83", "Petroleo", "Gas_LP")
-
-    val META: Map<String, FuelMeta> = mapOf(
-        "B-94" to FuelMeta("Gasolina B-94", "Especial", "CUP/L"),
-        "B-90" to FuelMeta("Gasolina B-90", "Regular", "CUP/L"),
-        "B-83" to FuelMeta("Gasolina B-83", "Motor", "CUP/L"),
-        "Petroleo" to FuelMeta("Petróleo / Diésel", "Diésel", "CUP/L"),
-        "Gas_LP" to FuelMeta("Gas licuado", "Balón", "CUP/balón"),
-    )
 }
 
 /**

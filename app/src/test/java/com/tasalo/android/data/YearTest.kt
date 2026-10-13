@@ -97,9 +97,8 @@ class YearTest {
 
     @Test
     fun corrupt_cache_means_no_data() {
-        val raw = CacheStore.Raw(latestJson = "{roto", latestAt = Instant.now(), fuelJson = "[]", fuelAt = Instant.now())
+        val raw = CacheStore.Raw(latestJson = "{roto", latestAt = Instant.now())
         val snap = Snapshots.from(raw, Instant.now())
         assertNull(snap.rates)
-        assertNull(snap.fuel)
     }
 }

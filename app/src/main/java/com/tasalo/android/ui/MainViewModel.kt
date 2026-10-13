@@ -12,7 +12,6 @@ import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.BLOG_ACCOUNTS
 import com.tasalo.android.domain.BlogPost
-import com.tasalo.android.domain.FuelSnapshot
 import com.tasalo.android.domain.RatesSnapshot
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
@@ -51,13 +50,11 @@ enum class RefreshError { NONE, OFFLINE, API }
 data class UiState(
     val loaded: Boolean = false,
     val rates: RatesSnapshot? = null,
-    val fuel: FuelSnapshot? = null,
     val year: YearState? = null,
     val settings: AppSettings = AppSettings(),
     val now: Instant = Instant.now(),
     val refreshing: Boolean = false,
     val ratesError: RefreshError = RefreshError.NONE,
-    val fuelError: RefreshError = RefreshError.NONE,
     val currentVersion: String = "",
     val update: UpdateInfo? = null,
     val showUpdate: Boolean = false,
@@ -120,7 +117,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
     private val currentVersion: String = ReportBuilder.versionName(app).substringBefore('-')
 
     private val refreshing = MutableStateFlow(false)
-    private val errors = MutableStateFlow(RefreshError.NONE to RefreshError.NONE)
+    private val errors = MutableStateFlow(RefreshError.NONE)
     private val extras = MutableStateFlow(Extras())
 
     /** Reloj para que "hace X min" y los avisos de datos viejos se actualicen solos. */
@@ -143,13 +140,11 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         UiState(
             loaded = true,
             rates = snap.rates,
-            fuel = snap.fuel,
             year = snap.year,
             settings = settings,
             now = now,
             refreshing = isRefreshing,
-            ratesError = err.first,
-            fuelError = err.second,
+            ratesError = err,
             currentVersion = currentVersion,
             releases = releasesFrom(raw.releasesJson),
             messages = messages,
@@ -181,8 +176,7 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
             try {
                 val result = repository.refreshAll()
                 val failure = if (NetworkMonitor.isOnline(app)) RefreshError.API else RefreshError.OFFLINE
-                errors.value = (if (result.rates && result.year) RefreshError.NONE else failure) to
-                    (if (result.fuel) RefreshError.NONE else failure)
+                errors.value = if (result.rates && result.year) RefreshError.NONE else failure
                 WidgetUpdater.updateAll(app)
             } finally {
                 refreshing.value = false

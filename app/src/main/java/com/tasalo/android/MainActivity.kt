@@ -78,7 +78,7 @@ import com.tasalo.android.ui.theme.quietGlassBackground
 import com.tasalo.android.update.UpdatePhase
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.blog.BlogScreen
-import com.tasalo.android.ui.fuel.FuelScreen
+import com.tasalo.android.ui.cash.CashScreen
 import com.tasalo.android.ui.home.HomeScreen
 import com.tasalo.android.ui.settings.SettingsScreen
 import com.tasalo.android.ui.theme.TasaloTheme
@@ -121,10 +121,10 @@ fun openUrl(context: android.content.Context, url: String) {
     }
 }
 
-/** Orden de la barra: Tasas · Combustible · Calculadora (centro) · Blog · Ajustes. */
+/** Orden de la barra: Tasas · Efectivo · Calculadora (centro) · Blog · Ajustes. */
 private val TABS = listOf(
     IslandItem("Tasas", NavIcons.Rates),
-    IslandItem("Combustible", NavIcons.Fuel),
+    IslandItem("Efectivo", NavIcons.Cash),
     IslandItem("Calculadora", NavIcons.Calculator),
     IslandItem("Blog", NavIcons.Blog),
     IslandItem("Ajustes", NavIcons.Settings),
@@ -291,7 +291,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                                         onOpenDetail = { source, currency -> detailKey = "${source.name}:$currency" },
                                         listView = state.settings.ratesListView,
                                     )
-                                    1 -> FuelScreen(state, vm::refresh)
+                                    1 -> CashScreen()
                                     CALC_TAB -> CalculatorScreen(state, vm::refresh)
                                     BLOG_TAB -> BlogScreen(
                                         state = blog,

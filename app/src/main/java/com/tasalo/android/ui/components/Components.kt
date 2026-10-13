@@ -36,8 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Currencies
-import com.tasalo.android.domain.FuelPrice
-import com.tasalo.android.domain.Fuel
 import com.tasalo.android.domain.PriceHistory
 import com.tasalo.android.domain.PricePoint
 import com.tasalo.android.domain.Rate
@@ -187,43 +185,6 @@ fun RateCard(
             ChangeText(rate.change, Format.change(rate))
         }
       }
-    }
-}
-
-@Composable
-fun FuelCard(price: FuelPrice, modifier: Modifier = Modifier) {
-    val meta = Fuel.META[price.key]
-    GlassCard(modifier.fillMaxWidth()) {
-        Row(
-            Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(meta?.name ?: price.key, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if (meta != null) {
-                    Text(
-                        meta.subtype,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    Format.fuelRange(price),
-                    fontFamily = TasaloMono,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    meta?.unit ?: "CUP",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                ChangeText(price.change, Format.arrow(price.change))
-            }
-        }
     }
 }
 

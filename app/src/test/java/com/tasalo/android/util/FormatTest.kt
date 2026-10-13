@@ -1,7 +1,6 @@
 package com.tasalo.android.util
 
 import com.tasalo.android.domain.Change
-import com.tasalo.android.domain.FuelPrice
 import com.tasalo.android.domain.Rate
 import java.time.Instant
 import java.time.ZoneOffset
@@ -46,12 +45,6 @@ class FormatTest {
         assertEquals("sube", Format.changeDescription(Change.UP))
         assertEquals("baja", Format.changeDescription(Change.DOWN))
         assertEquals("sin cambios", Format.changeDescription(Change.NEUTRAL))
-    }
-
-    @Test
-    fun fuel_range_shows_min_max_only_when_different() {
-        assertEquals("2500–5100", Format.fuelRange(FuelPrice("B-94", 2500.0, 5100.0, Change.NEUTRAL)))
-        assertEquals("3000", Format.fuelRange(FuelPrice("B-90", 3000.0, 3000.0, Change.NEUTRAL)))
     }
 
     @Test

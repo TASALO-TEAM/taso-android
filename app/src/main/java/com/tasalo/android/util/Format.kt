@@ -1,7 +1,6 @@
 package com.tasalo.android.util
 
 import com.tasalo.android.domain.Change
-import com.tasalo.android.domain.FuelPrice
 import com.tasalo.android.domain.Rate
 import java.math.RoundingMode
 import java.text.DecimalFormat
@@ -89,18 +88,6 @@ object Format {
         Change.UP -> "sube"
         Change.DOWN -> "baja"
         Change.NEUTRAL -> "sin cambios"
-    }
-
-    /** Combustible: `min–max` si son distintos; si no, un solo valor. */
-    fun fuelRange(price: FuelPrice): String {
-        val min = price.min
-        val max = price.max
-        return when {
-            min != null && max != null && min != max -> "${rate(min)}–${rate(max)}"
-            max != null -> rate(max)
-            min != null -> rate(min)
-            else -> "—"
-        }
     }
 
     /** ahora / hace 3 min / hace 2 h / dd/MM/yyyy (>24 h). */

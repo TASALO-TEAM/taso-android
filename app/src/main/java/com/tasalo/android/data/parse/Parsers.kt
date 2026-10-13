@@ -3,8 +3,6 @@ package com.tasalo.android.data.parse
 import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Currencies
-import com.tasalo.android.domain.Fuel
-import com.tasalo.android.domain.FuelPrice
 import com.tasalo.android.domain.QvaPay
 import com.tasalo.android.domain.Rate
 import com.tasalo.android.domain.Source
@@ -95,24 +93,6 @@ object Parsers {
 
     /** Endpoints por fuente (`{source, rates, updated_at}` sin `ok`): devuelve el objeto `rates`. */
     fun ratesObject(text: String): JsonObject? = root(text)?.get("rates") as? JsonObject
-
-    /** `/tasas/fuel` -> exige `rates`; devuelve solo claves conocidas, en el orden fijo de la UI. */
-    fun fuel(text: String): List<FuelPrice>? {
-        val rates = ratesObject(text) ?: return null
-        return Fuel.ORDER.mapNotNull { key ->
-            val o = rates[key] as? JsonObject ?: return@mapNotNull null
-            val buy = number(o["buy"])
-            val sell = number(o["sell"])
-            val rate = number(o["rate"])
-            var min = buy ?: rate ?: sell
-            var max = sell ?: rate ?: buy
-            if (min == null && max == null) return@mapNotNull null
-            if (min != null && max != null && min > max) {
-                val t = min; min = max; max = t
-            }
-            FuelPrice(key, min, max, change(o["change"]))
-        }
-    }
 
     /** `/year/state` -> exige ok == true. Solo se usan progress.* y quote.quote. */
     fun year(text: String): YearApi? {
