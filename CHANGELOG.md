@@ -3,6 +3,11 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.14.1
+
+### Correcciones
+- **Efectivo**: ya no te tapa el teclado la parte de abajo de la lista. Al escribir las cantidades, la lista queda justo encima del teclado y puedes desplazarte hasta el último billete; al bajar el teclado, todo vuelve a su lugar solo.
+
 ## 0.14.0
 
 ### Efectivo

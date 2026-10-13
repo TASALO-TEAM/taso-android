@@ -13,12 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -91,6 +95,13 @@ fun CashScreen(modifier: Modifier = Modifier) {
     val counts = remember(saved) { CashCalc.decode(saved) }
     val context = LocalContext.current
 
+    // Con la app a pantalla completa (edge-to-edge) el teclado no redimensiona la ventana: se superpone. Por eso la lista
+    // se encoge con imePadding hasta quedar justo encima del teclado (y recupera su alto sola al bajarlo), y mientras
+    // el teclado está abierto se quita el hueco de la cápsula flotante, que queda tapada detrás de él.
+    val imeVisible = WindowInsets.isImeVisible
+    val basePadding = floatingContentPadding()
+    val listPadding = if (imeVisible) PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 16.dp) else basePadding
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri != null) {
             val ok = runCatching {
@@ -102,8 +113,8 @@ fun CashScreen(modifier: Modifier = Modifier) {
     }
 
     LazyColumn(
-        modifier.fillMaxSize(),
-        contentPadding = floatingContentPadding(),
+        modifier.fillMaxSize().imePadding(),
+        contentPadding = listPadding,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
