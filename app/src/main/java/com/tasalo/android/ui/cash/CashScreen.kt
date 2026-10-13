@@ -249,15 +249,15 @@ private fun CashRow(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            denominationText,
-            Modifier.widthIn(min = 72.dp),
-            fontFamily = TasaloMono,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-        )
+        Box(Modifier.widthIn(min = 72.dp).heightIn(min = 48.dp), contentAlignment = Alignment.CenterStart) {
+            Text(
+                denominationText,
+                fontFamily = TasaloMono,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
         BasicTextField(
             value = text,
             onValueChange = { onChange(CashCalc.sanitize(it)) },
@@ -285,15 +285,16 @@ private fun CashRow(
                 }
             },
         )
-        Text(
-            Format.amount(value.toDouble()),
-            Modifier.weight(1f).widthIn(min = 96.dp),
-            fontFamily = TasaloMono,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (value > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-        )
+        Box(Modifier.weight(1f).widthIn(min = 96.dp).heightIn(min = 48.dp), contentAlignment = Alignment.CenterEnd) {
+            Text(
+                Format.amount(value.toDouble()),
+                fontFamily = TasaloMono,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (value > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
+            )
+        }
     }
 }
 
@@ -316,16 +317,19 @@ private fun TotalCapsule(code: String, total: Long) {
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(2.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Total · $code", style = MaterialTheme.typography.titleMedium)
-            Text(
-                Format.amount(total.toDouble()),
-                fontFamily = TasaloMono,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Box(Modifier.heightIn(min = 32.dp), contentAlignment = Alignment.CenterStart) {
+                Text("Total · $code", style = MaterialTheme.typography.titleMedium)
+            }
+            Box(Modifier.heightIn(min = 32.dp), contentAlignment = Alignment.CenterEnd) {
+                Text(
+                    Format.amount(total.toDouble()),
+                    fontFamily = TasaloMono,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }
