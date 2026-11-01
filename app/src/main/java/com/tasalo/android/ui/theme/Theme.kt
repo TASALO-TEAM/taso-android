@@ -14,7 +14,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import com.tasalo.android.domain.Change
+import com.tasalo.android.domain.Palette
 import com.tasalo.android.domain.ThemeMode
 
 /*
@@ -138,16 +140,18 @@ internal fun changeColorsFor(dark: Boolean, invert: Boolean): ChangeColors {
 }
 
 @Composable
-fun TasaloTheme(mode: ThemeMode, invertColors: Boolean, content: @Composable () -> Unit) {
+fun TasaloTheme(mode: ThemeMode, invertColors: Boolean, palette: Palette = Palette.CLASICA, content: @Composable () -> Unit) {
     val dark = when (mode) {
         ThemeMode.AUTO -> isSystemInDarkTheme()
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
     }
-    val scheme = if (dark) DarkColors else LightColors
+    val scheme = colorSchemeFor(palette, dark)
+    val glass = glassFor(palette, dark)
+    val card = glass.surfaceGlass.compositeOver(scheme.background)
     CompositionLocalProvider(
-        LocalChangeColors provides changeColorsFor(dark, invertColors),
-        LocalGlass provides (if (dark) DarkGlass else LightGlass),
+        LocalChangeColors provides changeColorsFor(dark, invertColors).readableOn(dark, scheme.background, card),
+        LocalGlass provides glass,
     ) {
         MaterialTheme(colorScheme = scheme, typography = TasaloTypography, shapes = TasaloShapes, content = content)
     }

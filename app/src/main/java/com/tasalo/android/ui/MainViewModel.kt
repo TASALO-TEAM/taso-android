@@ -12,6 +12,7 @@ import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.BLOG_ACCOUNTS
 import com.tasalo.android.domain.BlogPost
+import com.tasalo.android.domain.Palette
 import com.tasalo.android.domain.RatesSnapshot
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
@@ -492,6 +493,10 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun setRatesListView(value: Boolean) {
         viewModelScope.launch { settingsStore.setRatesListView(value) }
+    }
+
+    fun setPalette(palette: Palette) {
+        viewModelScope.launch { settingsStore.setPalette(palette) }
     }
 
     fun setCurrencyVisible(source: Source, currency: String, visible: Boolean) {

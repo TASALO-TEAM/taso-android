@@ -15,9 +15,9 @@ class CashCalcTest {
 
     @Test
     fun denominations_match_the_notes_in_circulation() {
-        assertEquals(listOf(1L, 3L, 5L, 10L, 20L, 50L, 100L, 200L, 500L, 1000L, 2000L, 5000L, 10000L, 20000L), cup.denominations)
-        assertEquals(listOf(1L, 2L, 5L, 10L, 20L, 50L, 100L), usd.denominations)
-        assertEquals(listOf(5L, 10L, 20L, 50L, 100L, 200L, 500L), eur.denominations)
+        assertEquals(listOf(20000L, 10000L, 5000L, 2000L, 1000L, 500L, 200L, 100L, 50L, 20L, 10L, 5L, 3L, 1L), cup.denominations)
+        assertEquals(listOf(100L, 50L, 20L, 10L, 5L, 2L, 1L), usd.denominations)
+        assertEquals(listOf(500L, 200L, 100L, 50L, 20L, 10L, 5L), eur.denominations)
     }
 
     @Test

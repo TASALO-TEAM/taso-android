@@ -4,11 +4,11 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Monedas de la calculadora de efectivo, con los billetes que circulan de cada una (de menor a mayor). */
+/** Monedas de la calculadora de efectivo, con los billetes que circulan de cada una (de mayor a menor: asi se ven en pantalla y en el recibo). */
 enum class CashCurrency(val code: String, val denominations: List<Long>) {
-    CUP("CUP", listOf(1L, 3L, 5L, 10L, 20L, 50L, 100L, 200L, 500L, 1000L, 2000L, 5000L, 10000L, 20000L)),
-    USD("USD", listOf(1L, 2L, 5L, 10L, 20L, 50L, 100L)),
-    EUR("EUR", listOf(5L, 10L, 20L, 50L, 100L, 200L, 500L)),
+    CUP("CUP", listOf(20000L, 10000L, 5000L, 2000L, 1000L, 500L, 200L, 100L, 50L, 20L, 10L, 5L, 3L, 1L)),
+    USD("USD", listOf(100L, 50L, 20L, 10L, 5L, 2L, 1L)),
+    EUR("EUR", listOf(500L, 200L, 100L, 50L, 20L, 10L, 5L)),
 }
 
 /**

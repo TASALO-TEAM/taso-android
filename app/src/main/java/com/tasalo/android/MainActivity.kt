@@ -160,7 +160,7 @@ private fun TasaloRoot(vm: MainViewModel) {
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshIfStale() }
 
-    TasaloTheme(settings.theme, settings.invertColors) {
+    TasaloTheme(settings.theme, settings.invertColors, settings.palette) {
         // Las secciones viven en un paginador: se cambia tocando la isla o deslizando con el dedo.
         val pagerState = rememberPagerState(pageCount = { TABS.size })
         val scope = rememberCoroutineScope()

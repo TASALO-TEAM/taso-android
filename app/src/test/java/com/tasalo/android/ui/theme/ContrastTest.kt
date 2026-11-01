@@ -3,6 +3,7 @@ package com.tasalo.android.ui.theme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import com.tasalo.android.domain.Palette
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.max
@@ -59,7 +60,7 @@ class ContrastTest {
         t("texto secundario en diálogos", s.onSurfaceVariant, s.surfaceContainerHigh)
 
         // Subida/bajada/neutro: se pintan sobre la tarjeta y sobre el fondo; con colores invertidos son los mismos.
-        val c = changeColorsFor(dark, invert = false)
+        val c = changeColorsFor(dark, invert = false).readableOn(dark, s.background, card)
         listOf("sube" to c.up, "baja" to c.down, "sin cambio" to c.neutral).forEach { (n, col) ->
             t("«$n» sobre tarjeta", col, card)
             t("«$n» sobre fondo", col, s.background)
@@ -71,13 +72,13 @@ class ContrastTest {
 
     @Test
     fun modoOscuroSeLee() {
-        val fails = audit("oscuro", DarkColors, DarkGlass, dark = true)
+        val fails = Palette.entries.flatMap { audit("oscuro ${it.id}", colorSchemeFor(it, true), glassFor(it, true), dark = true) }
         assertTrue(fails.joinToString("\n"), fails.isEmpty())
     }
 
     @Test
     fun modoClaroSeLee() {
-        val fails = audit("claro", LightColors, LightGlass, dark = false)
+        val fails = Palette.entries.flatMap { audit("claro ${it.id}", colorSchemeFor(it, false), glassFor(it, false), dark = false) }
         assertTrue(fails.joinToString("\n"), fails.isEmpty())
     }
 

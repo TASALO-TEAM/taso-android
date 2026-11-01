@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.tasalo.android.domain.AppSettings
 import com.tasalo.android.domain.DEFAULT_BASE_URL
+import com.tasalo.android.domain.Palette
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.HiveUser
@@ -42,6 +43,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val LAST_SEEN_MESSAGE = longPreferencesKey("last_seen_message")
         val BLOG_CUSTOM = stringPreferencesKey("blog_custom_account")
         val RATES_LIST = booleanPreferencesKey("rates_list_view")
+        val PALETTE = stringPreferencesKey("palette")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -62,6 +64,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 lastSeenMessageId = p[Keys.LAST_SEEN_MESSAGE] ?: 0L,
                 blogCustomAccount = p[Keys.BLOG_CUSTOM]?.let(HiveUser::normalize),
                 ratesListView = p[Keys.RATES_LIST] ?: false,
+                palette = Palette.fromId(p[Keys.PALETTE]) ?: Palette.CLASICA,
             )
         }
 
@@ -89,6 +92,10 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun setRatesListView(value: Boolean) {
         store.edit { it[Keys.RATES_LIST] = value }
+    }
+
+    suspend fun setPalette(palette: Palette) {
+        store.edit { it[Keys.PALETTE] = palette.id }
     }
 
     /** Devuelve false (sin guardar) si la URL no es https válida. */

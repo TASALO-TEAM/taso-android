@@ -62,6 +62,23 @@ data class AppMessage(
 
 enum class ThemeMode { AUTO, DARK, LIGHT }
 
+/** Paletas de color elegibles en Ajustes (las mismas de taso-inv). `swatches` solo pinta la vista previa del selector. */
+enum class Palette(val id: String, val title: String, val description: String, val swatches: List<Long>) {
+    CLASICA("clasica", "Cl\u00E1sica", "Verde azulado sobre azul pizarra: la de siempre.", listOf(0xFF0E1621, 0xFF16212F, 0xFF3DD6C0, 0xFFE8EEF5)),
+    SOFT("soft", "Soft Glass", "Marfil y carb\u00F3n c\u00E1lido con el amarillo de marca.", listOf(0xFFEDEBE6, 0xFFFBF9F4, 0xFFF2C94C, 0xFF14130F)),
+    OCEANO("oceano", "\u00D3ceano", "Azules apagados, de la noche al humo.", listOf(0xFF06141B, 0xFF11212D, 0xFF253745, 0xFF9BA8AB, 0xFFCCD0CF)),
+    AMBER("amber", "Amber Walnut Morning", "Nogal y arcilla sobre un gris verdoso.", listOf(0xFFEBEFEE, 0xFFCCB499, 0xFFC8906D, 0xFFBB6C43, 0xFF4A413C)),
+    CALCITE("calcite", "Calcite", "Gris c\u00E1lido con naranja vivo y durazno.", listOf(0xFFDDDCDB, 0xFFFD7B41, 0xFFEDBF9B, 0xFF3C4044)),
+    SAPPHIRE("sapphire", "Sapphire Ash Morning", "Azul zafiro con rosa, lavanda y ceniza.", listOf(0xFF35627A, 0xFFE5AEA9, 0xFFB46258, 0xFFA6A9D0, 0xFFF5F5F5, 0xFF8E9A98)),
+    OPALINE("opaline", "Opaline", "Grises perlados con un toque de coral.", listOf(0xFFF4F4F6, 0xFFE7E7E7, 0xFFD2D2D4, 0xFFFF634A)),
+    LEMON("lemon", "Lemon Granite Morning", "Lim\u00F3n sobre granito y azul petr\u00F3leo.", listOf(0xFFF3E308, 0xFFB8BFC1, 0xFF6C8494, 0xFF2C4C5C)),
+    ARCTIC("arctic", "Arctic Reflection", "Azules de hielo con blanco polar.", listOf(0xFF5289AD, 0xFF243C4C, 0xFFACBCBF, 0xFFF4FCFB, 0xFF698696));
+
+    companion object {
+        fun fromId(value: String?): Palette? = entries.firstOrNull { it.id == value }
+    }
+}
+
 data class AppSettings(
     val theme: ThemeMode = ThemeMode.AUTO,
     val defaultSource: Source = Source.ELTOQUE,
@@ -84,6 +101,8 @@ data class AppSettings(
     val blogCustomAccount: String? = null,
     /** true = Tasas en lista (una tarjeta por fila); false = cuadricula de tarjetas. */
     val ratesListView: Boolean = false,
+    /** Paleta de color elegida en Ajustes; la Clásica es la de siempre. */
+    val palette: Palette = Palette.CLASICA,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

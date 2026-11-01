@@ -3,6 +3,15 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.15.0
+
+### Temas
+- Nueva opción **Paleta de color** en Ajustes → Apariencia: elige entre Clásica (la de siempre), Soft Glass, Océano, Amber Walnut Morning, Calcite, Sapphire Ash Morning, Opaline, Lemon Granite Morning y Arctic Reflection. Son las mismas de TASALO Inventario y se ven bien en modo claro y oscuro. Tu elección se guarda y también se aplica al configurar los widgets.
+- Los colores de sube y baja se ajustan solos para leerse bien sobre cada paleta.
+
+### Efectivo
+- Los billetes ahora van de mayor a menor (el de más valor arriba), en pantalla y en el recibo que guardas.
+
 ## 0.14.1
 
 ### Correcciones

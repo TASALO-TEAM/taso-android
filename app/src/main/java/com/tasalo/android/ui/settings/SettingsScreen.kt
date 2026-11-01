@@ -73,6 +73,10 @@ import com.tasalo.android.domain.REPO_URL
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.defaultCodes
 import com.tasalo.android.domain.ThemeMode
+import com.tasalo.android.domain.Palette
+import com.tasalo.android.ui.theme.LocalGlass
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.graphics.Color
 import com.tasalo.android.ui.MainViewModel
 import com.tasalo.android.ui.UiState
 import com.tasalo.android.util.Format
@@ -121,6 +125,11 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
                         onSelect = { vm.setTheme(it.first) },
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+                Section("Paleta de color") {
+                    Palette.entries.forEach { palette ->
+                        PaletteOption(palette, selected = settings.palette == palette, onClick = { vm.setPalette(palette) })
+                    }
                 }
                 Section("Vista de Tasas") {
                     AdaptiveSegmentedChoice(
@@ -285,6 +294,32 @@ private fun SettingsCategory(
 
 private fun appVersion(context: Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
+
+/** Una paleta elegible: muestras de color + nombre + descripcion; marcada con borde de acento. */
+@Composable
+private fun PaletteOption(palette: Palette, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    val line = LocalGlass.current.border
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clip(shape)
+            .border(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else line, shape)
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            palette.swatches.forEach { Box(Modifier.size(18.dp).clip(CircleShape).background(Color(it)).border(1.dp, line, CircleShape)) }
+        }
+        Column(Modifier.weight(1f)) {
+            Text(palette.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(palette.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {

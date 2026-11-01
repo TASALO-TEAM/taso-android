@@ -71,7 +71,7 @@ class WidgetConfigActivity : ComponentActivity() {
 
         setContent {
             val settings by container.settingsStore.settings.collectAsState(initial = AppSettings())
-            TasaloTheme(settings.theme, settings.invertColors) {
+            TasaloTheme(settings.theme, settings.invertColors, settings.palette) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     ConfigScreen(multi = multi, onSave = ::save)
                 }
