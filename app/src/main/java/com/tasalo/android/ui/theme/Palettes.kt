@@ -78,11 +78,11 @@ private fun contrast(a: Color, b: Color): Float {
 }
 
 /** Primer color de [options] que se lee (4,5:1 o mas) sobre [bg]; si ninguno llega, el de mas contraste. */
-private fun readableOn(bg: Color, vararg options: Color): Color =
+private fun readableOn(bg: Color, options: List<Color>): Color =
     options.firstOrNull { contrast(it, bg) >= 4.5f } ?: options.maxBy { contrast(it, bg) }
 
 /** Acerca [c] a blanco (oscuro) o negro (claro) solo lo justo para que se lea (4,6:1, con margen) sobre todos los [bgs]. */
-private fun readable(c: Color, dark: Boolean, vararg bgs: Color): Color {
+private fun readable(c: Color, dark: Boolean, bgs: List<Color>): Color {
     val target = if (dark) Color.White else Color.Black
     var out = c
     var i = 0
@@ -91,11 +91,13 @@ private fun readable(c: Color, dark: Boolean, vararg bgs: Color): Color {
 }
 
 /** Sube/baja/neutro son fijos por modo; con otros fondos algunos no llegaban a 4,5:1, asi que se ajustan al fondo y a la tarjeta de la paleta. */
-internal fun ChangeColors.readableOn(dark: Boolean, bg: Color, card: Color) =
-    ChangeColors(readable(up, dark, bg, card), readable(down, dark, bg, card), readable(neutral, dark, bg, card))
+internal fun ChangeColors.readableOn(dark: Boolean, bg: Color, card: Color): ChangeColors {
+    val bgs = listOf(bg, card)
+    return ChangeColors(readable(up, dark, bgs), readable(down, dark, bgs), readable(neutral, dark, bgs))
+}
 
 private fun schemeOf(t: PaletteTokens, dark: Boolean): ColorScheme {
-    val onAccent = readableOn(t.accent, t.onAccent, Color.White, Color.Black)
+    val onAccent = readableOn(t.accent, listOf(t.onAccent, Color.White, Color.Black))
     val accentContainer = lerp(t.bg, t.accent, if (dark) 0.18f else 0.14f)
     val errorContainer = lerp(t.bg, t.bad, 0.18f)
     return (if (dark) darkColorScheme() else lightColorScheme()).copy(
@@ -124,7 +126,7 @@ private fun schemeOf(t: PaletteTokens, dark: Boolean): ColorScheme {
         outline = t.outline,
         outlineVariant = lerp(t.bg, t.outline, 0.3f),
         error = t.bad,
-        onError = readableOn(t.bad, t.bg, Color.White, Color.Black),
+        onError = readableOn(t.bad, listOf(t.bg, Color.White, Color.Black)),
         errorContainer = errorContainer,
         onErrorContainer = t.text,
     )
