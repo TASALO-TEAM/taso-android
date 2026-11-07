@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.16.1
+
+### Tienda
+- Corregido: la **Tienda** ya no se queda en blanco al cambiar de pestaña, minimizar la app o volver después de un rato. Si el sistema le quita memoria a la tienda, la app la recupera sola y recarga donde estabas, sin que tengas que cerrarla.
+- Menos consumo en móviles con poca memoria: la tienda se libera cuando no la estás viendo y la app está en segundo plano, y tu sesión se mantiene.
+
 ## 0.16.0
 
 ### Tienda

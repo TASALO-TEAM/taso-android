@@ -3,8 +3,10 @@ package com.tasalo.android.ui.tienda
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.print.PrintAttributes
 import android.print.PrintManager
@@ -57,7 +59,26 @@ class TiendaController(
     private var pendingFile: ValueCallback<Array<Uri>>? = null
     private var backgroundArgb = 0
     private var started = false
+    private var loadedOnce = false
+    private var goneCount = 0
     private var lastUrl: String = initialUrl?.takeIf { TiendaNav.isInv(it) } ?: TiendaNav.INV_URL
+
+    // Con poca memoria y la pestaña fuera de pantalla se suelta el WebView (la siguiente vez recarga desde la caché HTTP):
+    // en equipos de gama baja el sistema, si no, mata el render o la app entera y la tienda vuelve en blanco.
+    private val trimCallbacks = object : ComponentCallbacks2 {
+        override fun onTrimMemory(level: Int) {
+            val view = webView ?: return
+            if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND && view.parent == null) drop()
+        }
+
+        override fun onConfigurationChanged(newConfig: Configuration) {}
+
+        override fun onLowMemory() {}
+    }
+
+    init {
+        activity.registerComponentCallbacks(trimCallbacks)
+    }
 
     /** El WebView, creado la primera vez que se pide. Se suelta de su padre anterior para poder montarlo en otro. */
     fun obtain(backgroundColor: Int): WebView {
@@ -82,6 +103,7 @@ class TiendaController(
 
     fun retry() {
         failed = false
+        goneCount = 0
         val view = webView
         if (view == null) {
             generation++
@@ -104,10 +126,41 @@ class TiendaController(
     }
 
     fun destroy() {
+        activity.unregisterComponentCallbacks(trimCallbacks)
         pendingFile?.onReceiveValue(null)
         pendingFile = null
         webView?.let { discard(it) }
         webView = null
+    }
+
+    /**
+     * Al volver a la pestaña: si el WebView ya cargó antes pero no responde o quedó sin contenido (el sistema le quitó
+     * el render y el WebView no avisó), se recrea y recarga la última pantalla en vez de dejar una pantalla en blanco.
+     */
+    fun checkAlive() {
+        val view = webView ?: return
+        if (!loadedOnce || failed || progress in 1..99) return
+        var answered = false
+        view.evaluateJavascript("document.body ? document.body.childElementCount : -1") { result ->
+            answered = true
+            if (webView === view && (result == "0" || result == "-1" || result == "null")) recover()
+        }
+        view.postDelayed({ if (!answered && webView === view && view.isAttachedToWindow) recover() }, 2500)
+    }
+
+    private fun recover() {
+        DiagnosticLog.w("Tienda", "el WebView no respondia o estaba en blanco al volver: se recrea")
+        drop()
+        generation++
+    }
+
+    /** Suelta el WebView actual; el siguiente se crea al pedirlo y recarga la última pantalla (la sesión es una cookie). */
+    private fun drop() {
+        webView?.let { discard(it) }
+        webView = null
+        loadedOnce = false
+        canGoBack = false
+        progress = 0
     }
 
     /** Respuesta del selector de archivos (null = cancelado). */
@@ -178,6 +231,8 @@ class TiendaController(
 
         override fun onPageFinished(view: WebView, url: String?) {
             canGoBack = view.canGoBack()
+            loadedOnce = true
+            goneCount = 0
             CookieManager.getInstance().flush()
         }
 
@@ -203,10 +258,10 @@ class TiendaController(
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
             DiagnosticLog.w("Tienda", "el proceso de render del WebView terminó (fallo=${detail.didCrash()})")
-            discard(view)
-            webView = null
-            failed = true
-            generation++
+            drop()
+            // El sistema mata el render con poca memoria: se recrea sin aviso de error. Si cae 3 veces seguidas sin
+            // llegar a cargar, se muestra el error con Reintentar en vez de entrar en bucle.
+            if (++goneCount > 3) failed = true else generation++
             return true
         }
     }

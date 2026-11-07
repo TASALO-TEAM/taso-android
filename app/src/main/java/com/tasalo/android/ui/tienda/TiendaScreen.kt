@@ -2,8 +2,8 @@
 
 package com.tasalo.android.ui.tienda
 
-import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,20 +60,28 @@ fun TiendaScreen(controller: TiendaController, active: Boolean, modifier: Modifi
         controller.chooseFile = { intent -> runCatching { chooser.launch(intent) }.isSuccess }
         onDispose { controller.chooseFile = null }
     }
-    LaunchedEffect(active) { if (active) controller.ensureLoaded() }
+    LaunchedEffect(active) {
+        if (active) {
+            controller.ensureLoaded()
+            controller.checkAlive()
+        }
+    }
     BackHandler(enabled = active && controller.canGoBack) { controller.goBack() }
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { controller.onPause() }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { controller.onResume() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        controller.onResume()
+        if (active) controller.checkAlive()
+    }
 
     Box(modifier.fillMaxSize().imePadding().padding(bottom = bottom)) {
         // key(generation): si el proceso de render del WebView muere se crea uno nuevo y se vuelve a montar.
         key(controller.generation) {
             AndroidView(
-                factory = { controller.obtain(backgroundArgb) },
+                // Un contenedor propio por montaje: así el onRelease de un montaje viejo nunca le quita el WebView al nuevo.
+                factory = { context -> FrameLayout(context).apply { addView(controller.obtain(backgroundArgb)) } },
                 modifier = Modifier.fillMaxSize(),
                 update = { controller.setBackground(backgroundArgb) },
-                // Se suelta de su contenedor para poder montarlo otra vez cuando la pestaña vuelva a componerse.
-                onRelease = { view -> (view.parent as? ViewGroup)?.removeView(view) },
+                onRelease = { frame -> frame.removeAllViews() },
             )
         }
         if (!controller.failed && controller.progress in 1..99) {
