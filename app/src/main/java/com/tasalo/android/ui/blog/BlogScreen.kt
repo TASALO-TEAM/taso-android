@@ -80,13 +80,15 @@ fun BlogScreen(
     onClearCustom: () -> Unit,
     onOpen: (String) -> Unit,
     onClose: () -> Unit,
+    /** Cierra el Blog (ahora es una pantalla superpuesta que se abre desde Tasas). */
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val post = state.selected?.let { permlink -> state.posts.firstOrNull { it.permlink == permlink } }
     if (post != null) {
         PostDetail(post, onClose, modifier)
     } else {
-        PostList(state, onRefresh, onSelectAccount, onSetCustom, onClearCustom, onOpen, modifier)
+        PostList(state, onRefresh, onSelectAccount, onSetCustom, onClearCustom, onOpen, onBack, modifier)
     }
 }
 
@@ -99,6 +101,7 @@ private fun PostList(
     onSetCustom: (String) -> Boolean,
     onClearCustom: () -> Unit,
     onOpen: (String) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier,
 ) {
     var showCustomDialog by rememberSaveable { mutableStateOf(false) }
@@ -164,7 +167,7 @@ private fun PostList(
         }
         CollapsingHeader(
             state = header,
-            title = { BlogHeader(state.loading, onRefresh) },
+            title = { BlogHeader(state.loading, onRefresh, onBack) },
             pinned = {
                 AccountTabs(
                     state = state,
@@ -178,13 +181,16 @@ private fun PostList(
 
 /** Fila del título del Blog: se esconde al bajar y reaparece al subir. */
 @Composable
-private fun BlogHeader(loading: Boolean, onRefresh: () -> Unit) {
+private fun BlogHeader(loading: Boolean, onRefresh: () -> Unit, onBack: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("Blog", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver a Tasas") }
+            Text("Blog", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+        }
         IconButton(onClick = onRefresh, enabled = !loading) {
             if (loading) {
                 CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)

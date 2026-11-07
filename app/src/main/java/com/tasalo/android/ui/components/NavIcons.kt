@@ -35,6 +35,17 @@ object NavIcons {
 
     val Blog: ImageVector by lazy { build("Blog", "M6 3h9l4 4v14H6z", "M9 12h7M9 16h7M9 8h3") }
 
+    /** Cupcake (pestaña Tienda): copete en cúpula con una cereza, y el molde acanalado debajo. */
+    val Cupcake: ImageVector by lazy {
+        build(
+            "Tienda",
+            "M5 14a7 7 0 0 1 14 0z",
+            "M6 14l1.5 7h9L18 14",
+            "M10 15l.5 6M14 15l-.5 6",
+            "M12 4v.01",
+        )
+    }
+
     val Settings: ImageVector by lazy {
         build(
             "Ajustes",

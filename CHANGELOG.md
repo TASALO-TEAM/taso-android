@@ -3,6 +3,17 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.16.0
+
+### Tienda
+- La pestaña **Blog** de la barra pasa a ser **Tienda** (el cupcake): abre TASALO Inventario dentro de la app, como el navegador pero con la piel de la app. Si entras como cliente ves la tienda y tus pedidos; si entras como personal de la tienda ves la herramienta completa.
+- Tu sesión se conserva al cambiar de pestaña y al cerrar la app. Puedes subir fotos e **imprimir** (hoja de impresión del sistema, con «Guardar como PDF»).
+- Sin conexión o con la tienda caída verás un aviso con **Reintentar** en vez de una página en blanco. Los enlaces a otros sitios se abren fuera de la app.
+- Dentro de la app el inicio de sesión es con usuario y clave o con Telegram (Google no deja iniciar sesión en este tipo de pantallas).
+
+### Blog
+- El **Blog** ahora se abre desde Tasas, con el botón junto a la campana. «Atrás» o la flecha te devuelven a Tasas.
+
 ## 0.15.1
 
 ### QvaPay

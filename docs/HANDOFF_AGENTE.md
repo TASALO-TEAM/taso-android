@@ -129,3 +129,23 @@ El usuario la sacó de las tarjetas (2026-10-09). Dibujada al final de los dos t
 - Comprobar en un móvil real: widgets nuevos, iconos de la barra, cabecera de Tasas y el selector.
 - Backlog: recordar rango del detalle (requiere `SettingsStore`), leer la skill `ui-ux-pro-max`.
 - Si este bloque se completa, marcar aquí `[x]` y subir la versión en «Estado».
+
+
+---
+
+# SESIÓN 2026-11-06 — Acceso a taso-inv desde la app (PLAN, sin código)
+Pedido de Ernesto: pestaña Blog → cupcake que abre camiersus.duckdns.org (tienda/herramienta de taso-inv); Blog pasa a Tasas junto a la campana. Quiere que la app cambie lo menos posible cuando crezca taso-inv.
+- [~] Plan completo y decisiones: `C:\Users\ernes\Documents\tasalo\docs\plans\2026-11-06-taso-android-acceso-taso-inv.md` (WebView en la pestaña 3, Blog como overlay, v0.16.0). **Falta el «continuar» de Ernesto**; no escribas código antes.
+- Hallazgos clave: sesión de taso-inv = cookie HttpOnly SameSite=Strict (sin tokens), así que un WebView sirve y una pantalla nativa exigiría API nueva; Google no deja iniciar sesión en WebViews (ocultar su botón con UA `TasaloAndroid`); `input type=file` (catalogo/marca) pide `onShowFileChooser`; `window.print()` no funciona en WebView.
+- Orden: primero taso-inv (ocultar Google por UA), luego esta app. No compilar en local: CI de GitHub.
+- Dominio comprobado: `https://camiersus.duckdns.org/health` → 200 (taso-inv 0.97.0.1), servido desde la laptop.
+
+- (2026-11-06, 2.º mensaje) Ernesto pidió que el WebView se sienta nativo y funcione como el navegador: el plan de taso-inv añade la sección §10 (puente `TasaloAndroid` con `print()` y Google nativo, tema sincronizado, v0.16.0 / v0.17.0). Google nativo exige que Ernesto cree un ID de cliente OAuth Android en Google Cloud (paquete + SHA-1 del keystore).
+- (2026-11-06) QvaPay: nueva moneda **CUPCASH** (Cash) sin mostrar porque taso-api pide solo 9 códigos fijos; Ernesto quiere reconocimiento automático sin actualizar APK. Plan: `tasalo\docs\plans\2026-11-06-qvapay-monedas-automaticas.md` (API descubre monedas vía `/coins/v2` con límite por 429; campos `name/kind/count`; la app los lee). Toca `taso-api`: antes de empezar, que Ernesto diga «continuar». Desplegar la API lo hace él.
+
+- (2026-11-06, noche) **CUPCASH hecho**: app v0.15.1 (commit 63227b7, solo Models.kt + CHANGELOG + gradle.properties) y taso-api v0.11.0.0 (8d61f72). Detalle en `docs\plans\2026-11-06-qvapay-monedas-automaticas.md` §5. Falta que Ernesto despliegue taso-api en el VPS.
+- **(Resuelto: lo revisé, lo adopté y lo terminé en v0.16.0, ver la nota siguiente.) Trabajo previo sin commitear:** `MainActivity.kt`, `ui/components/NavIcons.kt` y `ui/tienda/` (TiendaController/TiendaNav/TiendaScreen, escritos hacia las 16:25) son un inicio de la pestaña Tienda de v0.16.0 que NO hice yo en esta sesión; no los toqué ni los incluí en el commit. Revisarlos contra el plan antes de seguir (no los pises). La versión 0.16.0 sigue sin publicarse.
+
+- (2026-11-06, noche) **v0.16.0 terminada en código (sin probar en móvil):** pestaña Tienda (`ui/tienda/` TiendaController + TiendaScreen + TiendaNav, puente `TasaloAndroid.print()`), icono Cupcake, Blog como overlay abierto desde Tasas (botón junto a la campana + flecha «Volver a Tasas» en `BlogScreen`), `TiendaNavTest`, CHANGELOG y `VERSION_NAME=0.16.0`. El lado taso-inv (Imprimir por el puente y sin Google en el WebView) ya estaba en taso-inv `15bb150`. No se compiló en local: mirar el CI (`gh run list -L 3`) y corregir lo que falle.
+- **Para probar en el móvil (checklist del plan §7.3):** abrir la pestaña, entrar con clave, entrar con Telegram, subir foto como admin, imprimir una ficha, cerrar y reabrir (sesión), rotar, laptop/VPS caído (pantalla de error), «atrás», Blog desde Tasas y su flecha.
+- Pendiente v0.17.0: Google nativo (necesita el ID de cliente OAuth Android que debe crear Ernesto) y tema sincronizado app↔web (ver plan §10).

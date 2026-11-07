@@ -46,6 +46,7 @@ import com.tasalo.android.ui.components.StatusBanner
 import com.tasalo.android.ui.components.YearCard
 import com.tasalo.android.ui.components.collapsingHeaderInset
 import com.tasalo.android.ui.components.edgeAwareSwipe
+import com.tasalo.android.ui.components.NavIcons
 import com.tasalo.android.ui.components.floatingContentPadding
 import com.tasalo.android.ui.components.rememberCollapsingHeaderState
 import com.tasalo.android.util.Format
@@ -58,6 +59,7 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onSelectSource: (Source) -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenBlog: () -> Unit,
     modifier: Modifier = Modifier,
     /** Últimos 30 días por tarjeta (clave `FUENTE:MONEDA`); vacío = tarjetas sin fondo. */
     summary: Map<String, List<PricePoint>> = emptyMap(),
@@ -161,6 +163,7 @@ fun HomeScreen(
                     onRefresh,
                     hasNotifications = state.update != null || state.unreadAlerts > 0,
                     onBell = onOpenNotifications,
+                    onBlog = onOpenBlog,
                 )
             },
             pinned = {
@@ -190,6 +193,7 @@ private fun Header(
     onRefresh: () -> Unit,
     hasNotifications: Boolean,
     onBell: () -> Unit,
+    onBlog: () -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
@@ -205,6 +209,10 @@ private fun Header(
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // El Blog ya no es pestaña: se abre desde aquí, junto a la campana.
+            IconButton(onClick = onBlog) {
+                Icon(NavIcons.Blog, contentDescription = "Blog")
+            }
             // Campana a la izquierda del botón de actualizar; el punto indica que hay algo nuevo.
             IconButton(onClick = onBell) {
                 BadgedBox(badge = { if (hasNotifications) Badge() }) {

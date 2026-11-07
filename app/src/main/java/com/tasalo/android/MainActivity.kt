@@ -66,6 +66,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.diag.ReportSender
+import com.tasalo.android.diag.ReportBuilder
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.CrashReportDialog
 import com.tasalo.android.ui.UpdateDialog
@@ -81,6 +82,8 @@ import com.tasalo.android.ui.blog.BlogScreen
 import com.tasalo.android.ui.cash.CashScreen
 import com.tasalo.android.ui.home.HomeScreen
 import com.tasalo.android.ui.settings.SettingsScreen
+import com.tasalo.android.ui.tienda.TiendaController
+import com.tasalo.android.ui.tienda.TiendaScreen
 import com.tasalo.android.ui.theme.TasaloTheme
 import com.tasalo.android.ui.theme.isDarkTheme
 import kotlin.math.abs
@@ -121,17 +124,17 @@ fun openUrl(context: android.content.Context, url: String) {
     }
 }
 
-/** Orden de la barra: Tasas · Efectivo · Calculadora (centro) · Blog · Ajustes. */
+/** Orden de la barra: Tasas · Efectivo · Calculadora (centro) · Tienda · Ajustes. El Blog ya no es pestaña: se abre desde Tasas. */
 private val TABS = listOf(
     IslandItem("Tasas", NavIcons.Rates),
     IslandItem("Efectivo", NavIcons.Cash),
     IslandItem("Calculadora", NavIcons.Calculator),
-    IslandItem("Blog", NavIcons.Blog),
+    IslandItem("Tienda", NavIcons.Cupcake),
     IslandItem("Ajustes", NavIcons.Settings),
 )
 
 private const val CALC_TAB = 2
-private const val BLOG_TAB = 3
+private const val TIENDA_TAB = 3
 
 @Composable
 private fun TasaloRoot(vm: MainViewModel) {
@@ -143,6 +146,14 @@ private fun TasaloRoot(vm: MainViewModel) {
     val settings = state.settings
     val activity = androidx.compose.ui.platform.LocalContext.current as ComponentActivity
     val dark = isDarkTheme(settings.theme)
+
+    // El WebView de la pestaña Tienda vive aquí (no en la página del paginador) para conservar la sesión y el formulario
+    // a medias al cambiar de pestaña. La URL se guarda solo para volver a la misma pantalla si la actividad se recrea.
+    var tiendaUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    val tienda = remember(activity) {
+        TiendaController(activity, ReportBuilder.versionName(activity).substringBefore('-'), tiendaUrl) { tiendaUrl = it }
+    }
+    DisposableEffect(tienda) { onDispose { tienda.destroy() } }
 
     // Que los iconos de las barras del sistema respeten el tema elegido en Ajustes, no solo el del sistema.
     DisposableEffect(dark) {
@@ -165,6 +176,8 @@ private fun TasaloRoot(vm: MainViewModel) {
         val pagerState = rememberPagerState(pageCount = { TABS.size })
         val scope = rememberCoroutineScope()
         var showNotifications by rememberSaveable { mutableStateOf(false) }
+        // El Blog es una pantalla superpuesta que se abre desde el encabezado de Tasas (ya no es pestaña).
+        var showBlog by rememberSaveable { mutableStateOf(false) }
         // Detalle histórico abierto ("FUENTE:MONEDA") o null. Va encima de las secciones, como Notificaciones.
         var detailKey by rememberSaveable { mutableStateOf<String?>(null) }
         val detailSource = detailKey?.substringBefore(':')?.let { Source.fromId(it) }
@@ -178,12 +191,12 @@ private fun TasaloRoot(vm: MainViewModel) {
             if (s != null && detailCurrency.isNotEmpty()) historyVm.openDetail(s, detailCurrency) else historyVm.closeDetail()
         }
         // Dentro de un post del blog, "atrás" vuelve a la lista (no cierra la app).
-        BackHandler(enabled = !showNotifications && pagerState.currentPage == BLOG_TAB && blog.selected != null) {
-            vm.closePost()
+        BackHandler(enabled = showBlog && !showNotifications && detailKey == null) {
+            if (blog.selected != null) vm.closePost() else showBlog = false
         }
         // Al quedarse en la sección Blog: muestra lo guardado y descarga si hace falta (más de 15 min).
         val settledTab = pagerState.settledPage
-        LaunchedEffect(settledTab) { if (settledTab == BLOG_TAB) vm.loadBlog() }
+        LaunchedEffect(showBlog) { if (showBlog) vm.loadBlog() }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
         val update = state.update
@@ -256,7 +269,8 @@ private fun TasaloRoot(vm: MainViewModel) {
                             state = pagerState,
                             modifier = Modifier.fillMaxSize(),
                             beyondViewportPageCount = 1,
-                            userScrollEnabled = !showNotifications && detailKey == null,
+                            // En la Tienda el deslizamiento horizontal se apaga: pelearía con las tablas con scroll lateral de la web.
+                            userScrollEnabled = !showNotifications && detailKey == null && !showBlog && settledTab != TIENDA_TAB,
                             // Al soltar, la sección se asienta con un resorte en vez del frenado lineal por defecto.
                             flingBehavior = PagerDefaults.flingBehavior(
                                 state = pagerState,
@@ -287,21 +301,14 @@ private fun TasaloRoot(vm: MainViewModel) {
                                         vm::refresh,
                                         vm::selectSource,
                                         onOpenNotifications = { showNotifications = true },
+                                        onOpenBlog = { showBlog = true },
                                         summary = summary,
                                         onOpenDetail = { source, currency -> detailKey = "${source.name}:$currency" },
                                         listView = state.settings.ratesListView,
                                     )
                                     1 -> CashScreen()
                                     CALC_TAB -> CalculatorScreen(state, vm::refresh)
-                                    BLOG_TAB -> BlogScreen(
-                                        state = blog,
-                                        onRefresh = { vm.loadBlog(force = true) },
-                                        onSelectAccount = vm::selectBlogAccount,
-                                        onSetCustom = vm::setBlogCustom,
-                                        onClearCustom = vm::clearBlogCustom,
-                                        onOpen = vm::openPost,
-                                        onClose = vm::closePost,
-                                    )
+                                    TIENDA_TAB -> TiendaScreen(tienda, active = pagerState.currentPage == TIENDA_TAB)
                                     else -> SettingsScreen(state, vm)
                                 }
                             }
@@ -331,6 +338,26 @@ private fun TasaloRoot(vm: MainViewModel) {
                                 }
                             }
                         }
+                        if (showBlog) {
+                            // Igual que Notificaciones: encima del paginador y tapando los toques de lo que hay debajo.
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .quietGlassBackground()
+                                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+                            ) {
+                                BlogScreen(
+                                    state = blog,
+                                    onRefresh = { vm.loadBlog(force = true) },
+                                    onSelectAccount = vm::selectBlogAccount,
+                                    onSetCustom = vm::setBlogCustom,
+                                    onClearCustom = vm::clearBlogCustom,
+                                    onOpen = vm::openPost,
+                                    onClose = vm::closePost,
+                                    onBack = { showBlog = false },
+                                )
+                            }
+                        }
                         if (showNotifications) {
                             // Encima del paginador (que se queda como estaba) y tapando los toques de lo que hay debajo.
                             Box(
@@ -355,6 +382,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                     position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                     onSelect = { index ->
                         showNotifications = false
+                        showBlog = false
                         detailKey = null
                         scope.launch {
                             val from = pagerState.currentPage
