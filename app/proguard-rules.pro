@@ -8,3 +8,5 @@
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn javax.annotation.**
 -dontwarn kotlin.Unit
+# Puente window.TasaloAndroid de la pestana Tienda: R8 no debe renombrar ni quitar los metodos que llama la web.
+-keepclassmembers class com.tasalo.android.ui.tienda.TiendaBridge { @android.webkit.JavascriptInterface <methods>; }

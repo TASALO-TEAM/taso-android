@@ -55,13 +55,13 @@ class TiendaController(
 
     private var webView: WebView? = null
     private var pendingFile: ValueCallback<Array<Uri>>? = null
-    private var background = 0
+    private var backgroundArgb = 0
     private var started = false
     private var lastUrl: String = initialUrl?.takeIf { TiendaNav.isInv(it) } ?: TiendaNav.INV_URL
 
     /** El WebView, creado la primera vez que se pide. Se suelta de su padre anterior para poder montarlo en otro. */
     fun obtain(backgroundColor: Int): WebView {
-        background = backgroundColor
+        backgroundArgb = backgroundColor
         val view = webView ?: create().also { webView = it }
         (view.parent as? ViewGroup)?.removeView(view)
         view.setBackgroundColor(backgroundColor)
@@ -69,7 +69,7 @@ class TiendaController(
     }
 
     fun setBackground(color: Int) {
-        background = color
+        backgroundArgb = color
         webView?.setBackgroundColor(color)
     }
 
@@ -140,7 +140,7 @@ class TiendaController(
     @SuppressLint("SetJavaScriptEnabled")
     private fun create(): WebView = WebView(activity).apply {
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        setBackgroundColor(background)
+        setBackgroundColor(backgroundArgb)
         isVerticalScrollBarEnabled = false
         isHorizontalScrollBarEnabled = false
         overScrollMode = android.view.View.OVER_SCROLL_NEVER
