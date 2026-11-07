@@ -148,10 +148,11 @@ object Currencies {
  * (no todos son CUP por unidad: MLC ronda 1,4 y ZELLE 1,02).
  */
 object QvaPay {
-    val ORDER = listOf("CUP", "MLC", "TROPIPAY", "ETECSA", "ZELLE", "CLASICA", "BOLSATM", "BANDECPREPAGO", "SBERBANK")
+    val ORDER = listOf("CUP", "CUPCASH", "MLC", "TROPIPAY", "ETECSA", "ZELLE", "CLASICA", "BOLSATM", "BANDECPREPAGO", "SBERBANK")
 
     val META: Map<String, CurrencyMeta> = mapOf(
         "CUP" to CurrencyMeta("Banco CUP", "🏦"),
+        "CUPCASH" to CurrencyMeta("CUP Cash", "💵"),
         "MLC" to CurrencyMeta("Banco MLC", "💳"),
         "TROPIPAY" to CurrencyMeta("Tropipay", "💸"),
         "ETECSA" to CurrencyMeta("Saldo ETECSA", "📱"),

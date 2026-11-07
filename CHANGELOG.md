@@ -3,6 +3,11 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.15.1
+
+### QvaPay
+- Nueva moneda **CUP Cash** (CUP en efectivo) en la fuente QvaPay. Aparece junto a Banco CUP, y puedes ocultarla en Ajustes si no la quieres ver.
+
 ## 0.15.0
 
 ### Temas
