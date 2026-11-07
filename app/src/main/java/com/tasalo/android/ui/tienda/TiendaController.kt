@@ -61,6 +61,7 @@ class TiendaController(
     private var started = false
     private var loadedOnce = false
     private var goneCount = 0
+    private var pendingGoogleCode: String? = null
     private var lastUrl: String = initialUrl?.takeIf { TiendaNav.isInv(it) } ?: TiendaNav.INV_URL
 
     // Con poca memoria y la pestaña fuera de pantalla se suelta el WebView (la siguiente vez recarga desde la caché HTTP):
@@ -182,6 +183,43 @@ class TiendaController(
         }
     }
 
+    /**
+     * Abre en el navegador del sistema la página de Google de taso-inv: Google no deja iniciar sesión dentro de un WebView.
+     * Solo si la pide una página de taso-inv y la URL es exactamente esa página (la web no puede mandar la app a otro sitio).
+     */
+    fun openGoogleLogin(url: String?) {
+        val view = webView ?: return
+        view.post {
+            if (!TiendaNav.isInv(view.url) || !TiendaNav.isGoogleBrowserUrl(url)) {
+                DiagnosticLog.w("Tienda", "googleLogin rechazado: la página o la URL no son de taso-inv")
+                return@post
+            }
+            openOutside(url!!)
+        }
+    }
+
+    /**
+     * Entrega a la web el código de un solo uso que trajo el enlace `tasalo://login`; la web lo canjea con su verificador.
+     * Si la tienda aún no cargó (o el WebView se recreó), el código espera y sale en cuanto la página termina de cargar.
+     */
+    fun deliverGoogleCode(code: String) {
+        if (!TiendaNav.isGoogleCode(code)) return
+        pendingGoogleCode = code
+        webView?.let { flushGoogleCode(it) }
+    }
+
+    private fun flushGoogleCode(view: WebView) {
+        val code = pendingGoogleCode ?: return
+        if (!loadedOnce || !TiendaNav.isInv(view.url)) return
+        pendingGoogleCode = null
+        // El código ya pasó por TiendaNav.isGoogleCode (solo [A-Za-z0-9_-]): es seguro dentro de comillas simples.
+        // Si la pantalla de login aún no se pintó, la web lo recoge de window.__tasaloGoogleCodigo al pintarse.
+        view.evaluateJavascript(
+            "(function(c){if(typeof window.tasaloGoogleCodigo==='function'){window.tasaloGoogleCodigo(c)}else{window.__tasaloGoogleCodigo=c}})('$code')",
+            null,
+        )
+    }
+
     private fun discard(view: WebView) {
         (view.parent as? ViewGroup)?.removeView(view)
         view.stopLoading()
@@ -232,6 +270,7 @@ class TiendaController(
         override fun onPageFinished(view: WebView, url: String?) {
             canGoBack = view.canGoBack()
             loadedOnce = true
+            flushGoogleCode(view)
             goneCount = 0
             CookieManager.getInstance().flush()
         }
@@ -299,11 +338,17 @@ class TiendaController(
 
 /**
  * Puente `window.TasaloAndroid` para la web de taso-inv. Solo hace lo que la web no puede en un WebView y solo si la
- * página que lo llama es de taso-inv. Hoy: imprimir. (Google nativo llegará aquí, v0.17.0.)
+ * página que lo llama es de taso-inv. Hoy: imprimir y abrir el login con Google en el navegador del sistema.
  */
 class TiendaBridge(private val owner: TiendaController) {
     @JavascriptInterface
     fun print() {
         owner.printCurrentPage()
+    }
+
+    /** `url` = página de Google de taso-inv con el desafío PKCE; el controlador comprueba que sea exactamente esa página. */
+    @JavascriptInterface
+    fun googleLogin(url: String?) {
+        owner.openGoogleLogin(url)
     }
 }

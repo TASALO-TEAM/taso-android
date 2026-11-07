@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.17.0
+
+### Tienda
+- Ya puedes **entrar con Google** en la Tienda. Google no deja iniciar sesión dentro de una pantalla embebida, así que al tocar «Continuar con Google» se abre tu navegador, confirmas tu cuenta y vuelves a la app con la sesión iniciada.
+- Es seguro: el navegador solo devuelve un código de un solo uso que dura 2 minutos y que no sirve sin una clave secreta que nunca sale de la app.
+
 ## 0.16.1
 
 ### Tienda

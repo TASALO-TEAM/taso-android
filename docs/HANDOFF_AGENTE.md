@@ -150,3 +150,28 @@ Pedido de Ernesto: pestaña Blog → cupcake que abre camiersus.duckdns.org (tie
 - (2026-11-06, noche) **v0.16.0 terminada en código (sin probar en móvil):** pestaña Tienda (`ui/tienda/` TiendaController + TiendaScreen + TiendaNav, puente `TasaloAndroid.print()`), icono Cupcake, Blog como overlay abierto desde Tasas (botón junto a la campana + flecha «Volver a Tasas» en `BlogScreen`), `TiendaNavTest`, CHANGELOG y `VERSION_NAME=0.16.0`. El lado taso-inv (Imprimir por el puente y sin Google en el WebView) ya estaba en taso-inv `15bb150`. No se compiló en local: mirar el CI (`gh run list -L 3`) y corregir lo que falle.
 - **Para probar en el móvil (checklist del plan §7.3):** abrir la pestaña, entrar con clave, entrar con Telegram, subir foto como admin, imprimir una ficha, cerrar y reabrir (sesión), rotar, laptop/VPS caído (pantalla de error), «atrás», Blog desde Tasas y su flecha.
 - Pendiente v0.17.0: Google nativo (necesita el ID de cliente OAuth Android que debe crear Ernesto) y tema sincronizado app↔web (ver plan §10).
+
+
+---
+
+# SESIÓN 2026-11-07 — v0.17.0 EN CURSO: Google por el navegador + revisión UI/UX (una sola APK)
+Decisión de Ernesto (7 nov): NO se hace el Google «nativo» (Credential Manager) que decía el plan; en su lugar **el botón «Continuar con Google» sale en la app y manda al navegador**, y todo va junto con la revisión UI/UX en **una sola APK (v0.17.0)**. Pidió dejar todo anotado por si se acaban los créditos. Después (versiones aparte, ya aprobadas en el plan `tasalo\docs\plans\2026-11-07-android-ux-premium-notificaciones-privacidad.md`): notificaciones del bot en el teléfono y descargo de privacidad.
+Reglas de este repo que se mantienen: SIN dependencias nuevas (por eso el navegador se abre con un `Intent` ACTION_VIEW, no con androidx.browser) y SIN colores nuevos (Quiet Glass v3). Sin SDK local: se sube a `main` y se mira el CI.
+
+## Diseño del flujo Google (PKCE, sin secreto de cliente; reutiliza el client ID y la verificación del id_token de taso-inv)
+1. La web de taso-inv (en el WebView, UA `TasaloAndroid/…`) genera un *verificador* aleatorio, lo guarda en `localStorage` (caduca a los 10 min) y calcula el *desafío* = base64url(SHA-256(verificador)). Llama a `window.TasaloAndroid.googleLogin("https://camiersus.duckdns.org/google-app.html?c=<desafio>")`.
+2. La app valida que la llamada viene de una página de taso-inv y que la URL es https, de `camiersus.duckdns.org` y de `/google-app.html`; entonces abre el **navegador del sistema** (`Intent.ACTION_VIEW`).
+3. `google-app.html` (taso-inv) usa Google Identity Services en un navegador normal; el `id_token` va por POST a `/api/auth/google/app` junto al desafío; el servidor lo verifica igual que el login normal y guarda la identidad con un **código de un solo uso (2 min)** ligado al desafío. La página enlaza a `tasalo://login?codigo=<codigo>` (con botón «Volver a la app» por si el navegador no abre solo el enlace).
+4. `MainActivity` (singleTop, intent-filter `tasalo://login`) recibe el código y lo pasa a la pestaña Tienda, que lo entrega al WebView con `window.tasaloGoogleCodigo(codigo)`.
+5. La web canjea `POST /api/auth/google/app/canjear {codigo, verificador}`: el servidor comprueba SHA-256(verificador) == desafío (comparación en tiempo constante), quema el código y crea la sesión (cookie HttpOnly **en el WebView**). Quien intercepte el enlace profundo no puede canjearlo sin el verificador.
+- Fuera de alcance: «Vincular Google» desde Mi cuenta dentro de la app (sigue oculto en el WebView).
+
+## Checklist v0.17.0 (marcar al terminar cada paso)
+- [x] HECHO (taso-inv 0.101.0.0, commit 9912fae, desplegado por git pull en el VPS; FALTA reiniciar taso-inv con sudo) taso-inv backend: `app/google_app.py` (códigos en memoria, TTL, un solo uso, tope) + rutas `/api/auth/google/app` y `/app/canjear` + pruebas.
+- [x] HECHO (mismo commit; 20/20 JS y pytest completo en verde; NO probado en navegador/móvil real todavía) taso-inv web: `web/google-app.html` + `web/js/google-app.js`, `lib/google_app.js` (puro, con pruebas `node --test`), `login.js` (botón en la app), `lib/app.js`.
+- [x] HECHO (sin compilar en local; lo valida el CI) taso-android: puente `googleLogin` (`TiendaBridge` → `TiendaController.openGoogleLogin`, solo si la página es de taso-inv y la URL es exactamente `/google-app.html`), `AndroidManifest` (intent-filter `tasalo://login`), `MainActivity.handleIntent` → `MainViewModel.googleCode` → `TiendaController.deliverGoogleCode` (espera a que cargue la página; si la web aún no pintó el login deja el código en `window.__tasaloGoogleCodigo`), pruebas de `TiendaNav` (`isGoogleBrowserUrl`, `googleCodeFromLink`, `isGoogleCode`).
+- DECISIÓN 7 nov (tarde): Ernesto pidió **desplegar por secciones** (consolidar → desplegar → seguir). Por eso la 0.17.0 sale SOLO con Google por el navegador; la revisión UI/UX pasa a **0.18.0** (auditoría primero; solo cambios dentro de Quiet Glass v3).
+- [x] `VERSION_NAME=0.17.0` + `CHANGELOG.md` (texto para usuarios).
+- [x] taso-inv ya está desplegado y el servicio reiniciado en el VPS (el 7 nov `POST /api/auth/google/app/canjear` responde con el mensaje propio de la app, no 404/405). `ssh pan` no tiene `sudo` sin clave.
+- [ ] CI de GitHub en verde (`gh run list -L 3`) y prueba en un móvil real: botón de Google → navegador → volver a la app con la sesión iniciada.
+- Nota: en el árbol quedaban 4 líneas sin commitear en `HomeScreen.kt` (parámetro `onOpenBlog` y argumento `onBlog` DUPLICADOS: no compilaban). Se revirtieron con `git checkout`; copia del parche en `%TEMP%\homescreen-sin-commitear.patch`.

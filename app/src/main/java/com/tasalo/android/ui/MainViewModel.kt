@@ -344,6 +344,23 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---------- Login con Google (por el navegador) ----------
+
+    /**
+     * Código de un solo uso que trae el enlace tasalo://login (login con Google hecho en el navegador). Lo recoge la
+     * pestaña Tienda, que lo entrega a la web y lo consume. Vive aquí para sobrevivir a que la actividad se recree.
+     */
+    private val _googleCode = MutableStateFlow<String?>(null)
+    val googleCode: StateFlow<String?> = _googleCode
+
+    fun onGoogleCode(code: String) {
+        _googleCode.value = code
+    }
+
+    fun consumeGoogleCode() {
+        _googleCode.value = null
+    }
+
     // ---------- Blog ----------
 
     private val _blog = MutableStateFlow(BlogUiState())

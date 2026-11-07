@@ -83,6 +83,7 @@ import com.tasalo.android.ui.cash.CashScreen
 import com.tasalo.android.ui.home.HomeScreen
 import com.tasalo.android.ui.settings.SettingsScreen
 import com.tasalo.android.ui.tienda.TiendaController
+import com.tasalo.android.ui.tienda.TiendaNav
 import com.tasalo.android.ui.tienda.TiendaScreen
 import com.tasalo.android.ui.theme.TasaloTheme
 import com.tasalo.android.ui.theme.isDarkTheme
@@ -108,6 +109,12 @@ class MainActivity : ComponentActivity() {
     /** Tap en un widget: abre la pestaña Tasas en la fuente que mostraba (plan §5). */
     private fun handleIntent(intent: Intent?) {
         Source.fromId(intent?.getStringExtra(EXTRA_SOURCE))?.let(viewModel::selectSource)
+        // Vuelta del login con Google hecho en el navegador (tasalo://login?codigo=...). El enlace se limpia al leerlo:
+        // si la actividad se recrea (rotar) no debe entregarse otra vez un código que ya se quemó.
+        TiendaNav.googleCodeFromLink(intent?.dataString)?.let { code ->
+            viewModel.onGoogleCode(code)
+            intent?.data = null
+        }
     }
 
     companion object {
@@ -197,6 +204,20 @@ private fun TasaloRoot(vm: MainViewModel) {
         // Al quedarse en la sección Blog: muestra lo guardado y descarga si hace falta (más de 15 min).
         val settledTab = pagerState.settledPage
         LaunchedEffect(showBlog) { if (showBlog) vm.loadBlog() }
+
+        // Vuelta del login con Google por el navegador (tasalo://login): se cierra lo que haya encima, se entrega el
+        // código a la Tienda (la web lo canjea con su verificador) y se lleva al usuario a esa pestaña.
+        val googleCode by vm.googleCode.collectAsStateWithLifecycle()
+        LaunchedEffect(googleCode) {
+            val code = googleCode ?: return@LaunchedEffect
+            showNotifications = false
+            showBlog = false
+            detailKey = null
+            tienda.deliverGoogleCode(code)
+            vm.consumeGoogleCode()
+            // En el scope del composable, no en este efecto: al consumir el código la clave cambia y este efecto se cancela.
+            scope.launch { pagerState.animateScrollToPage(TIENDA_TAB) }
+        }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
         val update = state.update
