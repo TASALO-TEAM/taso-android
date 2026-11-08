@@ -173,5 +173,21 @@ Reglas de este repo que se mantienen: SIN dependencias nuevas (por eso el navega
 - DECISIÓN 7 nov (tarde): Ernesto pidió **desplegar por secciones** (consolidar → desplegar → seguir). Por eso la 0.17.0 sale SOLO con Google por el navegador; la revisión UI/UX pasa a **0.18.0** (auditoría primero; solo cambios dentro de Quiet Glass v3).
 - [x] `VERSION_NAME=0.17.0` + `CHANGELOG.md` (texto para usuarios).
 - [x] taso-inv ya está desplegado y el servicio reiniciado en el VPS (el 7 nov `POST /api/auth/google/app/canjear` responde con el mensaje propio de la app, no 404/405). `ssh pan` no tiene `sudo` sin clave.
-- [ ] CI de GitHub en verde (`gh run list -L 3`) y prueba en un móvil real: botón de Google → navegador → volver a la app con la sesión iniciada.
+- [x] CI de GitHub en verde y Release `v0.17.0` publicado como Latest (commit `8fb4617`, 7 nov). PENDIENTE solo la prueba en un móvil real: botón de Google → navegador → volver a la app con la sesión iniciada.
 - Nota: en el árbol quedaban 4 líneas sin commitear en `HomeScreen.kt` (parámetro `onOpenBlog` y argumento `onBlog` DUPLICADOS: no compilaban). Se revirtieron con `git checkout`; copia del parche en `%TEMP%\homescreen-sin-commitear.patch`.
+
+# SESION 2026-11-07 (noche) - v0.17.1 EN REVISION: descargo de privacidad de taso-inv (Parte 4 del plan)
+Plan: `tasalo\docs\plans\2026-11-07-android-ux-premium-notificaciones-privacidad.md`. Rama **`feat/privacidad-taso-inv`** (NO está en `main`): el texto legal lo revisa Ernesto antes de publicar. El CI corre en el PR sin publicar Release; al fusionar en `main` sale la 0.17.1.
+- [x] Auditoría de solo lectura de taso-inv v0.101.0.0 (migraciones 0001-0020, `app/auth.py`, `cuentas.py`, `google_login.py`, `telegram_login.py`, `respaldo.py`, `web/js/views/cuenta.js`, bloque `log` de Caddy en el VPS). Lo que hay en `docs/PRIVACIDAD.md` es solo lo confirmado ahí.
+- [x] `docs/PRIVACIDAD.md` (texto completo), `domain/PrivacyNotice.kt` (resumen corto, mismo contenido) y categoría **Privacidad** en Ajustes (`SettingsCategories.PRIVACY`, `NavIcons.Privacy`, `PrivacyNoticeContent` en `SettingsScreen.kt`) con botón «Ver el texto completo». Pruebas: `PrivacyNoticeTest` y un caso nuevo en `SettingsSummaryTest`. `VERSION_NAME=0.17.1` + CHANGELOG. Sin compilar en local (no hay SDK): lo valida el CI.
+- Regla: si cambia lo que guarda taso-inv, actualizar `docs/PRIVACIDAD.md` y `PrivacyNotice.kt` a la vez.
+
+## Pendientes de decisión de Ernesto antes de fusionar (hallazgos de la auditoría)
+1. **Sesiones vencidas nunca se borran** en taso-inv: `sesiones` (con IP y navegador) solo se borra al cerrar sesión, cambiar la clave o eliminar la cuenta. El texto dice «mientras tengas la cuenta», que es verdad hoy, pero lo razonable es purgar las vencidas (p. ej. en `auth.iniciar`). Es un cambio pequeño en taso-inv (otro repo + despliegue): requiere visto bueno.
+2. **Canal de contacto**: el texto dice «pídelo al negocio por el mismo medio con el que haces tus pedidos». Si hay un correo o @usuario concreto, ponerlo.
+3. **Personal** no puede descargar sus datos ni darse de baja solo (lo hace un admin). El texto lo dice así.
+4. El texto no cita leyes (decisión del plan). Revisarlo con alguien que sepa si el negocio crece.
+5. Dentro de la app el vínculo con Google (Mi cuenta) sigue oculto en el WebView; el texto lo aclara solo en `docs/PRIVACIDAD.md`.
+
+## Siguiente (orden del plan)
+Parte 3: notificaciones del bot en el teléfono. Opción A (local desde `RefreshWorker`, sin Firebase) salvo que Ernesto pida tiempo real con FCM. Luego revisión UI/UX 0.18.0 por versiones pequeñas.

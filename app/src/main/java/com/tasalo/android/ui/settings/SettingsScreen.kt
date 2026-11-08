@@ -74,6 +74,7 @@ import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.defaultCodes
 import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.domain.Palette
+import com.tasalo.android.domain.PrivacyNotice
 import com.tasalo.android.ui.theme.LocalGlass
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.graphics.Color
@@ -210,6 +211,18 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
                 onToggle = { toggle(SettingsCategories.UPDATES) },
             ) {
                 UpdateSection(state, vm)
+            }
+        }
+
+        item(key = SettingsCategories.PRIVACY) {
+            SettingsCategory(
+                title = SettingsCategories.PRIVACY,
+                summary = summaries.getValue(SettingsCategories.PRIVACY),
+                icon = NavIcons.Privacy,
+                expanded = expanded == SettingsCategories.PRIVACY,
+                onToggle = { toggle(SettingsCategories.PRIVACY) },
+            ) {
+                PrivacyNoticeContent()
             }
         }
 
@@ -361,6 +374,29 @@ private fun AdvancedSection(currentUrl: String, vm: MainViewModel) {
             }
         }
     }
+}
+
+/** Descargo de privacidad de TASALO Inventario: el resumen de docs/PRIVACIDAD.md, con el texto de [PrivacyNotice]. */
+@Composable
+private fun PrivacyNoticeContent() {
+    val uriHandler = LocalUriHandler.current
+    Text(PrivacyNotice.INTRO, style = MaterialTheme.typography.bodyMedium)
+    PrivacyNotice.sections.forEach { section ->
+        Section(section.title) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                section.lines.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            }
+        }
+    }
+    Text(
+        "Actualizado el ${PrivacyNotice.UPDATED}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    OutlinedButton(
+        onClick = { runCatching { uriHandler.openUri(PrivacyNotice.FULL_TEXT_URL) } },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text("Ver el texto completo") }
 }
 
 private const val DEVELOPER_GITHUB = "ersus93"

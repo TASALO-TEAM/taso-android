@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.17.1
+
+### Privacidad
+- Nueva categoría **Privacidad** en Ajustes: te cuenta, en lenguaje claro, qué datos guarda TASALO Inventario (la pestaña Tienda), para qué, quién los ve, cuánto tiempo y cómo descargarlos o eliminar tu cuenta.
+- El texto completo está en el repositorio (`docs/PRIVACIDAD.md`) y se abre desde ahí con «Ver el texto completo».
+
 ## 0.17.0
 
 ### Tienda
