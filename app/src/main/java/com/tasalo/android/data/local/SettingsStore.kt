@@ -46,6 +46,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val PALETTE = stringPreferencesKey("palette")
         val ALERT_NOTIFY = booleanPreferencesKey("alert_notifications")
         val LAST_NOTIFIED = longPreferencesKey("last_notified_message")
+        val ALERT_ASKED = booleanPreferencesKey("alert_prompt_done")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -69,6 +70,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 palette = Palette.fromId(p[Keys.PALETTE]) ?: Palette.CLASICA,
                 alertNotifications = p[Keys.ALERT_NOTIFY] ?: false,
                 lastNotifiedMessageId = p[Keys.LAST_NOTIFIED] ?: 0L,
+                // Quien ya eligio a mano (clave presente) no recibe la pregunta.
+                alertPromptDone = p[Keys.ALERT_ASKED] ?: (p[Keys.ALERT_NOTIFY] != null),
             )
         }
 
@@ -102,6 +105,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
     suspend fun setAlertNotifications(on: Boolean, baseline: Long? = null) {
         store.edit {
             it[Keys.ALERT_NOTIFY] = on
+            it[Keys.ALERT_ASKED] = true
             if (on && baseline != null) it[Keys.LAST_NOTIFIED] = maxOf(baseline, it[Keys.LAST_NOTIFIED] ?: 0L)
         }
     }

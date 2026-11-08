@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.19.0
+
+### Avisos de alertas activos desde el inicio
+- Los avisos en el teléfono cuando el bot publica una alerta ahora vienen activos. En Android 13 o superior la app te lo explica una vez y te pide el permiso de notificaciones; puedes decir «Ahora no».
+- Puedes apagarlos cuando quieras en Ajustes → Tasas → Avisar en el teléfono.
+- Quien ya los había encendido o apagado a mano conserva su elección.
+
 ## 0.18.1
 
 ### Pedir el borrado de tus datos

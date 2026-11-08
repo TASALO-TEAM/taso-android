@@ -649,8 +649,8 @@ private fun AlertNotifySection(state: UiState, vm: MainViewModel) {
                 Column(Modifier.weight(1f)) {
                     Text("Avisar en el teléfono")
                     Text(
-                        "Una notificación cuando el bot publique una alerta nueva. Está apagado hasta que lo actives " +
-                            "y solo avisa de lo que llegue después.",
+                        "Una notificación cuando el bot publique una alerta nueva. Puedes apagarlo cuando quieras " +
+                            "y solo avisa de lo que llegue despu\u00e9s.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

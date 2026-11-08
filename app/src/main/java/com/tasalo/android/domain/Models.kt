@@ -107,6 +107,8 @@ data class AppSettings(
     val alertNotifications: Boolean = false,
     /** Ultima alerta ya avisada en el telefono, para no repetir. */
     val lastNotifiedMessageId: Long = 0L,
+    /** Ya se le pregunto (o ya eligio) lo de los avisos de alertas: no se vuelve a preguntar. */
+    val alertPromptDone: Boolean = false,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

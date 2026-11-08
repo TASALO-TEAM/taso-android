@@ -56,6 +56,11 @@ private suspend fun RefreshWorker.notifyNewAlerts(container: AppContainer) {
         if (!settings.alertNotifications) return
         val json = container.cacheStore.current().messagesJson ?: return
         val messages = Parsers.messages(json) ?: return
+        // Primer aviso de todos: lo que ya habia publicado no cuenta, solo lo que llegue despues.
+        if (settings.lastNotifiedMessageId == 0L && settings.lastSeenMessageId == 0L && messages.isNotEmpty()) {
+            container.settingsStore.setLastNotifiedMessageId(messages.maxOf { it.id })
+            return
+        }
         val pending = AlertNotices.pending(messages, settings.lastNotifiedMessageId, settings.lastSeenMessageId)
         val notice = AlertNotices.notice(pending) ?: return
         if (AlertNotifier.show(applicationContext, notice)) container.settingsStore.setLastNotifiedMessageId(notice.newestId)

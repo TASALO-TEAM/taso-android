@@ -69,6 +69,7 @@ import com.tasalo.android.diag.ReportSender
 import com.tasalo.android.diag.ReportBuilder
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.CrashReportDialog
+import com.tasalo.android.ui.AlertPermissionPrompt
 import com.tasalo.android.ui.UpdateDialog
 import com.tasalo.android.ui.calculator.CalculatorScreen
 import com.tasalo.android.ui.components.GlassIslandBar
@@ -281,6 +282,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                 },
             )
         }
+        AlertPermissionPrompt(state, vm, canShow = !state.showCrash && !(state.showUpdate || state.updatePhase != UpdatePhase.Idle))
         // La cápsula flota sobre todo: el paginador ocupa la pantalla entera y cada lista reserva el hueco de abajo.
         var barHeightPx by remember { mutableIntStateOf(0) }
         val barInset = with(LocalDensity.current) { barHeightPx.toDp() }
