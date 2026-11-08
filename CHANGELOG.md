@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.21.1
+
+### Barra inferior
+- La burbuja de la pestaña activa ahora es una cápsula de alto completo y el nombre de la sección cabe dentro (ya no se sale ni se corta).
+- El icono ya no salta al cambiar de pestaña: sube suavemente y el nombre aparece con un fundido.
+- La burbuja se mueve como una gota: se estira al viajar, rebota un poco al llegar y sigue al dedo al arrastrarla. En un salto largo recorre todo el trayecto.
+- Con «quitar animaciones» del sistema se coloca de golpe, sin movimiento.
+
 ## 0.21.0
 
 ### Estados de carga y letra grande
