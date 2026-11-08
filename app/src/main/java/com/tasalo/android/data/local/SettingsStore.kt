@@ -44,6 +44,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val BLOG_CUSTOM = stringPreferencesKey("blog_custom_account")
         val RATES_LIST = booleanPreferencesKey("rates_list_view")
         val PALETTE = stringPreferencesKey("palette")
+        val ALERT_NOTIFY = booleanPreferencesKey("alert_notifications")
+        val LAST_NOTIFIED = longPreferencesKey("last_notified_message")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -65,6 +67,8 @@ class SettingsStore(private val store: DataStore<Preferences>) {
                 blogCustomAccount = p[Keys.BLOG_CUSTOM]?.let(HiveUser::normalize),
                 ratesListView = p[Keys.RATES_LIST] ?: false,
                 palette = Palette.fromId(p[Keys.PALETTE]) ?: Palette.CLASICA,
+                alertNotifications = p[Keys.ALERT_NOTIFY] ?: false,
+                lastNotifiedMessageId = p[Keys.LAST_NOTIFIED] ?: 0L,
             )
         }
 
@@ -92,6 +96,18 @@ class SettingsStore(private val store: DataStore<Preferences>) {
 
     suspend fun setRatesListView(value: Boolean) {
         store.edit { it[Keys.RATES_LIST] = value }
+    }
+
+    /** Al activar se fija un punto de partida (`baseline`): solo se avisa de lo que llegue despues. */
+    suspend fun setAlertNotifications(on: Boolean, baseline: Long? = null) {
+        store.edit {
+            it[Keys.ALERT_NOTIFY] = on
+            if (on && baseline != null) it[Keys.LAST_NOTIFIED] = maxOf(baseline, it[Keys.LAST_NOTIFIED] ?: 0L)
+        }
+    }
+
+    suspend fun setLastNotifiedMessageId(id: Long) {
+        store.edit { it[Keys.LAST_NOTIFIED] = id }
     }
 
     suspend fun setPalette(palette: Palette) {

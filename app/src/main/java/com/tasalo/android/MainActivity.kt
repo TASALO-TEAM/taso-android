@@ -109,6 +109,11 @@ class MainActivity : ComponentActivity() {
     /** Tap en un widget: abre la pestaña Tasas en la fuente que mostraba (plan §5). */
     private fun handleIntent(intent: Intent?) {
         Source.fromId(intent?.getStringExtra(EXTRA_SOURCE))?.let(viewModel::selectSource)
+        // Tap en la notificacion de una alerta. El extra se quita al leerlo para no reabrir al rotar.
+        if (intent?.getBooleanExtra(EXTRA_OPEN_ALERTS, false) == true) {
+            viewModel.requestOpenAlerts()
+            intent?.removeExtra(EXTRA_OPEN_ALERTS)
+        }
         // Vuelta del login con Google hecho en el navegador (tasalo://login?codigo=...). El enlace se limpia al leerlo:
         // si la actividad se recrea (rotar) no debe entregarse otra vez un código que ya se quemó.
         TiendaNav.googleCodeFromLink(intent?.dataString)?.let { code ->
@@ -119,6 +124,9 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_SOURCE = "com.tasalo.android.extra.SOURCE"
+
+        /** Lo pone la notificacion de una alerta del bot: al tocarla se abre la pantalla de notificaciones. */
+        const val EXTRA_OPEN_ALERTS = "com.tasalo.android.extra.OPEN_ALERTS"
     }
 }
 
@@ -217,6 +225,16 @@ private fun TasaloRoot(vm: MainViewModel) {
             vm.consumeGoogleCode()
             // En el scope del composable, no en este efecto: al consumir el código la clave cambia y este efecto se cancela.
             scope.launch { pagerState.animateScrollToPage(TIENDA_TAB) }
+        }
+
+        // Tap en la notificacion de una alerta del bot: se cierra lo que haya encima y se abre Notificaciones.
+        val openAlerts by vm.openAlerts.collectAsStateWithLifecycle()
+        LaunchedEffect(openAlerts) {
+            if (!openAlerts) return@LaunchedEffect
+            showBlog = false
+            detailKey = null
+            showNotifications = true
+            vm.consumeOpenAlerts()
         }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.

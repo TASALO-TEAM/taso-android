@@ -103,6 +103,10 @@ data class AppSettings(
     val ratesListView: Boolean = false,
     /** Paleta de color elegida en Ajustes; la Clásica es la de siempre. */
     val palette: Palette = Palette.CLASICA,
+    /** Avisar en el telefono cuando el bot publica una alerta nueva. Apagado hasta que la persona lo active. */
+    val alertNotifications: Boolean = false,
+    /** Ultima alerta ya avisada en el telefono, para no repetir. */
+    val lastNotifiedMessageId: Long = 0L,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

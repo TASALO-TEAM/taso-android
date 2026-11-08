@@ -21,7 +21,7 @@ Kotlin · Jetpack Compose (Material 3) · Glance · Retrofit + OkHttp · kotlinx
 
 ## Permisos
 
-`INTERNET` y `ACCESS_NETWORK_STATE`, más `REQUEST_INSTALL_PACKAGES` y `UPDATE_PACKAGES_WITHOUT_USER_ACTION` para actualizarse a sí misma (el instalador solo acepta un APK del mismo paquete y con la misma firma). Solo HTTPS. `allowBackup=false`.
+`INTERNET` y `ACCESS_NETWORK_STATE`, más `POST_NOTIFICATIONS` (Android 13+, solo si activas el aviso de alertas del bot), `REQUEST_INSTALL_PACKAGES` y `UPDATE_PACKAGES_WITHOUT_USER_ACTION` para actualizarse a sí misma (el instalador solo acepta un APK del mismo paquete y con la misma firma). Solo HTTPS. `allowBackup=false`.
 
 ## Compilar
 

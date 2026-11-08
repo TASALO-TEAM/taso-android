@@ -11,7 +11,10 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.tasalo.android.AppContainer
 import com.tasalo.android.container
+import com.tasalo.android.data.parse.Parsers
+import com.tasalo.android.domain.AlertNotices
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.widget.WidgetUpdater
 import java.util.concurrent.TimeUnit
@@ -33,6 +36,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             if (result.anyOk) container.settingsStore.setLastBackgroundRefresh(System.currentTimeMillis())
             // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.
             WidgetUpdater.updateAll(applicationContext)
+            if (result.anyOk) notifyNewAlerts(container)
             if (result.anyOk || runAttemptCount >= 2) Result.success() else Result.retry()
         } catch (e: kotlinx.coroutines.CancellationException) {
             // WorkManager cancela el trabajo al reprogramarlo o al abrir la app: es normal, no un fallo.
@@ -42,6 +46,22 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             DiagnosticLog.e("Worker", "el refresco en segundo plano falló", e)
             if (runAttemptCount >= 2) Result.failure() else Result.retry()
         }
+    }
+}
+
+/** Aviso local de alertas nuevas del bot (solo si la persona lo activo). Un fallo aqui nunca debe tumbar el refresco. */
+private suspend fun RefreshWorker.notifyNewAlerts(container: AppContainer) {
+    runCatching {
+        val settings = container.settingsStore.current()
+        if (!settings.alertNotifications) return
+        val json = container.cacheStore.current().messagesJson ?: return
+        val messages = Parsers.messages(json) ?: return
+        val pending = AlertNotices.pending(messages, settings.lastNotifiedMessageId, settings.lastSeenMessageId)
+        val notice = AlertNotices.notice(pending) ?: return
+        if (AlertNotifier.show(applicationContext, notice)) container.settingsStore.setLastNotifiedMessageId(notice.newestId)
+    }.onFailure {
+        if (it is kotlinx.coroutines.CancellationException) throw it
+        DiagnosticLog.w("Worker", "el aviso de alertas falló", it)
     }
 }
 

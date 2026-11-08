@@ -361,6 +361,20 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         _googleCode.value = null
     }
 
+    // ---------- Tap en la notificacion de una alerta ----------
+
+    /** La notificacion pide abrir la pantalla de notificaciones. Vive aqui para sobrevivir a que la actividad se recree. */
+    private val _openAlerts = MutableStateFlow(false)
+    val openAlerts: StateFlow<Boolean> = _openAlerts
+
+    fun requestOpenAlerts() {
+        _openAlerts.value = true
+    }
+
+    fun consumeOpenAlerts() {
+        _openAlerts.value = false
+    }
+
     // ---------- Blog ----------
 
     private val _blog = MutableStateFlow(BlogUiState())
@@ -488,6 +502,13 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun setCrashPrompt(value: Boolean) {
         viewModelScope.launch { settingsStore.setCrashPrompt(value) }
+    }
+
+    /** Aviso en el telefono de alertas nuevas del bot. Al activarlo solo se avisa de lo que llegue despues de ese momento. */
+    fun setAlertNotifications(on: Boolean) {
+        viewModelScope.launch {
+            settingsStore.setAlertNotifications(on, baseline = state.value.messages.maxOfOrNull { it.id })
+        }
     }
 
     // ---------- Ajustes ----------
