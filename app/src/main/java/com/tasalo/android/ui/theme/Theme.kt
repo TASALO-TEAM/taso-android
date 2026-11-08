@@ -152,6 +152,7 @@ fun TasaloTheme(mode: ThemeMode, invertColors: Boolean, palette: Palette = Palet
     CompositionLocalProvider(
         LocalChangeColors provides changeColorsFor(dark, invertColors).readableOn(dark, scheme.background, card),
         LocalGlass provides glass,
+        LocalReduceMotion provides rememberReduceMotion(),
     ) {
         MaterialTheme(colorScheme = scheme, typography = TasaloTypography, shapes = TasaloShapes, content = content)
     }

@@ -1,5 +1,6 @@
 package com.tasalo.android.ui.components
 
+import com.tasalo.android.ui.theme.LocalReduceMotion
 import android.provider.Settings
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
@@ -84,12 +85,8 @@ class CollapsingHeaderState(private val reduceMotion: Boolean) {
 
 @Composable
 fun rememberCollapsingHeaderState(): CollapsingHeaderState {
-    val context = LocalContext.current
-    return remember {
-        // Con las animaciones del sistema desactivadas, el encabezado cambia de estado sin animar.
-        val scale = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
-        CollapsingHeaderState(reduceMotion = scale == 0f)
-    }
+    val reduce = LocalReduceMotion.current
+    return remember(reduce) { CollapsingHeaderState(reduceMotion = reduce) }
 }
 
 /** Alto total del encabezado con todo visible: la lista lo usa como relleno superior para arrancar justo debajo. */

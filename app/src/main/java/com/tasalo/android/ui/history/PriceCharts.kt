@@ -1,5 +1,6 @@
 package com.tasalo.android.ui.history
 
+import com.tasalo.android.ui.theme.LocalReduceMotion
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -103,7 +104,8 @@ fun PriceChart(
     var active by remember(points) { mutableStateOf<Int?>(null) }
     // Entrada suave: la curva se "dibuja" de izquierda a derecha al cargar o cambiar de rango.
     val reveal = remember(points) { Animatable(0f) }
-    LaunchedEffect(points) { reveal.animateTo(1f, tween(650, easing = FastOutSlowInEasing)) }
+    val reduce = LocalReduceMotion.current
+    LaunchedEffect(points) { if (reduce) reveal.snapTo(1f) else reveal.animateTo(1f, tween(650, easing = FastOutSlowInEasing)) }
 
     Box(
         modifier

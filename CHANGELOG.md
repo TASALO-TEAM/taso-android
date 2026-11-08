@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.20.1
+
+### Movimiento y navegación
+- Si quitas las animaciones del sistema, ahora la app entera las respeta: la barra inferior, el cambio entre secciones, la entrada del gráfico y las pantallas superpuestas aparecen sin movimiento.
+- Notificaciones, Blog y el detalle de una tasa se abren y se cierran con el mismo fundido suave.
+- Gesto de atrás predictivo de Android: ves una vista previa de a dónde vuelves mientras deslizas desde el borde.
+- Barra inferior: la pestaña activa muestra su nombre (si la letra no es muy grande), TalkBack la anuncia como grupo de pestañas y se ve el foco al navegar con teclado.
+
 ## 0.20.0
 
 ### Mismo estilo en toda la app

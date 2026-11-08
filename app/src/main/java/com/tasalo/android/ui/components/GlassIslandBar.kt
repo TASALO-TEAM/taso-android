@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,10 +21,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -51,6 +58,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.theme.LocalGlass
+import com.tasalo.android.ui.theme.LocalReduceMotion
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -108,6 +116,7 @@ fun GlassIslandBar(
 
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val reduce = LocalReduceMotion.current
     val currentPosition by rememberUpdatedState(position)
     val currentOnSelect by rememberUpdatedState(onSelect)
     // Posición de la burbuja mientras el dedo la arrastra (null = manda el paginador).
@@ -116,7 +125,7 @@ fun GlassIslandBar(
     // 0 en reposo, 1 mientras se arrastra: la burbuja crece un poco, como si la levantaras.
     val lift by animateFloatAsState(
         targetValue = if (dragging) 1f else 0f,
-        animationSpec = spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
+        animationSpec = if (reduce) snap() else spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow),
         label = "islandLift",
     )
 
@@ -138,7 +147,7 @@ fun GlassIslandBar(
             .background(base)
             .background(sheen)
             .border(1.dp, rim, shape)
-            .pointerInput(items.size) {
+            .pointerInput(items.size, reduce) {
                 val pad = sidePad.toPx()
                 val itemW = (size.width - pad * 2) / items.size
                 val last = (items.size - 1).toFloat()
@@ -149,7 +158,9 @@ fun GlassIslandBar(
                     if (from != null) {
                         val target = from.roundToInt().coerceIn(0, items.size - 1)
                         currentOnSelect(target)
-                        scope.launch {
+                        if (reduce) {
+                            dragPos = null
+                        } else scope.launch {
                             animate(
                                 initialValue = from,
                                 targetValue = target.toFloat(),
@@ -190,7 +201,7 @@ fun GlassIslandBar(
                 drawRoundRect(bubbleRim, Offset(left, inset), Size(w, h), radius, style = Stroke(1.dp.toPx()))
             },
     ) {
-        Row(Modifier.fillMaxSize().padding(horizontal = sidePad)) {
+        Row(Modifier.fillMaxSize().padding(horizontal = sidePad).selectableGroup()) {
             items.forEachIndexed { index, item ->
                 IslandTab(
                     item = item,
@@ -205,17 +216,24 @@ fun GlassIslandBar(
 
 @Composable
 private fun IslandTab(item: IslandItem, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val reduce = LocalReduceMotion.current
     val tint by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = tween(180),
+        animationSpec = if (reduce) snap() else tween(180),
         label = "islandTint",
     )
+    val source = remember { MutableInteractionSource() }
+    val focused by source.collectIsFocusedAsState()
+    // La etiqueta solo se ve en la pestana activa y no con letra muy grande (no cabria sin recortarse).
+    val showLabel = selected && LocalDensity.current.fontScale <= 1.15f
     Column(
         modifier
             .fillMaxHeight()
+            // Foco visible para teclado o control por interruptores (sin indicacion de pulsado, la burbuja ya marca la activa).
+            .then(if (focused) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(26.dp)) else Modifier)
             .selectable(
                 selected = selected,
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = source,
                 indication = null,
                 role = Role.Tab,
                 onClick = onClick,
@@ -223,7 +241,10 @@ private fun IslandTab(item: IslandItem, selected: Boolean, onClick: () -> Unit, 
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // Solo icono: la etiqueta queda como descripción para lectores de pantalla (TalkBack).
-        Icon(item.icon, contentDescription = item.label, tint = tint, modifier = Modifier.size(26.dp))
+        // Con la etiqueta a la vista, el icono es decorativo (si no, TalkBack diria el nombre dos veces).
+        Icon(item.icon, contentDescription = if (showLabel) null else item.label, tint = tint, modifier = Modifier.size(26.dp))
+        if (showLabel) {
+            Text(item.label, color = tint, fontSize = 10.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+        }
     }
 }

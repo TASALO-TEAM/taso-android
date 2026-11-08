@@ -28,6 +28,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -78,6 +81,7 @@ import com.tasalo.android.ui.blog.BlogScreen
 import com.tasalo.android.ui.cash.CashScreen
 import com.tasalo.android.ui.home.HomeScreen
 import com.tasalo.android.ui.settings.SettingsScreen
+import com.tasalo.android.ui.theme.LocalReduceMotion
 import com.tasalo.android.ui.tienda.TiendaController
 import com.tasalo.android.ui.tienda.TiendaNav
 import com.tasalo.android.ui.tienda.TiendaScreen
@@ -280,6 +284,7 @@ private fun TasaloRoot(vm: MainViewModel) {
         AlertPermissionPrompt(state, vm, canShow = !state.showCrash && !(state.showUpdate || state.updatePhase != UpdatePhase.Idle))
         // La cápsula flota sobre todo: el paginador ocupa la pantalla entera y cada lista reserva el hueco de abajo.
         var barHeightPx by remember { mutableIntStateOf(0) }
+        val reduceMotion = LocalReduceMotion.current
         val barInset = with(LocalDensity.current) { barHeightPx.toDp() }
         val layoutDirection = LocalLayoutDirection.current
         Scaffold(
@@ -322,6 +327,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                                     // Profundidad suave: la sección que se va se aleja y se apaga con una curva
                                     // (no lineal) y se mueve un poco más despacio que el dedo (parallax).
                                     .graphicsLayer {
+                                        if (reduceMotion) return@graphicsLayer
                                         val signed = (page - pagerState.currentPage - pagerState.currentPageOffsetFraction)
                                             .coerceIn(-1f, 1f)
                                         val d = abs(signed)
@@ -357,7 +363,8 @@ private fun TasaloRoot(vm: MainViewModel) {
                             val enter = remember(detailKey) { MutableTransitionState(false).apply { targetState = true } }
                             AnimatedVisibility(
                                 visibleState = enter,
-                                enter = fadeIn(tween(200)) + slideInVertically(spring(dampingRatio = 0.85f, stiffness = 380f)) { it / 14 },
+                                enter = if (reduceMotion) EnterTransition.None
+                                else fadeIn(tween(200)) + slideInVertically(spring(dampingRatio = 0.85f, stiffness = 380f)) { it / 14 },
                             ) {
                                 Box(
                                     Modifier
@@ -377,8 +384,12 @@ private fun TasaloRoot(vm: MainViewModel) {
                                 }
                             }
                         }
-                        if (showBlog) {
-                            // Igual que Notificaciones: encima del paginador y tapando los toques de lo que hay debajo.
+                        // Igual que Notificaciones: encima del paginador y tapando los toques de lo que hay debajo.
+                        AnimatedVisibility(
+                            visible = showBlog,
+                            enter = if (reduceMotion) EnterTransition.None else fadeIn(tween(200)),
+                            exit = if (reduceMotion) ExitTransition.None else fadeOut(tween(200)),
+                        ) {
                             Box(
                                 Modifier
                                     .fillMaxSize()
@@ -397,8 +408,11 @@ private fun TasaloRoot(vm: MainViewModel) {
                                 )
                             }
                         }
-                        if (showNotifications) {
-                            // Encima del paginador (que se queda como estaba) y tapando los toques de lo que hay debajo.
+                        AnimatedVisibility(
+                            visible = showNotifications,
+                            enter = if (reduceMotion) EnterTransition.None else fadeIn(tween(200)),
+                            exit = if (reduceMotion) ExitTransition.None else fadeOut(tween(200)),
+                        ) {
                             Box(
                                 Modifier
                                     .fillMaxSize()
@@ -430,10 +444,14 @@ private fun TasaloRoot(vm: MainViewModel) {
                             if (abs(index - from) > 1) {
                                 pagerState.scrollToPage(if (index > from) index - 1 else index + 1)
                             }
-                            pagerState.animateScrollToPage(
-                                index,
-                                animationSpec = spring(dampingRatio = 0.85f, stiffness = 380f),
-                            )
+                            if (reduceMotion) {
+                                pagerState.scrollToPage(index)
+                            } else {
+                                pagerState.animateScrollToPage(
+                                    index,
+                                    animationSpec = spring(dampingRatio = 0.85f, stiffness = 380f),
+                                )
+                            }
                         }
                     },
                     modifier = Modifier
