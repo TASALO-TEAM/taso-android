@@ -8,6 +8,7 @@ El texto de la sección `## <versión>` es el que ven los usuarios en el aviso d
 ### Privacidad
 - Nueva categoría **Privacidad** en Ajustes: te cuenta, en lenguaje claro, qué datos guarda TASALO Inventario (la pestaña Tienda), para qué, quién los ve, cuánto tiempo y cómo descargarlos o eliminar tu cuenta.
 - El texto completo está en el repositorio (`docs/PRIVACIDAD.md`) y se abre desde ahí con «Ver el texto completo».
+- Si trabajas en el negocio, el texto aclara qué es (y qué no) la ficha de Personal, qué se registra de ti y qué puedes pedir, según el Código de Trabajo.
 
 ## 0.17.0
 

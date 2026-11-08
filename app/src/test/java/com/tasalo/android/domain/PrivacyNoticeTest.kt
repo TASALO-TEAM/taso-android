@@ -29,7 +29,7 @@ class PrivacyNoticeTest {
     }
 
     @Test
-    fun `no cita leyes y no deja marcas de pendiente`() {
+    fun `no cita numeros de ley y no deja marcas de pendiente`() {
         val all = (listOf(PrivacyNotice.INTRO) + PrivacyNotice.sections.flatMap { it.lines }).joinToString("\n")
         assertTrue(!Regex("""\b(Ley|RGPD|GDPR)\b""").containsMatchIn(all))
         assertTrue(!Regex("""TODO|\[\s*\]|XXX|por definir""", RegexOption.IGNORE_CASE).containsMatchIn(all))

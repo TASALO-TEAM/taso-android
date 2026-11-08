@@ -49,6 +49,17 @@ object PrivacyNotice {
             ),
         ),
         PrivacySection(
+            "Si trabajas en el negocio",
+            listOf(
+                "Esta herramienta no sustituye tu contrato ni tu expediente laboral, que el negocio lleva aparte según el Código de Trabajo. " +
+                    "La ficha de Personal no tiene campos para carné de identidad, dirección, sueldo ni salud.",
+                "Tus sesiones y el registro de actividad sirven para saber quién hizo qué en el negocio y proteger las cuentas, no para seguirte fuera del trabajo. " +
+                    "La app no pide ubicación, cámara ni micrófono, y nadie está obligado a instalarla: la herramienta funciona igual desde el navegador.",
+                "Puedes pedirle a un administrador que te muestre tu ficha cuando quieras y corrija lo que esté mal. " +
+                    "Sancionar una cuenta limita el acceso a la herramienta; no es una medida disciplinaria laboral, que sigue el Código de Trabajo.",
+            ),
+        ),
+        PrivacySection(
             "Cuánto tiempo",
             listOf(
                 "Mientras tengas la cuenta. Se hace una copia de respaldo diaria de la base y se guardan las últimas 14: " +

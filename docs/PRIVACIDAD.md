@@ -57,9 +57,16 @@ Atender tus pedidos, mantener tu sesión, proteger las cuentas de abusos (límit
 - **Eliminar mi cuenta:** borra tu cuenta, tus sesiones y tus avisos; quita tu nombre, tu contacto y las notas y destinos de tus pedidos, y los mensajes que mandaste al bot; deja tus valoraciones sin nombre y quita tu nombre del registro de actividad. No se puede deshacer.
 - **Vincular o desvincular Google y Telegram:** desde Mi cuenta en el navegador. Dentro de la app, el vínculo con Google no está disponible por ahora.
 
-**Personal:** no se da de baja solo. Pídele a un administrador que lo haga o corrija tus datos desde Usuarios.
+**Personal:** no se da de baja solo. Pídele a un administrador que lo haga, que corrija tus datos o que te muestre tu ficha desde Usuarios.
 
 **Si no puedes hacerlo tú**, pídelo al negocio por el mismo medio con el que haces tus pedidos.
 
+## Si trabajas en el negocio
+- **Esto no es tu contrato ni tu expediente laboral.** El negocio debe llevarlos aparte, como pide el Código de Trabajo (Ley 189/2026, arts. 41, 42 y 76 a 82). TASALO Inventario solo guarda la ficha de Personal descrita arriba, que no tiene campos para carné de identidad, dirección, sueldo ni salud: no los escribas en la nota.
+- **Qué se registra de ti:** tus sesiones (IP y navegador) y el registro de actividad sirven para saber quién hizo qué en el negocio y proteger las cuentas. No se usan para seguirte fuera del trabajo. La app Android no pide ubicación, cámara ni micrófono (arts. 192, apartado 2, y 314, apartado 2).
+- **No estás obligado a instalar la app Android** para trabajar: la herramienta funciona igual desde el navegador.
+- **Tu ficha:** puedes pedirle a un administrador que te la muestre cuando quieras y que corrija lo que esté mal (como con el expediente, art. 78).
+- **Sanción de cuenta:** sancionar o desactivar una cuenta limita el acceso a la herramienta. No es una medida disciplinaria laboral: esas siguen el Código de Trabajo (art. 318 y siguientes) y el reglamento interno del negocio, fuera de esta herramienta.
+
 ## Mantenimiento de este documento
-Si cambian las tablas o lo que guarda taso-inv, hay que actualizar este archivo y `PrivacyNotice.kt` (app Android) a la vez. Fuentes revisadas: `migrations/0001` a `0020`, `app/auth.py`, `app/cuentas.py`, `app/google_login.py`, `app/telegram_login.py`, `app/respaldo.py`, `web/js/views/cuenta.js` y el bloque de registro de Caddy en el VPS.
+Si cambian las tablas o lo que guarda taso-inv, hay que actualizar este archivo y `PrivacyNotice.kt` (app Android) a la vez. Fuentes revisadas: `migrations/0001` a `0020`, `app/auth.py`, `app/cuentas.py`, `app/google_login.py`, `app/telegram_login.py`, `app/respaldo.py`, `web/js/views/cuenta.js` y el bloque de registro de Caddy en el VPS. Marco laboral de la sección de personal: Código de Trabajo (Ley 189/2026, GOC-2026-O78), arts. 20, 41, 42, 76 a 82, 192, 314 y 318.
