@@ -61,6 +61,9 @@ object NavIcons {
 
     val Download: ImageVector by lazy { build("Actualizaciones", "M12 4v12M7 11l5 5 5-5M5 20h14") }
 
+    /** Escudo con una marca (categoria Privacidad de Ajustes). */
+    val Privacy: ImageVector by lazy { build("Privacidad", "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z", "M9 12l2 2 4-4") }
+
     val Terminal: ImageVector by lazy { build("Diagn\u00F3stico", "M4 6l5 6-5 6M12 18h8") }
 
     val Chevron: ImageVector by lazy { build("Desplegar", "M6 9l6 6 6-6") }

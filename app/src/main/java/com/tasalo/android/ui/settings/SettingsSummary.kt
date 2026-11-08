@@ -8,6 +8,7 @@ object SettingsCategories {
     const val APPEARANCE = "Apariencia"
     const val RATES = "Tasas"
     const val UPDATES = "Actualizaciones"
+    const val PRIVACY = "Privacidad"
     const val ADVANCED = "Diagn\u00F3stico y avanzado"
 }
 
@@ -30,6 +31,7 @@ fun settingsSummaries(settings: AppSettings, version: String, newVersion: String
         SettingsCategories.APPEARANCE to "$theme \u00B7 $view \u00B7 $colors",
         SettingsCategories.RATES to "${settings.defaultSource.title} \u00B7 $refresh",
         SettingsCategories.UPDATES to installed,
+        SettingsCategories.PRIVACY to "Qu\u00E9 guarda TASALO Inventario de ti",
         SettingsCategories.ADVANCED to "Informe de fallos: $crash \u00B7 URL de la API",
     )
 }

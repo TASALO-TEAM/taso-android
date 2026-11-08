@@ -55,6 +55,12 @@ class SettingsSummaryTest {
     }
 
     @Test
+    fun `privacidad tiene su linea de resumen`() {
+        val summary = settingsSummaries(AppSettings(), "1", null)[SettingsCategories.PRIVACY]
+        assertEquals("Qu\u00E9 guarda TASALO Inventario de ti", summary)
+    }
+
+    @Test
     fun `diagnostico refleja si pregunta al detectar un fallo`() {
         assertEquals(
             "Informe de fallos: s\u00ED \u00B7 URL de la API",
