@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
@@ -308,7 +309,10 @@ private fun TasaloRoot(vm: MainViewModel) {
                     ) {
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier.fillMaxSize(),
+                            // Con algo encima (Notificaciones, Blog o Detalle) las secciones de abajo siguen en pantalla pero tapadas:
+                            // se esconden del lector de pantalla para que TalkBack no las lea ni las enfoque.
+                            modifier = Modifier.fillMaxSize()
+                                .then(if (showNotifications || showBlog || detailKey != null) Modifier.clearAndSetSemantics {} else Modifier),
                             beyondViewportPageCount = 1,
                             // En la Tienda el deslizamiento horizontal se apaga: pelearía con las tablas con scroll lateral de la web.
                             userScrollEnabled = !showNotifications && detailKey == null && !showBlog && settledTab != TIENDA_TAB,

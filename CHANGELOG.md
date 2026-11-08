@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.19.1
+
+### Correcciones de uso y accesibilidad
+- **Calculadora:** el resultado y las cifras de la factura ya no se cortan con números grandes o letra grande; si no caben junto a la moneda, bajan a su propia línea.
+- **TalkBack:** con Notificaciones, Blog o el detalle de una tasa abiertos, el lector de pantalla ya no lee ni enfoca lo que queda tapado debajo.
+- **Notificaciones:** las tarjetas se anuncian como botones desplegables (expandido o contraído) y usan el mismo icono de flecha que Ajustes.
+- **Ajustes:** al escribir en el campo de la URL de la API, el teclado ya no tapa el campo.
+
 ## 0.19.0
 
 ### Avisos de alertas activos desde el inicio

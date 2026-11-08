@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
@@ -110,9 +114,13 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     fun toggle(key: String) { expanded = if (expanded == key) null else key }
 
+    // Igual que Efectivo: con edge-to-edge el teclado se superpone (el campo «URL base de la API» queda debajo), asi que la
+    // lista se encoge con imePadding y, con el teclado abierto, pierde el hueco de la capsula flotante (queda tapada detras).
+    val imeVisible = WindowInsets.isImeVisible
+    val basePadding = floatingContentPadding()
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = floatingContentPadding(),
+        modifier = modifier.fillMaxSize().imePadding(),
+        contentPadding = if (imeVisible) PaddingValues(16.dp) else basePadding,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {

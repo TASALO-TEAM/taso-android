@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package com.tasalo.android.ui.calculator
 
@@ -14,6 +14,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.ui.components.floatingContentPadding
 import androidx.compose.foundation.layout.Row
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -263,9 +266,12 @@ private fun ConverterCard(
                 Box(Modifier.weight(1f).height(1.dp).background(glass.border))
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 CurrencyPicker(to, codes, source, onPickTo)
-                Spacer(Modifier.width(12.dp))
                 Text(
                     resultText,
                     modifier = Modifier.weight(1f),
@@ -274,7 +280,6 @@ private fun ConverterCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.End,
-                    maxLines = 1,
                 )
             }
 
@@ -357,30 +362,34 @@ private fun InvoiceCard(
             }
             rows.forEach { (code, value) ->
                 Box(Modifier.fillMaxWidth().height(1.dp).background(glass.border))
-                Row(
+                FlowRow(
                     Modifier
                         .fillMaxWidth()
                         .clickable { onPick(code) }
                         .padding(vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    Text(flagOf(code, source), fontSize = 18.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(code, fontWeight = FontWeight.Bold)
-                        Text(
-                            nameOf(code, source),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Row(Modifier.weight(2f).widthIn(min = 120.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(flagOf(code, source), fontSize = 18.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(code, fontWeight = FontWeight.Bold)
+                            Text(
+                                nameOf(code, source),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Text(
                         value?.let(Format::amount) ?: "—",
+                        modifier = Modifier.weight(1f),
                         fontFamily = TasaloMono,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (code == to) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
+                        textAlign = TextAlign.End,
                     )
                 }
             }

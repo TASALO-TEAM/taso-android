@@ -1,5 +1,6 @@
 package com.tasalo.android.ui.notifications
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.MainViewModel
@@ -36,6 +41,7 @@ import com.tasalo.android.ui.UiState
 import com.tasalo.android.ui.components.EmptyMessage
 import com.tasalo.android.ui.components.GlassCard
 import com.tasalo.android.ui.components.MarkdownView
+import com.tasalo.android.ui.components.NavIcons
 import com.tasalo.android.domain.AppMessage
 import com.tasalo.android.update.ReleaseInfo
 import com.tasalo.android.update.SemVer
@@ -132,7 +138,7 @@ private fun ReleaseItem(
     onToggle: () -> Unit,
     onUpdate: () -> Unit,
 ) {
-    GlassCard(Modifier.fillMaxWidth().clickable(onClick = onToggle)) {
+    GlassCard(Modifier.fillMaxWidth().expandable(expanded, "versi\u00F3n ${release.version}", onToggle)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -149,7 +155,7 @@ private fun ReleaseItem(
                         color = if (newer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text(if (expanded) "▴" else "▾", style = MaterialTheme.typography.titleMedium)
+                ExpandChevron(expanded)
             }
             if (expanded) {
                 MarkdownView(release.notes ?: "[Ver cambios en GitHub](${release.pageUrl})")
@@ -190,7 +196,7 @@ private fun AlertsTab(state: UiState, vm: MainViewModel) {
 /** Mensaje contraído (título + fecha); al tocarlo se expande con el texto completo en el lector Markdown. */
 @Composable
 private fun AlertItem(message: AppMessage, unread: Boolean, expanded: Boolean, onToggle: () -> Unit) {
-    GlassCard(Modifier.fillMaxWidth().clickable(onClick = onToggle)) {
+    GlassCard(Modifier.fillMaxWidth().expandable(expanded, "alerta ${message.title}", onToggle)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -207,7 +213,7 @@ private fun AlertItem(message: AppMessage, unread: Boolean, expanded: Boolean, o
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text(if (expanded) "▴" else "▾", style = MaterialTheme.typography.titleMedium)
+                ExpandChevron(expanded)
             }
             if (expanded) {
                 MarkdownView(
@@ -217,4 +223,21 @@ private fun AlertItem(message: AppMessage, unread: Boolean, expanded: Boolean, o
             }
         }
     }
+}
+
+/** Tarjeta expandible accesible: rol de boton, estado (expandido/contraido) y una etiqueta que dice que pasa al tocar. */
+private fun Modifier.expandable(expanded: Boolean, label: String, onToggle: () -> Unit): Modifier = this
+    .clickable(onClickLabel = if (expanded) "Contraer $label" else "Expandir $label", role = Role.Button, onClick = onToggle)
+    .semantics { stateDescription = if (expanded) "Expandido" else "Contra\u00EDdo" }
+
+/** El mismo chevron de Ajustes: gira media vuelta al abrir. */
+@Composable
+private fun ExpandChevron(expanded: Boolean) {
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+    Icon(
+        NavIcons.Chevron,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.rotate(rotation),
+    )
 }
