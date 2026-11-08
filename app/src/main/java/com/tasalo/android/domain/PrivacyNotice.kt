@@ -9,8 +9,30 @@ data class PrivacySection(val title: String, val lines: List<String>)
  * Texto puro (sin Android) para poder probarlo en la JVM.
  */
 object PrivacyNotice {
-    const val UPDATED = "7 de noviembre de 2026"
+    const val UPDATED = "8 de noviembre de 2026"
     const val FULL_TEXT_URL = "$REPO_URL/blob/main/docs/PRIVACIDAD.md"
+
+    /** Correo del equipo, a donde se pide el borrado de datos. */
+    const val CONTACT_EMAIL = "tasaloteam@gmail.com"
+
+    const val DELETION_SUBJECT = "Pedido de borrado de mis datos - TASALO Inventario"
+
+    /** Mensaje que la app deja escrito en el correo. La persona lo completa y lo edita a su gusto antes de enviarlo. */
+    val DELETION_BODY: String = """
+        Hola, equipo de TASALO:
+
+        Quiero que borren mis datos personales de TASALO Inventario (la Tienda).
+
+        Mi usuario en la Tienda:
+        Como entro (usuario y contraseña, Google o Telegram):
+        Mi contacto, para que puedan confirmar que soy yo:
+
+        Les pido que eliminen mi cuenta y mis datos personales, y que me confirmen por este correo cuando esté hecho.
+
+        Entiendo que lo que esté en las copias de respaldo puede tardar hasta 14 días en desaparecer, y que los pedidos y pagos se conservan sin mis datos personales.
+
+        Gracias.
+    """.trimIndent()
 
     const val INTRO =
         "TASALO Inventario (la pestaña Tienda) guarda algunos datos tuyos para poder atenderte. " +
@@ -72,8 +94,10 @@ object PrivacyNotice {
             listOf(
                 "En la Tienda, abre Mi cuenta y entra en «Privacidad y datos»: puedes descargar una copia de tus datos, apagar los avisos por Telegram (si lo tienes vinculado) y eliminar tu cuenta.",
                 "Eliminar la cuenta borra tu cuenta, tus sesiones y tus avisos, quita tu nombre, tu contacto y las notas de tus pedidos, y deja tus valoraciones sin nombre. No se puede deshacer.",
+                "Si quieres que se borren tus datos y no puedes hacerlo desde la Tienda, o quieres que te confirmen el borrado, escribe a $CONTACT_EMAIL. " +
+                    "En esta pantalla, el bot\u00f3n \u00abPedir borrado de mis datos\u00bb abre tu correo con el mensaje ya escrito, para que lo edites antes de enviarlo.",
                 "Si eres parte del personal, pídele a un administrador que te dé de baja o corrija tus datos. " +
-                    "Si no puedes hacerlo tú, pídelo al negocio por el mismo medio con el que haces tus pedidos.",
+                    "Si no puedes hacerlo tú, pídelo al negocio escribiendo a $CONTACT_EMAIL.",
             ),
         ),
     )

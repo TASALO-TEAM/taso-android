@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.18.1
+
+### Pedir el borrado de tus datos
+- En Ajustes → Privacidad hay un botón nuevo, **«Pedir borrado de mis datos»**: abre tu app de correo con un mensaje ya escrito para tasaloteam@gmail.com. Lo completas con tu usuario y lo puedes editar todo antes de enviarlo.
+- Si el teléfono no tiene app de correo, el mensaje se copia para que lo pegues donde escribas.
+- El texto de privacidad ahora indica ese correo como el lugar donde pedir el borrado.
+
 ## 0.18.0
 
 ### Avisos de alertas en el teléfono

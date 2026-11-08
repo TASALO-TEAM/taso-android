@@ -1,6 +1,6 @@
 # Privacidad de TASALO Inventario
 
-Última actualización: 7 de noviembre de 2026. Cubre **TASALO Inventario (taso-inv)**: la Tienda para clientes y la herramienta del personal, que la app Android muestra en la pestaña Tienda. No habla de las tasas, el blog ni del resto de la app.
+Última actualización: 8 de noviembre de 2026. Cubre **TASALO Inventario (taso-inv)**: la Tienda para clientes y la herramienta del personal, que la app Android muestra en la pestaña Tienda. No habla de las tasas, el blog ni del resto de la app.
 
 Este texto sale de leer el código y las migraciones de taso-inv (v0.101.0.0), no de memoria. Resumen en lenguaje llano; la app muestra una versión corta en **Ajustes → Privacidad**.
 
@@ -59,7 +59,9 @@ Atender tus pedidos, mantener tu sesión, proteger las cuentas de abusos (límit
 
 **Personal:** no se da de baja solo. Pídele a un administrador que lo haga, que corrija tus datos o que te muestre tu ficha desde Usuarios.
 
-**Si no puedes hacerlo tú**, pídelo al negocio por el mismo medio con el que haces tus pedidos.
+**Si no puedes hacerlo tú**, pídelo al negocio escribiendo a **tasaloteam@gmail.com**.
+
+**Pedir el borrado por correo:** escribe a tasaloteam@gmail.com con tu usuario y cómo entras (usuario y contraseña, Google o Telegram), para poder comprobar que eres tú. En la app, Ajustes → Privacidad → «Pedir borrado de mis datos» abre tu correo con el mensaje ya escrito, que puedes editar antes de enviarlo.
 
 ## Si trabajas en el negocio
 - **Esto no es tu contrato ni tu expediente laboral.** El negocio debe llevarlos aparte, como pide el Código de Trabajo (Ley 189/2026, arts. 41, 42 y 76 a 82). TASALO Inventario solo guarda la ficha de Personal descrita arriba, que no tiene campos para carné de identidad, dirección, sueldo ni salud: no los escribas en la nota.

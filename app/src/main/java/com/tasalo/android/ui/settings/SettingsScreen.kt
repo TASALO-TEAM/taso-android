@@ -1,7 +1,12 @@
 package com.tasalo.android.ui.settings
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -391,6 +396,8 @@ private fun AdvancedSection(currentUrl: String, vm: MainViewModel) {
 @Composable
 private fun PrivacyNoticeContent() {
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    var noMailApp by remember { mutableStateOf(false) }
     Text(PrivacyNotice.INTRO, style = MaterialTheme.typography.bodyMedium)
     PrivacyNotice.sections.forEach { section ->
         Section(section.title) {
@@ -408,6 +415,38 @@ private fun PrivacyNoticeContent() {
         onClick = { runCatching { uriHandler.openUri(PrivacyNotice.FULL_TEXT_URL) } },
         modifier = Modifier.fillMaxWidth(),
     ) { Text("Ver el texto completo") }
+    OutlinedButton(
+        onClick = {
+            noMailApp = false
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:")
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(PrivacyNotice.CONTACT_EMAIL))
+                putExtra(Intent.EXTRA_SUBJECT, PrivacyNotice.DELETION_SUBJECT)
+                putExtra(Intent.EXTRA_TEXT, PrivacyNotice.DELETION_BODY)
+            }
+            try {
+                context.startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                // Sin app de correo: el texto queda copiado para pegarlo donde la persona escriba.
+                context.getSystemService(ClipboardManager::class.java)
+                    ?.setPrimaryClip(ClipData.newPlainText("Pedido de borrado", PrivacyNotice.DELETION_BODY))
+                noMailApp = true
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) { Text("Pedir borrado de mis datos") }
+    Text(
+        "Se abre tu correo con el mensaje ya escrito para ${PrivacyNotice.CONTACT_EMAIL}. Puedes editarlo antes de enviarlo.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    if (noMailApp) {
+        Text(
+            "No encontré una app de correo. Copié el mensaje: pégalo y envíalo a ${PrivacyNotice.CONTACT_EMAIL} desde donde uses tu correo.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
 }
 
 private const val DEVELOPER_GITHUB = "ersus93"
