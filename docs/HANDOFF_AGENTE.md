@@ -191,3 +191,16 @@ Plan: `tasalo\docs\plans\2026-11-07-android-ux-premium-notificaciones-privacidad
 
 ## Siguiente (orden del plan)
 Parte 3: notificaciones del bot en el teléfono. Opción A (local desde `RefreshWorker`, sin Firebase) salvo que Ernesto pida tiempo real con FCM. Luego revisión UI/UX 0.18.0 por versiones pequeñas.
+
+
+# SESION 2026-11-07 (madrugada) - v0.18.0 EN REVISION: avisos de alertas del bot en el telefono (Parte 3 del plan)
+Rama **`feat/notificaciones-bot`**, PR **#7** (apilado sobre el #6 de privacidad: fusionar primero #6, luego #7). **CI verde** (build 2m14s). No se publica Release hasta fusionar en `main`. NO probado en un movil real.
+- Opcion A elegida por Ernesto: notificacion **local** desde `RefreshWorker` (sin Firebase). El worker ya descarga los mensajes (`RefreshResult.messages`); despues del refresco llama a `notifyNewAlerts` (en `RefreshWorker.kt`), que solo actua si `settings.alertNotifications` esta activo.
+- `domain/AlertNotices.kt` (puro, probado en `AlertNoticesTest`): decide que alertas avisar (id mayor que la ultima avisada y que la ultima vista en la app), un aviso por tanda (una alerta = su titulo + adelanto sin Markdown; varias = «N alertas nuevas» + titulo de la mas reciente).
+- `work/AlertNotifier.kt`: canal `alertas_bot`, comprueba permiso `POST_NOTIFICATIONS` (Android 13+) y que las notificaciones no esten bloqueadas; el id avisado SOLO se guarda si de verdad se mostro. El tap abre `MainActivity` con `EXTRA_OPEN_ALERTS` → `MainViewModel.openAlerts` → abre la pantalla de Notificaciones.
+- Ajustes: dentro de la categoria **Tasas**, seccion «Avisos de alertas del bot» (`AlertNotifySection` en `SettingsScreen.kt`): interruptor APAGADO por defecto; al activar pide el permiso en Android 13+; avisos si esta denegado/bloqueado, boton «Sonido y tipo de aviso» (pantalla del canal) y aviso si la actualizacion en segundo plano esta en Manual (sin ella no llegan avisos). Al activar se fija una linea base (`setAlertNotifications(on, baseline)`): solo avisa de lo posterior.
+- Claves nuevas del DataStore: `alert_notifications`, `last_notified_message` (no se tocaron las existentes). `VERSION_NAME=0.18.0`, CHANGELOG y README (permisos) actualizados.
+- Para probar en el movil: activar el interruptor (Android 13+: aceptar el permiso), mandar `/msapp` desde el bot, esperar el refresco (o forzarlo), ver la notificacion, tocarla (debe abrir Notificaciones), comprobar que no se repite, y con la app abierta/alerta ya vista no debe avisar.
+- Limites honestos: el aviso llega con el intervalo del refresco (15 min minimo en WorkManager), no en tiempo real; si Ernesto quiere tiempo real hace falta FCM (Firebase), cambio mayor.
+- Parte legal (PR #6): se ajusto el texto para el personal segun el Codigo de Trabajo (commit 404276c). Siguen pendientes de decision de Ernesto: purgar sesiones vencidas en taso-inv, canal de contacto concreto para pedir borrado.
+- Siguiente: revision UI/UX 0.18.x por versiones pequenas (auditoria primero, solo dentro de Quiet Glass v3).
