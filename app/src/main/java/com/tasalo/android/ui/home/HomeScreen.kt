@@ -12,9 +12,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
@@ -216,14 +213,14 @@ private fun Header(
             // Campana a la izquierda del botón de actualizar; el punto indica que hay algo nuevo.
             IconButton(onClick = onBell) {
                 BadgedBox(badge = { if (hasNotifications) Badge() }) {
-                    Icon(Icons.Filled.Notifications, contentDescription = "Notificaciones")
+                    Icon(NavIcons.Bell, contentDescription = "Notificaciones")
                 }
             }
             IconButton(onClick = onRefresh, enabled = !refreshing) {
                 if (refreshing) {
                     CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Filled.Refresh, contentDescription = "Actualizar tasas")
+                    Icon(NavIcons.Refresh, contentDescription = "Actualizar tasas")
                 }
             }
         }

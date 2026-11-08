@@ -10,12 +10,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Article
-import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.runtime.mutableStateOf
 import android.widget.Toast
 import android.graphics.Color as AndroidColor

@@ -15,14 +15,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import com.tasalo.android.ui.components.NavIcons
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -195,7 +193,7 @@ private fun BlogHeader(loading: Boolean, onRefresh: () -> Unit, onBack: () -> Un
             if (loading) {
                 CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
             } else {
-                Icon(Icons.Filled.Refresh, contentDescription = "Actualizar blog")
+                Icon(NavIcons.Refresh, contentDescription = "Actualizar blog")
             }
         }
     }
@@ -218,9 +216,9 @@ private fun AccountTabs(state: BlogUiState, onSelectAccount: (String) -> Unit, o
         )
         IconButton(onClick = onEditCustom) {
             if (state.custom != null) {
-                Icon(Icons.Filled.Edit, contentDescription = "Cambiar o quitar usuario")
+                Icon(NavIcons.Edit, contentDescription = "Cambiar o quitar usuario")
             } else {
-                Icon(Icons.Filled.Add, contentDescription = "Añadir usuario de Hive")
+                Icon(NavIcons.Add, contentDescription = "Añadir usuario de Hive")
             }
         }
     }
@@ -288,7 +286,7 @@ private fun PostCard(post: BlogPost, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(160.dp),
             )
         }
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 post.title,
                 style = MaterialTheme.typography.titleMedium,

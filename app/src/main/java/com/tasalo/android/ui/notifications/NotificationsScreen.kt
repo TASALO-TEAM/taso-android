@@ -139,7 +139,7 @@ private fun ReleaseItem(
     onUpdate: () -> Unit,
 ) {
     GlassCard(Modifier.fillMaxWidth().expandable(expanded, "versi\u00F3n ${release.version}", onToggle)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Versión ${release.version}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -197,7 +197,7 @@ private fun AlertsTab(state: UiState, vm: MainViewModel) {
 @Composable
 private fun AlertItem(message: AppMessage, unread: Boolean, expanded: Boolean, onToggle: () -> Unit) {
     GlassCard(Modifier.fillMaxWidth().expandable(expanded, "alerta ${message.title}", onToggle)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(

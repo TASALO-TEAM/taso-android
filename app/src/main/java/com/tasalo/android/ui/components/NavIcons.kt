@@ -68,6 +68,22 @@ object NavIcons {
 
     val Chevron: ImageVector by lazy { build("Desplegar", "M6 9l6 6 6-6") }
 
+    val Refresh: ImageVector by lazy { build("Actualizar", "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8", "M21 3v5h-5") }
+
+    val Bell: ImageVector by lazy { build("Notificaciones", "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9", "M10.3 21a1.94 1.94 0 0 0 3.4 0") }
+
+    val Close: ImageVector by lazy { build("Cerrar", "M18 6L6 18M6 6l12 12") }
+
+    val SwapVertical: ImageVector by lazy { build("Invertir", "M21 16l-4 4-4-4M17 20V4M3 8l4-4 4 4M7 4v16") }
+
+    val Copy: ImageVector by lazy { build("Copiar", roundRect(8.0, 8.0, 14.0, 14.0, 2.0), "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2") }
+
+    val Share: ImageVector by lazy { build("Compartir", "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8", "M16 6l-4-4-4 4M12 2v13") }
+
+    val Edit: ImageVector by lazy { build("Editar", "M12 20h9", "M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z") }
+
+    val Add: ImageVector by lazy { build("A\u00F1adir", "M12 5v14M5 12h14") }
+
     /** Rectangulo redondeado como trazo SVG (x, y, ancho, alto, radio). */
     internal fun roundRect(x: Double, y: Double, w: Double, h: Double, r: Double): String =
         "M${x + r} ${y}h${w - 2 * r}a$r $r 0 0 1 $r $r" +

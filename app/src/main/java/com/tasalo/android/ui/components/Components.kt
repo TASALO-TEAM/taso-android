@@ -105,86 +105,62 @@ fun RateCard(
         modifier
     }
     GlassCard(cardModifier) {
-      Box(Modifier.fillMaxWidth()) {
-        SparklineBackground(history, sparkColor, Modifier.matchParentSize())
-        if (listMode) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(meta?.flag.orEmpty(), fontSize = 20.sp)
-                        if (meta != null) Spacer(Modifier.width(6.dp))
-                        Text(rate.currency, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Box(Modifier.fillMaxWidth()) {
+            SparklineBackground(history, sparkColor, Modifier.matchParentSize())
+            if (listMode) {
+                Row(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        RateTitle(rate.currency, meta?.flag, meta?.name)
+                        ChangeText(rate.change, Format.change(rate))
                     }
-                    if (meta != null) {
-                        Text(
-                            meta.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        RateValue(rate, source)
                     }
+                }
+            } else {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    RateTitle(rate.currency, meta?.flag, meta?.name)
+                    RateValue(rate, source)
                     ChangeText(rate.change, Format.change(rate))
                 }
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        Format.rate(rate.rate),
-                        fontFamily = TasaloMono,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    if (source == Source.QVAPAY) {
-                        Text("por 1 USD", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (source.hasBuySell && (rate.buy != null || rate.sell != null)) {
-                        val buy = rate.buy?.let(Format::rate) ?: "-"
-                        val sell = rate.sell?.let(Format::rate) ?: "-"
-                        Text(
-                            "Compra $buy \u00B7 Venta $sell",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = TasaloMono,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
             }
-        } else Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(meta?.flag.orEmpty(), fontSize = 20.sp)
-                if (meta != null) Spacer(Modifier.width(6.dp))
-                Text(rate.currency, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            if (meta != null) {
-                Text(
-                    meta.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Text(
-                Format.rate(rate.rate),
-                fontFamily = TasaloMono,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            if (source == Source.QVAPAY) {
-                Text("por 1 USD", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (source.hasBuySell && (rate.buy != null || rate.sell != null)) {
-                val buy = rate.buy?.let(Format::rate) ?: "—"
-                val sell = rate.sell?.let(Format::rate) ?: "—"
-                Text(
-                    "Compra $buy · Venta $sell",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = TasaloMono,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            ChangeText(rate.change, Format.change(rate))
         }
-      }
+    }
+}
+
+/** Bandera, codigo y nombre de la moneda: igual en tarjeta y en lista. */
+@Composable
+private fun RateTitle(currency: String, flag: String?, name: String?) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(flag.orEmpty(), fontSize = 20.sp)
+        if (name != null) Spacer(Modifier.width(6.dp))
+        Text(currency, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    }
+    if (name != null) {
+        Text(name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Precio, aclaracion de QvaPay y compra/venta: igual en tarjeta y en lista. */
+@Composable
+private fun RateValue(rate: Rate, source: Source) {
+    Text(Format.rate(rate.rate), fontFamily = TasaloMono, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+    if (source == Source.QVAPAY) {
+        Text("por 1 USD", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    if (source.hasBuySell && (rate.buy != null || rate.sell != null)) {
+        val buy = rate.buy?.let(Format::rate) ?: "\u2014"
+        val sell = rate.sell?.let(Format::rate) ?: "\u2014"
+        Text(
+            "Compra $buy \u00B7 Venta $sell",
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = TasaloMono,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

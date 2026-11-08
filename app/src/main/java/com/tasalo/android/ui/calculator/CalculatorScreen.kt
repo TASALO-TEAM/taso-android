@@ -25,23 +25,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import com.tasalo.android.ui.components.NavIcons
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -253,7 +248,7 @@ private fun ConverterCard(
                         onAmountChange("")
                         focusRequester.requestFocus()
                     }) {
-                        Icon(Icons.Filled.Close, contentDescription = "Borrar monto")
+                        Icon(NavIcons.Close, contentDescription = "Borrar monto")
                     }
                 }
             }
@@ -261,7 +256,7 @@ private fun ConverterCard(
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f).height(1.dp).background(glass.border))
                 FilledTonalIconButton(onClick = onSwap, modifier = Modifier.padding(horizontal = 12.dp)) {
-                    Icon(Icons.Filled.SwapVert, contentDescription = "Invertir monedas")
+                    Icon(NavIcons.SwapVertical, contentDescription = "Invertir monedas")
                 }
                 Box(Modifier.weight(1f).height(1.dp).background(glass.border))
             }
@@ -303,16 +298,16 @@ private fun CurrencyPicker(selected: String, options: List<String>, source: Sour
     Box {
         Surface(
             onClick = { open = true },
-            shape = RoundedCornerShape(16.dp),
+            shape = MaterialTheme.shapes.small,
             color = glass.accentSoft,
             border = BorderStroke(1.dp, glass.borderAccent),
-            modifier = Modifier.semantics { contentDescription = "Moneda ${nameOf(selected, source)}. Cambiar" },
+            modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Moneda ${nameOf(selected, source)}. Cambiar" },
         ) {
             Row(Modifier.padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(flagOf(selected, source), fontSize = 18.sp)
                 Spacer(Modifier.width(6.dp))
                 Text(selected, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                Icon(NavIcons.Chevron, contentDescription = null)
             }
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -357,15 +352,15 @@ private fun InvoiceCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = onCopy) { Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar resumen") }
-                IconButton(onClick = onShare) { Icon(Icons.Filled.Share, contentDescription = "Compartir resumen") }
+                IconButton(onClick = onCopy) { Icon(NavIcons.Copy, contentDescription = "Copiar resumen") }
+                IconButton(onClick = onShare) { Icon(NavIcons.Share, contentDescription = "Compartir resumen") }
             }
             rows.forEach { (code, value) ->
                 Box(Modifier.fillMaxWidth().height(1.dp).background(glass.border))
                 FlowRow(
                     Modifier
                         .fillMaxWidth()
-                        .clickable { onPick(code) }
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button) { onPick(code) }
                         .padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),

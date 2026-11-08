@@ -22,19 +22,19 @@ Veredicto: pasa como app nativa (Compose + Material 3 con identidad propia, no u
 - [ ] **A6 «Quitar animaciones» casi no se respeta.** Solo `CollapsingHeader.kt` (~90, `ANIMATOR_DURATION_SCALE == 0`). La isla, el parallax del paginador (`MainActivity.kt`), el gráfico (650 ms, `PriceCharts.kt`) y el slide del Detalle lo ignoran. Arreglo: un único `LocalReduceMotion` y usarlo en todos.
 - [ ] **A7 Superpuestas sin transición.** El Detalle entra con fundido + deslizamiento; Notificaciones y Blog aparecen y desaparecen en seco. Arreglo: el mismo `AnimatedVisibility` de 200 ms para los tres.
 - [ ] **A8 Atrás predictivo apagado.** `AndroidManifest.xml` sin `android:enableOnBackInvokedCallback="true"` (targetSdk 35 lo deja opcional). Hay 4 `BackHandler` en `MainActivity.kt`: probar los casos al activarlo.
-- [ ] **A9 Sin tokens de espaciado/radio.** Padding de tarjeta 14 dp (`RateCard`, Notificaciones) vs 16 dp (Año, Frase, Ajustes); ~37 valores fuera de 4/8 (6, 10, 14); `RoundedCornerShape(16.dp)` suelto en `CurrencyPicker` frente a `shapes.small` (14). Arreglo: `Spacing` y `Radius` en `ui/theme`.
-- [ ] **A10 Dos lenguajes de iconos.** `NavIcons` (trazo 2, redondeado) frente a 24 usos de `Icons.Filled.*` (campana y refrescar junto al Blog en Tasas; cerrar, invertir, copiar, compartir en Calculadora; Blog; MainActivity). Arreglo: dibujar los que faltan al estilo `NavIcons` y migrar; después evaluar quitar `material-icons-extended`.
+- [x] **A9 [0.20.0, sin probar en movil] Sin tokens de espaciado/radio.** Padding de tarjeta 14 dp (`RateCard`, Notificaciones) vs 16 dp (Año, Frase, Ajustes); ~37 valores fuera de 4/8 (6, 10, 14); `RoundedCornerShape(16.dp)` suelto en `CurrencyPicker` frente a `shapes.small` (14). Arreglo: `Spacing` y `Radius` en `ui/theme`.
+- [x] **A10 [0.20.0, sin probar en movil] Dos lenguajes de iconos.** `NavIcons` (trazo 2, redondeado) frente a 24 usos de `Icons.Filled.*` (campana y refrescar junto al Blog en Tasas; cerrar, invertir, copiar, compartir en Calculadora; Blog; MainActivity). Arreglo: dibujar los que faltan al estilo `NavIcons` y migrar; después evaluar quitar `material-icons-extended`.
 - [ ] **A11 `blur(3.dp)` por tarjeta** (`ui/history/PriceCharts.kt`, `SparklineBackground`, 9–12 a la vez). El Samsung A07 de pruebas es gama baja y ya dio `POCA_MEMORIA`. Medir; si se nota, quitar el blur (el trazo ya es tenue) o cachear con `drawWithCache`.
-- [ ] **A12 Objetivo táctil** del `CurrencyPicker` de la Calculadora: ~40 dp de alto (<48) y filas de la factura con `clickable` sin `role`. Arreglo: `heightIn(min = 48.dp)` y `role = Role.Button`.
+- [x] **A12 [0.20.0, sin probar en movil] Objetivo táctil** del `CurrencyPicker` de la Calculadora: ~40 dp de alto (<48) y filas de la factura con `clickable` sin `role`. Arreglo: `heightIn(min = 48.dp)` y `role = Role.Button`.
 - [ ] **A13 `DateRangePicker` con alto fijo** `height(500.dp)` (`ui/history/HistoryDetailScreen.kt` ~406): se corta en pantallas bajas, horizontal o con letra grande. Arreglo: `heightIn(max)` con scroll.
 - [ ] **A14 Cuadrícula de Tasas siempre en 2 columnas** (`ui/home/HomeScreen.kt`) aunque la letra esté al 150–200 % (cifra de 26 sp). Verificar. Arreglo: 1 columna según `fontScale`.
 - [ ] **A15 Sin splash.** El fondo de la ventana depende del modo del sistema (`values` / `values-night`); si el tema elegido en la app difiere, puede verse un destello del color contrario al arrancar. Verificar.
 
 ### P3
 - [ ] **A16 `SkeletonBlock`** mide 96 dp y la tarjeta real más (salto al cargar); el plan pedía pulso suave (finito y respetando reducir animaciones).
-- [ ] **A17 `RateCard` duplica ~50 líneas** (lista y cuadrícula) y los marcadores difieren: `-` frente a `—`, `\u00B7` frente a `·`.
+- [x] **A17 [0.20.0, sin probar en movil] `RateCard` duplica ~50 líneas** (lista y cuadrícula) y los marcadores difieren: `-` frente a `—`, `\u00B7` frente a `·`.
 - [ ] **A18 `StatusBanner`:** «Datos desactualizados» usa el color de error y no tiene icono.
-- [ ] **A19 Imports sin uso en `MainActivity.kt`** (`LocalGasStation`, `Article`, `Calculate`, `SwapHoriz`, `Settings`...), resto de lo ya quitado. Anotar; limpiar al tocar el archivo.
+- [x] **A19 [0.20.0, sin probar en movil] Imports sin uso en `MainActivity.kt`** (`LocalGasStation`, `Article`, `Calculate`, `SwapHoriz`, `Settings`...), resto de lo ya quitado. Anotar; limpiar al tocar el archivo.
 - [ ] **A20 `FontWeight.ExtraBold`** (mes activo de `YearCard`) no existe en la familia (solo Normal–Bold): cae a Bold.
 
 ## Lo que está bien (conservar)

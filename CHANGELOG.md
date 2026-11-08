@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.20.0
+
+### Mismo estilo en toda la app
+- Los iconos de actualizar, notificaciones, cerrar, invertir, copiar, compartir, editar y añadir (Tasas, Calculadora y Blog) usan ahora el mismo trazo que la barra inferior y Ajustes.
+- Las tarjetas de Tasas, Notificaciones y Blog tienen el mismo margen interior, y la lista y la cuadrícula de Tasas comparten el mismo diseño (compra y venta se ven igual en ambas).
+- Calculadora: el selector de moneda y las filas de la factura son más fáciles de tocar y TalkBack las anuncia como botones.
+
 ## 0.19.1
 
 ### Correcciones de uso y accesibilidad
