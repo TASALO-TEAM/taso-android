@@ -176,7 +176,7 @@ Reglas de este repo que se mantienen: SIN dependencias nuevas (por eso el navega
 - [x] CI de GitHub en verde y Release `v0.17.0` publicado como Latest (commit `8fb4617`, 7 nov). PENDIENTE solo la prueba en un móvil real: botón de Google → navegador → volver a la app con la sesión iniciada.
 - Nota: en el árbol quedaban 4 líneas sin commitear en `HomeScreen.kt` (parámetro `onOpenBlog` y argumento `onBlog` DUPLICADOS: no compilaban). Se revirtieron con `git checkout`; copia del parche en `%TEMP%\homescreen-sin-commitear.patch`.
 
-# SESION 2026-11-07 (noche) - v0.17.1 EN REVISION: descargo de privacidad de taso-inv (Parte 4 del plan)
+# SESION 2026-11-07 (noche) - v0.17.1 PUBLICADA (PR #6 fusionado): descargo de privacidad de taso-inv (Parte 4 del plan)
 Plan: `tasalo\docs\plans\2026-11-07-android-ux-premium-notificaciones-privacidad.md`. Rama **`feat/privacidad-taso-inv`** (NO está en `main`): el texto legal lo revisa Ernesto antes de publicar. El CI corre en el PR sin publicar Release; al fusionar en `main` sale la 0.17.1.
 - [x] Auditoría de solo lectura de taso-inv v0.101.0.0 (migraciones 0001-0020, `app/auth.py`, `cuentas.py`, `google_login.py`, `telegram_login.py`, `respaldo.py`, `web/js/views/cuenta.js`, bloque `log` de Caddy en el VPS). Lo que hay en `docs/PRIVACIDAD.md` es solo lo confirmado ahí.
 - [x] `docs/PRIVACIDAD.md` (texto completo), `domain/PrivacyNotice.kt` (resumen corto, mismo contenido) y categoría **Privacidad** en Ajustes (`SettingsCategories.PRIVACY`, `NavIcons.Privacy`, `PrivacyNoticeContent` en `SettingsScreen.kt`) con botón «Ver el texto completo». Pruebas: `PrivacyNoticeTest` y un caso nuevo en `SettingsSummaryTest`. `VERSION_NAME=0.17.1` + CHANGELOG. Sin compilar en local (no hay SDK): lo valida el CI.
@@ -193,7 +193,7 @@ Plan: `tasalo\docs\plans\2026-11-07-android-ux-premium-notificaciones-privacidad
 Parte 3: notificaciones del bot en el teléfono. Opción A (local desde `RefreshWorker`, sin Firebase) salvo que Ernesto pida tiempo real con FCM. Luego revisión UI/UX 0.18.0 por versiones pequeñas.
 
 
-# SESION 2026-11-07 (madrugada) - v0.18.0 EN REVISION: avisos de alertas del bot en el telefono (Parte 3 del plan)
+# SESION 2026-11-07 (madrugada) - v0.18.0 PUBLICADA (PR #7 fusionado): avisos de alertas del bot en el telefono (Parte 3 del plan)
 Rama **`feat/notificaciones-bot`**, PR **#7** (apilado sobre el #6 de privacidad: fusionar primero #6, luego #7). **CI verde** (build 2m14s). No se publica Release hasta fusionar en `main`. NO probado en un movil real.
 - Opcion A elegida por Ernesto: notificacion **local** desde `RefreshWorker` (sin Firebase). El worker ya descarga los mensajes (`RefreshResult.messages`); despues del refresco llama a `notifyNewAlerts` (en `RefreshWorker.kt`), que solo actua si `settings.alertNotifications` esta activo.
 - `domain/AlertNotices.kt` (puro, probado en `AlertNoticesTest`): decide que alertas avisar (id mayor que la ultima avisada y que la ultima vista en la app), un aviso por tanda (una alerta = su titulo + adelanto sin Markdown; varias = «N alertas nuevas» + titulo de la mas reciente).
@@ -204,3 +204,12 @@ Rama **`feat/notificaciones-bot`**, PR **#7** (apilado sobre el #6 de privacidad
 - Limites honestos: el aviso llega con el intervalo del refresco (15 min minimo en WorkManager), no en tiempo real; si Ernesto quiere tiempo real hace falta FCM (Firebase), cambio mayor.
 - Parte legal (PR #6): se ajusto el texto para el personal segun el Codigo de Trabajo (commit 404276c). Siguen pendientes de decision de Ernesto: purgar sesiones vencidas en taso-inv, canal de contacto concreto para pedir borrado.
 - Siguiente: revision UI/UX 0.18.x por versiones pequenas (auditoria primero, solo dentro de Quiet Glass v3).
+
+
+# SESION 2026-11-08 - v0.18.1: boton «Pedir borrado de mis datos» (privacidad)
+- PR #6 (v0.17.1) y #7 (v0.18.0) ya fusionados en `main`; Releases v0.17.1 y v0.18.0 publicadas; ramas viejas borradas (solo queda `main`). La calculadora v0.7.0 ya estaba en `main` con otro hash.
+- Ernesto decidio el contacto para pedir borrado de datos: **tasaloteam@gmail.com**. Rama `feat/privacidad-contacto-borrado`.
+- `PrivacyNotice` (domain, puro): `CONTACT_EMAIL`, `DELETION_SUBJECT`, `DELETION_BODY` (mensaje para completar y editar). El texto de «Tus opciones» ya no dice «por el mismo medio de tus pedidos»: cita el correo. `UPDATED` = 8 de noviembre de 2026 (igual en `docs/PRIVACIDAD.md`, que tambien cita el correo).
+- `SettingsScreen.kt` (`PrivacyNoticeContent`): boton «Pedir borrado de mis datos» → `ACTION_SENDTO mailto:` con destinatario, asunto y cuerpo; el usuario edita antes de enviar. Sin app de correo: copia el texto al portapapeles y avisa. No hace falta permiso ni cambio de manifest (mismo patron que `ReportSender`).
+- Pendiente de decision de Ernesto: purgar sesiones vencidas en taso-inv (guardan IP y navegador hasta eliminar la cuenta; el texto dice «mientras tengas la cuenta»). Cambio pequeno en taso-inv + despliegue en el VPS (`ssh pan`).
+- Sin probar en movil: abrir el boton y ver que Gmail/otra app trae asunto y cuerpo; probar sin app de correo.

@@ -1,5 +1,6 @@
 package com.tasalo.android.domain
 
+import com.tasalo.android.diag.DiagnosticLog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,6 +27,24 @@ class PrivacyNoticeTest {
     @Test
     fun `el texto completo apunta al documento del repo`() {
         assertEquals("$REPO_URL/blob/main/docs/PRIVACIDAD.md", PrivacyNotice.FULL_TEXT_URL)
+    }
+
+    @Test
+    fun `el correo de contacto es el del equipo y aparece en las opciones del texto`() {
+        assertEquals(DiagnosticLog.REPORT_EMAIL, PrivacyNotice.CONTACT_EMAIL)
+        val options = PrivacyNotice.sections.first { it.title == "Tus opciones" }.lines.joinToString("\n")
+        assertTrue(options.contains(PrivacyNotice.CONTACT_EMAIL))
+        assertTrue(!options.contains("mismo medio"))
+    }
+
+    @Test
+    fun `el mensaje de borrado esta listo para completar y no trae datos de nadie`() {
+        val body = PrivacyNotice.DELETION_BODY
+        assertTrue(body.contains("borren mis datos"))
+        assertTrue(body.contains("Mi usuario en la Tienda:"))
+        assertTrue(body.contains("14 d\u00edas"))
+        assertTrue(PrivacyNotice.DELETION_SUBJECT.isNotBlank())
+        assertTrue(!body.startsWith("\n") && !body.contains("    "))
     }
 
     @Test
