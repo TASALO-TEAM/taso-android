@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.21.0
+
+### Estados de carga y letra grande
+- Los marcadores de carga tienen ahora el alto de la tarjeta real (la lista ya no salta al cargar) y laten suavemente unos segundos.
+- Con la letra al 150 % o más, la pantalla Tasas pasa a una sola columna para que las cifras no se corten.
+- El aviso de datos desactualizados ya no usa el color de error: es un aviso normal (los fallos de conexión siguen en rojo).
+- El selector de fechas del historial se adapta a pantallas bajas, en horizontal o con letra grande.
+
 ## 0.20.1
 
 ### Movimiento y navegación

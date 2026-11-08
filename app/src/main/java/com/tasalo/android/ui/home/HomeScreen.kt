@@ -94,7 +94,9 @@ fun HomeScreen(
         ) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             // 2 columnas en teléfono; 3 si el ancho es >= 600 dp (plan §4.1).
-            val columns = if (listView) 1 else if (maxWidth >= 600.dp) 3 else 2
+            // Con la letra al 150 % o mas, la cifra de 26 sp no cabe en media pantalla: una sola columna.
+            val bigFont = androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.5f
+            val columns = if (listView || (bigFont && maxWidth < 600.dp)) 1 else if (maxWidth >= 600.dp) 3 else 2
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 modifier = Modifier
@@ -111,7 +113,7 @@ fun HomeScreen(
 
                 when {
                     !state.loaded || (snapshot == null && (state.refreshing || state.ratesError == RefreshError.NONE)) -> {
-                        items(4) { SkeletonBlock() }
+                        items(4) { SkeletonBlock(height = if (listView) 104 else 140) }
                     }
                     snapshot == null -> {
                         item(span = { GridItemSpan(maxLineSpan) }) {
@@ -177,7 +179,7 @@ internal fun bannerFor(state: UiState): Pair<String, Boolean>? {
     return when {
         state.ratesError == RefreshError.OFFLINE -> "Sin conexión · datos de $ago" to true
         state.ratesError == RefreshError.API -> "No se pudo actualizar · datos de $ago" to true
-        Format.isStale(fetchedAt, state.now) -> "Datos desactualizados · $ago" to true
+        Format.isStale(fetchedAt, state.now) -> "Datos desactualizados · $ago" to false
         else -> null
     }
 }

@@ -1,5 +1,6 @@
 package com.tasalo.android.ui.history
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -403,6 +404,6 @@ private fun RangeDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     ) {
-        DateRangePicker(state = pickerState, modifier = Modifier.height(500.dp))
+        DateRangePicker(state = pickerState, modifier = Modifier.heightIn(max = 500.dp))
     }
 }

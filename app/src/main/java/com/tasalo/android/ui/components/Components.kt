@@ -1,5 +1,11 @@
 package com.tasalo.android.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.drawBehind
+import com.tasalo.android.ui.theme.LocalReduceMotion
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -242,15 +248,24 @@ fun StatusBanner(text: String, isError: Boolean, modifier: Modifier = Modifier) 
     }
 }
 
-/** Skeleton estático (sin animaciones infinitas, por batería). */
+/** Skeleton con un pulso suave que se detiene solo tras unos segundos (sin animacion infinita, por bateria). */
 @Composable
 fun SkeletonBlock(modifier: Modifier = Modifier, height: Int = 96) {
+    val tone = MaterialTheme.colorScheme.onSurface
+    val reduce = LocalReduceMotion.current
+    val alpha = remember { Animatable(0.08f) }
+    LaunchedEffect(reduce) {
+        if (!reduce) repeat(3) {
+            alpha.animateTo(0.14f, tween(700))
+            alpha.animateTo(0.08f, tween(700))
+        }
+    }
     Box(
         modifier
             .fillMaxWidth()
             .height(height.dp)
             .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
+            .drawBehind { drawRect(tone.copy(alpha = alpha.value)) },
     )
 }
 
