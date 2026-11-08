@@ -215,3 +215,13 @@ Rama **`feat/notificaciones-bot`**, PR **#7** (apilado sobre el #6 de privacidad
 - Sin probar en movil: abrir el boton y ver que Gmail/otra app trae asunto y cuerpo; probar sin app de correo.
 
 - 2026-11-08: v0.18.0 y v0.18.1 ya estan publicadas (la v0.18.0 ya NO esta en revision). v0.19.0: avisos de alertas activos por defecto (AlertPrompt.kt; en Android 13+ pregunta una vez, en 12 o menos quedan activos sin preguntar; quien ya eligio a mano conserva su eleccion; el worker no avisa de lo viejo la primera vez). CI verde y Release publicada. Sin probar en movil real. Siguiente: auditoria UI/UX (solo dentro de Quiet Glass v3), en versiones pequenas.
+
+
+# SESION 2026-11-08 (tarde) - Auditoria UI/UX hecha; v0.19.1 EN CURSO
+Ernesto pidio la revision UI/UX «profesional» en versiones pequenas y dejar todo anotado por si se acaban los creditos.
+- **La auditoria completa esta en `docs/AUDITORIA_UI_UX.md`** (20 hallazgos A1-A20 con archivo, lineas aprox., arreglo y casilla de estado; orden de entrega 0.19.1 -> 0.20.0 -> 0.20.1 -> 0.21.0). Es solo de codigo: lo marcado «verificar» hay que probarlo en un movil real (no hay SDK ni emulador).
+- Reglas que se mantienen: dentro de Quiet Glass v3 (radios 22/28 y turquesa son marca), SIN dependencias ni colores nuevos, cambios minimos, `ESCALADO_DE_FUENTE.md` (se cambia la distribucion, nunca se recorta), `ContrastTest` en verde. No hay SDK local: se sube a `main` y se mira `gh run list -L 3`.
+- Correccion hecha durante el trabajo: el campo de texto del Blog esta dentro de un `AlertDialog`, que maneja el teclado solo; **no** necesita `imePadding` (A4 es solo Ajustes).
+- Herramientas: graphify NO tiene grafo de este repo (no existe `graphify-out/graph.json`); la consola de PowerShell 5.1 muestra mal los acentos de archivos UTF-8 (no es corrupcion; los archivos estan bien: usar `read_file` de Desktop Commander o `Get-Content -Encoding UTF8`). Los archivos usan fin de linea LF.
+- **Plan de la 0.19.1:** A1 Calculadora sin recorte, A2 TalkBack con superpuestas, A3 tarjetas de Notificaciones, A4 teclado en Ajustes. Marcar cada una en `docs/AUDITORIA_UI_UX.md` al terminarla y subir `VERSION_NAME` + CHANGELOG (texto para usuarios).
+- Estado de la 0.19.1: (se actualiza abajo, linea a linea, segun avance)
