@@ -3,6 +3,14 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.18.0
+
+### Avisos de alertas en el teléfono
+- Nuevo: la app puede **avisarte con una notificación cuando el bot de TASALO publique una alerta nueva**, aunque la app esté cerrada. Se activa en Ajustes → Tasas → «Avisos de alertas del bot» y viene **apagado**: no te llega nada hasta que lo actives.
+- Solo avisa de lo que llegue después de activarlo, y no repite lo que ya viste en la app. Al tocar el aviso se abre la pantalla de notificaciones.
+- Funciona con la actualización en segundo plano (no usa Firebase ni servicios de Google, y no manda datos tuyos a ningún sitio): puede tardar hasta el intervalo que elegiste en avisar.
+- Android 13 o superior pedirá el permiso de notificaciones al activarlo. También puedes cambiar el sonido o silenciarlo desde el botón «Sonido y tipo de aviso».
+
 ## 0.17.1
 
 ### Privacidad

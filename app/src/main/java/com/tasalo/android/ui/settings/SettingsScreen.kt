@@ -1,6 +1,16 @@
 package com.tasalo.android.ui.settings
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import com.tasalo.android.work.AlertNotifier
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -199,6 +209,7 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
                     }
                 }
                 RefreshSection(state, vm)
+                AlertNotifySection(state, vm)
             }
         }
 
@@ -579,6 +590,80 @@ private fun DiagnosticsSection(state: UiState, vm: MainViewModel) {
         }
     }
 }
+/** Aviso local (sin Firebase) de las alertas nuevas del bot. Se comprueba con el refresco en segundo plano. */
+@Composable
+private fun AlertNotifySection(state: UiState, vm: MainViewModel) {
+    val context = LocalContext.current
+    val enabled = state.settings.alertNotifications
+    var denied by remember { mutableStateOf(false) }
+    // Al volver de los ajustes del sistema se vuelve a comprobar si las notificaciones quedaron permitidas.
+    var resumes by remember { mutableIntStateOf(0) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumes++ }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        denied = !granted
+        if (granted) vm.setAlertNotifications(true)
+    }
+    val blockedBySystem = enabled && resumes >= 0 && !AlertNotifier.canNotify(context)
+    Section("Avisos de alertas del bot") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Avisar en el teléfono")
+                    Text(
+                        "Una notificación cuando el bot publique una alerta nueva. Está apagado hasta que lo actives " +
+                            "y solo avisa de lo que llegue después.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { on ->
+                        denied = false
+                        val allowed = Build.VERSION.SDK_INT < 33 ||
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                        when {
+                            !on -> vm.setAlertNotifications(false)
+                            allowed -> vm.setAlertNotifications(true)
+                            else -> askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    },
+                )
+            }
+            if (denied) {
+                Text(
+                    "Sin el permiso de notificaciones de Android no se puede avisar. Puedes dárselo a TASALO en los ajustes del teléfono.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (blockedBySystem) {
+                Text(
+                    "Las notificaciones de TASALO están bloqueadas en el teléfono, así que el aviso no se verá.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (enabled) {
+                OutlinedButton(onClick = { AlertNotifier.openSystemSettings(context) }) { Text("Sonido y tipo de aviso") }
+                if (state.settings.refreshMinutes == 0) {
+                    Text(
+                        "La actualización en segundo plano está en Manual: sin ella no llegan avisos. Elige un intervalo arriba.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    "Todo se hace en tu teléfono: la app consulta la API como siempre y no manda datos tuyos a ningún servicio extra. " +
+                        "Puede tardar hasta el intervalo elegido en avisar.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RefreshSection(state: UiState, vm: MainViewModel) {
