@@ -3,6 +3,13 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.21.2
+
+### Barra inferior
+- La burbuja ya no va con retraso: se mueve exactamente a la vez que la pantalla y llega con ella, sin quedarse atrás ni rebotar después.
+- Sigue estirándose como una gota al viajar entre dos secciones, pero ahora al mismo ritmo que el resto de transiciones de la app.
+- En un salto largo (por ejemplo, de Tasas a Ajustes) la burbuja recorre el trayecto con el mismo resorte que la pantalla.
+
 ## 0.21.1
 
 ### Barra inferior

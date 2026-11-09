@@ -1,8 +1,8 @@
 package com.tasalo.android.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.snap
@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -66,10 +65,9 @@ import androidx.compose.ui.unit.sp
 import com.tasalo.android.ui.theme.LocalGlass
 import com.tasalo.android.ui.theme.LocalReduceMotion
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -93,10 +91,11 @@ fun floatingContentPadding(top: androidx.compose.ui.unit.Dp = 16.dp): PaddingVal
  * burbuja de alto completo que lleva el icono y el nombre de la sección activa. Es solo Compose, sin dependencias:
  * no desenfoca lo que hay detrás.
  *
- * La burbuja no copia la posición del paginador: la persiguen dos resortes, uno por borde. El borde que va delante
- * es rápido y el de atrás más lento y con algo de rebote, así que la burbuja se estira al viajar y se recoge al
- * llegar (efecto gota). Sigue al dedo mientras se arrastra, y en un salto largo (de la primera a la última sección)
- * recorre todo el trayecto en vez de teletransportarse. Con «quitar animaciones» se coloca de golpe.
+ * La burbuja va pegada al paginador, sin resortes propios: su sitio y su estiramiento salen de la posición continua
+ * de las secciones, así que se mueve exactamente a la vez que el contenido (dedo, toque o salto) y llega con él.
+ * Al viajar entre dos secciones el borde de delante adelanta al de atrás (efecto gota). Solo cuando la mueve la propia
+ * barra (arrastrarla con el dedo o tocar una sección lejana, donde el paginador salta) usa el mismo resorte que el
+ * paginador y le devuelve el mando al llegar. Con «quitar animaciones» se coloca de golpe.
  *
  * [position] devuelve la posición continua (página + desplazamiento) y se lee fuera de la composición, así que
  * mover la burbuja solo vuelve a dibujar, no recompone.
@@ -137,10 +136,12 @@ fun GlassIslandBar(
     val reduce = LocalReduceMotion.current
     val currentPosition by rememberUpdatedState(position)
     val currentOnSelect by rememberUpdatedState(onSelect)
-    // Posición de la burbuja mientras el dedo la arrastra o se asienta (null = manda el paginador).
-    var dragPos by remember { mutableStateOf<Float?>(null) }
+    // Posición de la burbuja cuando la mueve la propia barra (dedo o salto largo); si [ovrOn] es falso manda el paginador.
+    var ovr by remember { mutableFloatStateOf(0f) }
+    var ovrOn by remember { mutableStateOf(false) }
     var dragging by remember { mutableStateOf(false) }
-    var settleJob by remember { mutableStateOf<Job?>(null) }
+    var travelJob by remember { mutableStateOf<Job?>(null) }
+    val pos: () -> Float = { (if (ovrOn) ovr else currentPosition()).coerceIn(0f, last) }
     // 0 en reposo, 1 mientras se arrastra: la burbuja crece un poco, como si la levantaras.
     val lift by animateFloatAsState(
         targetValue = if (dragging) 1f else 0f,
@@ -148,21 +149,19 @@ fun GlassIslandBar(
         label = "islandLift",
     )
 
-    // Borde izquierdo y derecho de la burbuja, en «posición de sección» (0 = primera). En reposo valen lo mismo.
-    val leftEdge = remember { Animatable(selected.toFloat()) }
-    val rightEdge = remember { Animatable(selected.toFloat()) }
-    LaunchedEffect(reduce, items.size) {
-        snapshotFlow { (dragPos ?: currentPosition()).coerceIn(0f, last) }.collectLatest { target ->
+    // Lleva la burbuja a [target] con el mismo resorte que el paginador y, cuando éste ha llegado, le devuelve el mando.
+    val travelTo: (Int) -> Unit = { target ->
+        travelJob?.cancel()
+        if (!ovrOn) ovr = pos()
+        ovrOn = true
+        travelJob = scope.launch {
             if (reduce) {
-                leftEdge.snapTo(target)
-                rightEdge.snapTo(target)
+                ovr = target.toFloat()
             } else {
-                val goingRight = target >= (leftEdge.value + rightEdge.value) / 2f
-                coroutineScope {
-                    launch { rightEdge.animateTo(target, spring(0.78f, if (goingRight) 900f else 320f)) }
-                    launch { leftEdge.animateTo(target, spring(0.78f, if (goingRight) 320f else 900f)) }
-                }
+                animate(ovr, target.toFloat(), animationSpec = spring(dampingRatio = 0.85f, stiffness = 380f)) { v, _ -> ovr = v }
             }
+            withTimeoutOrNull(600L) { snapshotFlow { abs(currentPosition() - target) }.first { it < 0.02f } }
+            if (!dragging) ovrOn = false
         }
     }
 
@@ -187,34 +186,26 @@ fun GlassIslandBar(
             .pointerInput(items.size, reduce) {
                 val pad = sidePad.toPx()
                 val itemW = (size.width - pad * 2) / items.size
-                // Al soltar, la burbuja se queda en la sección más cercana (el resorte de arriba la asienta) y el
-                // paginador la alcanza; solo entonces se le devuelve el mando.
+                // Al soltar, la burbuja se asienta en la sección más cercana con el resorte del paginador.
                 val finish = {
                     dragging = false
-                    val from = dragPos
-                    if (from != null) {
-                        val target = from.roundToInt().coerceIn(0, items.size - 1)
-                        dragPos = target.toFloat()
+                    if (ovrOn) {
+                        val target = ovr.roundToInt().coerceIn(0, items.size - 1)
                         currentOnSelect(target)
-                        settleJob?.cancel()
-                        settleJob = scope.launch {
-                            withTimeoutOrNull(1500L) {
-                                snapshotFlow { abs(currentPosition() - target) }.first { it < 0.01f }
-                            }
-                            if (!dragging) dragPos = null
-                            if (!reduce) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        }
+                        travelTo(target)
+                        if (!reduce) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     }
                 }
                 detectHorizontalDragGestures(
                     onDragStart = {
-                        settleJob?.cancel()
-                        dragPos = ((leftEdge.value + rightEdge.value) / 2f).coerceIn(0f, last)
+                        travelJob?.cancel()
+                        ovr = pos()
+                        ovrOn = true
                         dragging = true
                     },
                     onHorizontalDrag = { change, dx ->
                         change.consume()
-                        dragPos = ((dragPos ?: 0f) + dx / itemW).coerceIn(0f, last)
+                        ovr = (ovr + dx / itemW).coerceIn(0f, last)
                     },
                     onDragEnd = { finish() },
                     onDragCancel = { finish() },
@@ -226,14 +217,19 @@ fun GlassIslandBar(
                 val insetV = bubbleInsetV.toPx() * (1f - 0.35f * raised)
                 val grow = 2.dp.toPx() * raised
                 val itemW = (size.width - pad * 2) / items.size
-                val a = leftEdge.value.coerceIn(-0.05f, last + 0.05f)
-                val b = rightEdge.value.coerceIn(-0.05f, last + 0.05f)
+                // Entre dos secciones el borde de delante adelanta al de atrás (a = izquierdo, b = derecho, centrados en p).
+                val p = pos()
+                val cell = floor(p)
+                val f = p - cell
+                val stretch = f * (1f - f)
+                val a = cell + f - stretch
+                val b = cell + f + stretch
                 val halfW = (itemW - bubbleInsetH.toPx() * 2) / 2f
-                val left = pad + (minOf(a, b) + 0.5f) * itemW - halfW - grow
-                val right = pad + (maxOf(a, b) + 0.5f) * itemW + halfW + grow
-                // Al viajar se estira (lo hacen los dos resortes) y se achata un poco, como una gota.
-                val spread = abs(b - a).coerceAtMost(1f)
-                val h = (size.height - insetV * 2) * (1f - 0.06f * spread)
+                val left = pad + (a + 0.5f) * itemW - halfW - grow
+                val right = pad + (b + 0.5f) * itemW + halfW + grow
+                // Al viajar se estira y se achata un poco, como una gota.
+                val spread = (b - a).coerceAtMost(0.5f)
+                val h = (size.height - insetV * 2) * (1f - 0.12f * spread)
                 val top = (size.height - h) / 2f
                 val radius = CornerRadius(h / 2f, h / 2f)
                 val topLeft = Offset(left, top)
@@ -258,8 +254,13 @@ fun GlassIslandBar(
                     item = item,
                     selected = index == selected,
                     // 1 cuando la burbuja está justo sobre esta pestaña y 0 al alejarse: el nombre aparece y se va con ella.
-                    progress = { (1f - abs((leftEdge.value + rightEdge.value) / 2f - index) * 1.6f).coerceIn(0f, 1f) },
-                    onClick = { onSelect(index) },
+                    progress = { (1f - abs(pos() - index) * 1.6f).coerceIn(0f, 1f) },
+                    onClick = {
+                        // Un salto largo no recorre las secciones del medio: el paginador salta junto al destino y la
+                        // burbuja viaja entera con el mismo resorte, para no teletransportarse.
+                        if (!reduce && abs(index - selected) > 1) travelTo(index)
+                        onSelect(index)
+                    },
                     modifier = Modifier.weight(1f),
                 )
             }
