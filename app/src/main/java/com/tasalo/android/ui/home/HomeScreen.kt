@@ -69,7 +69,7 @@ fun HomeScreen(
     val rates = snapshot?.bySource?.get(source).orEmpty()
         .filter { !state.settings.isHidden(source, it.currency) }
 
-    // Deslizar a izquierda/derecha cambia de fuente (El Toque / BCC / CADECA), además de tocar el selector.
+    // Deslizar a izquierda/derecha cambia de fuente (El Toque / QvaPay / BCC), además de tocar el selector.
     val sources = Source.entries
 
     // El encabezado flota sobre la lista: el título se esconde al bajar y reaparece al subir; el selector de

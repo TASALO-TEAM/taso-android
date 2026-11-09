@@ -4,7 +4,7 @@
     <string name="widget_tasas_label">TASALO · Tasas</string>
     <string name="widget_bloque_label">TASALO · Bloque</string>
     <string name="widget_anio_label">TASALO · Año y frase</string>
-    <string name="widget_tasas_desc">De 1 a 4 monedas de El Toque, BCC o CADECA</string>
+    <string name="widget_tasas_desc">De 1 a 4 monedas de El Toque, QvaPay o BCC</string>
     <string name="widget_bloque_desc">Todas las monedas de una fuente</string>
     <string name="widget_anio_desc">Progreso del año y frase del día</string>
     <string name="widget_tendencia_label">TASALO &#183; Tendencia</string>

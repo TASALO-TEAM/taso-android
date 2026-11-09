@@ -59,7 +59,7 @@ object Parsers {
             else -> Change.NEUTRAL
         }
 
-    /** CADECA puede no traer `rate`: rate = sell ?: buy; sin ninguno de los tres se descarta. */
+    /** Una fuente puede no traer `rate`: rate = sell ?: buy; sin ninguno de los tres se descarta. */
     fun rate(code: String, e: JsonElement?): Rate? {
         val o = e as? JsonObject ?: return null
         val buy = number(o["buy"])

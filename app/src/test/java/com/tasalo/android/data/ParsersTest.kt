@@ -18,10 +18,9 @@ class ParsersTest {
     // ---------- /tasas/latest (fixture real capturado en la Fase 0) ----------
 
     @Test
-    fun latest_fixture_parses_the_three_sources_in_preferred_order() {
+    fun latest_fixture_parses_the_sources_in_preferred_order() {
         val m = Parsers.latest(fixture("latest.json"))!!
         assertEquals(listOf("EUR", "USD", "MLC", "BTC", "TRX", "USDT"), m[Source.ELTOQUE]!!.map { it.currency })
-        assertEquals(listOf("EUR", "USD", "CAD", "GBP", "CHF", "JPY", "MXN"), m[Source.CADECA]!!.map { it.currency })
         assertEquals(
             listOf("EUR", "USD", "CAD", "GBP", "CHF", "RUB", "AUD", "JPY", "MXN").toSet(),
             m[Source.BCC]!!.map { it.currency }.toSet(),
@@ -38,12 +37,11 @@ class ParsersTest {
     }
 
     @Test
-    fun cup_is_dropped_from_cadeca() {
-        val cadeca = Parsers.latest(fixture("latest.json"))!![Source.CADECA]!!
-        assertFalse(cadeca.any { it.currency == "CUP" })
-        val usd = cadeca.first { it.currency == "USD" }
-        assertEquals(657.66, usd.buy!!, 0.0)
-        assertEquals(684.78, usd.sell!!, 0.0)
+    fun cup_is_dropped_from_bcc() {
+        val json = """{"ok":true,"data":{"bcc":{"CUP":{"rate":1},"USD":{"rate":500}}}}"""
+        val bcc = Parsers.latest(json)!![Source.BCC]!!
+        assertFalse(bcc.any { it.currency == "CUP" })
+        assertEquals(500.0, bcc.single().rate, 0.0)
     }
 
     @Test
@@ -56,19 +54,28 @@ class ParsersTest {
     // ---------- casos borde (plan §9) ----------
 
     @Test
-    fun cadeca_without_rate_uses_sell_then_buy() {
-        val json = """{"ok":true,"data":{"cadeca":{
+    fun source_without_rate_uses_sell_then_buy() {
+        val json = """{"ok":true,"data":{"bcc":{
             "USD":{"buy":115,"sell":120},
             "EUR":{"buy":130,"sell":null}}}}"""
-        val cadeca = Parsers.latest(json)!![Source.CADECA]!!.associateBy { it.currency }
-        assertEquals(120.0, cadeca.getValue("USD").rate, 0.0)
-        assertEquals(130.0, cadeca.getValue("EUR").rate, 0.0)
+        val bcc = Parsers.latest(json)!![Source.BCC]!!.associateBy { it.currency }
+        assertEquals(120.0, bcc.getValue("USD").rate, 0.0)
+        assertEquals(130.0, bcc.getValue("EUR").rate, 0.0)
     }
 
     @Test
-    fun cadeca_with_buy_and_sell_both_null_is_discarded() {
-        val json = """{"ok":true,"data":{"cadeca":{"USD":{"rate":null,"buy":null,"sell":null,"change":"up"}}}}"""
-        assertTrue(Parsers.latest(json)!![Source.CADECA]!!.isEmpty())
+    fun source_with_buy_and_sell_both_null_is_discarded() {
+        val json = """{"ok":true,"data":{"bcc":{"USD":{"rate":null,"buy":null,"sell":null,"change":"up"}}}}"""
+        assertTrue(Parsers.latest(json)!![Source.BCC]!!.isEmpty())
+    }
+
+    @Test
+    fun legacy_cadeca_key_is_ignored() {
+        val json = """{"ok":true,"data":{"eltoque":{"USD":{"rate":500}},"cadeca":{"USD":{"buy":115,"sell":120}}}}"""
+        val m = Parsers.latest(json)!!
+        assertEquals(Source.entries.toSet(), m.keys)
+        assertEquals(500.0, m.getValue(Source.ELTOQUE).single().rate, 0.0)
+        assertNull(Source.fromId("cadeca"))
     }
 
     @Test

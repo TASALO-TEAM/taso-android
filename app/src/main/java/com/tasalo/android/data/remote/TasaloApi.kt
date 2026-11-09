@@ -27,9 +27,6 @@ interface TasaloApi {
     @GET("api/v1/tasas/bcc")
     suspend fun bcc(): ResponseBody
 
-    @GET("api/v1/tasas/cadeca")
-    suspend fun cadeca(): ResponseBody
-
     /** Fuente nueva: con una API antigua da 404 y simplemente no hay datos de QvaPay. */
     @GET("api/v1/tasas/qvapay")
     suspend fun qvapay(): ResponseBody
