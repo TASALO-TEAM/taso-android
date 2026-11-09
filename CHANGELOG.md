@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.22.1
+
+### Barra inferior
+- La barra se encoge un poco y baja hacia el borde cuando bajas por una lista (Tasas, Efectivo, Blog, Ajustes...), y vuelve a su tama?o en cuanto subes o cambias de secci?n.
+- Con ?quitar animaciones? activado el cambio es instant?neo.
+
 ## 0.22.0
 
 ### Avisos de pedidos de la tienda

@@ -51,6 +51,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
@@ -307,6 +311,17 @@ private fun TasaloRoot(vm: MainViewModel) {
         val reduceMotion = LocalReduceMotion.current
         val barInset = with(LocalDensity.current) { barHeightPx.toDp() }
         val layoutDirection = LocalLayoutDirection.current
+        // La cápsula se encoge al bajar por una lista y vuelve a su tamaño al subir o cambiar de sección. Solo observa: no consume scroll.
+        var barCompact by remember { mutableStateOf(false) }
+        val barScroll = remember {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    if (available.y < 0f) barCompact = true else if (available.y > 0f) barCompact = false
+                    return Offset.Zero
+                }
+            }
+        }
+        LaunchedEffect(pagerState.currentPage) { barCompact = false }
         Scaffold(
             modifier = Modifier.quietGlassBackground(),
             containerColor = Color.Transparent,
@@ -319,6 +334,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                     Box(
                         Modifier
                             .fillMaxSize()
+                            .nestedScroll(barScroll)
                             // Solo se respeta el borde de arriba y los laterales: abajo manda la cápsula flotante.
                             .padding(
                                 start = padding.calculateStartPadding(layoutDirection),
@@ -452,6 +468,7 @@ private fun TasaloRoot(vm: MainViewModel) {
                 GlassIslandBar(
                     items = TABS,
                     selected = pagerState.currentPage,
+                    compact = barCompact,
                     position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                     onSelect = { index ->
                         showNotifications = false

@@ -48,6 +48,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -107,6 +108,7 @@ fun GlassIslandBar(
     position: () -> Float,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val glass = LocalGlass.current
     val scheme = MaterialTheme.colorScheme
@@ -165,8 +167,23 @@ fun GlassIslandBar(
         }
     }
 
+    val compactAmount by animateFloatAsState(
+        targetValue = if (compact) 1f else 0f,
+        animationSpec = if (reduce) snap() else spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+        label = "islandCompact",
+    )
+
     Box(
         modifier
+            // Compacta (al bajar por una lista): se encoge y baja un poco hacia el borde, anclada abajo. Solo dibujo, no cambia el tamaño medido.
+            .graphicsLayer {
+                val k = compactAmount
+                val s = 1f - 0.14f * k
+                scaleX = s
+                scaleY = s
+                translationY = 6.dp.toPx() * k
+                transformOrigin = TransformOrigin(0.5f, 1f)
+            }
             .padding(horizontal = 20.dp)
             .navigationBarsPadding()
             .padding(top = 4.dp, bottom = 8.dp)
