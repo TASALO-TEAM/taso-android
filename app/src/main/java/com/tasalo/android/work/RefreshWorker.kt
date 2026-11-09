@@ -15,6 +15,7 @@ import com.tasalo.android.AppContainer
 import com.tasalo.android.container
 import com.tasalo.android.data.parse.Parsers
 import com.tasalo.android.domain.AlertNotices
+import com.tasalo.android.domain.OrderNotices
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.widget.WidgetUpdater
 import java.util.concurrent.TimeUnit
@@ -37,6 +38,8 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             // Se actualizan siempre: aunque falle la red, los widgets deben poder atenuarse por datos viejos.
             WidgetUpdater.updateAll(applicationContext)
             if (result.anyOk) notifyNewAlerts(container)
+            // Los pedidos vienen de otro servidor (taso-inv): se consultan aunque las tasas hayan fallado.
+            notifyOrders(container)
             if (result.anyOk || runAttemptCount >= 2) Result.success() else Result.retry()
         } catch (e: kotlinx.coroutines.CancellationException) {
             // WorkManager cancela el trabajo al reprogramarlo o al abrir la app: es normal, no un fallo.
@@ -67,6 +70,28 @@ private suspend fun RefreshWorker.notifyNewAlerts(container: AppContainer) {
     }.onFailure {
         if (it is kotlinx.coroutines.CancellationException) throw it
         DiagnosticLog.w("Worker", "el aviso de alertas falló", it)
+    }
+}
+
+/**
+ * Aviso local de pedidos de la tienda (taso-inv): solo si la persona no lo apago y hay sesion abierta en la pestaña Tienda
+ * (sin sesion `fetch()` devuelve null y no pasa nada). Un fallo aqui nunca debe tumbar el refresco.
+ */
+private suspend fun RefreshWorker.notifyOrders(container: AppContainer) {
+    runCatching {
+        val settings = container.settingsStore.current()
+        if (!settings.orderNotifications) return
+        val items = container.avisosClient.fetch() ?: return
+        // Primera vez con sesion: lo que ya habia no cuenta, solo lo que llegue despues.
+        if (settings.lastNotifiedOrder == 0L) {
+            container.settingsStore.setLastNotifiedOrder(OrderNotices.baseline(items))
+            return
+        }
+        val notice = OrderNotices.notice(OrderNotices.pending(items, settings.lastNotifiedOrder)) ?: return
+        if (AlertNotifier.showOrder(applicationContext, notice)) container.settingsStore.setLastNotifiedOrder(notice.newestId)
+    }.onFailure {
+        if (it is kotlinx.coroutines.CancellationException) throw it
+        DiagnosticLog.w("Worker", "el aviso de pedidos falló", it)
     }
 }
 

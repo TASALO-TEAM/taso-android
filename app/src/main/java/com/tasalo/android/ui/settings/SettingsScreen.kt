@@ -223,6 +223,7 @@ fun SettingsScreen(state: UiState, vm: MainViewModel, modifier: Modifier = Modif
                 }
                 RefreshSection(state, vm)
                 AlertNotifySection(state, vm)
+                OrderNotifySection(state, vm)
             }
         }
 
@@ -640,25 +641,64 @@ private fun DiagnosticsSection(state: UiState, vm: MainViewModel) {
 /** Aviso local (sin Firebase) de las alertas nuevas del bot. Se comprueba con el refresco en segundo plano. */
 @Composable
 private fun AlertNotifySection(state: UiState, vm: MainViewModel) {
+    NotifySection(
+        title = "Avisos de alertas del bot",
+        description = "Una notificación cuando el bot publique una alerta nueva. Puedes apagarlo cuando quieras " +
+            "y solo avisa de lo que llegue despu\u00e9s.",
+        enabled = state.settings.alertNotifications,
+        onChange = vm::setAlertNotifications,
+        channelId = AlertNotifier.CHANNEL_ID,
+        refreshMinutes = state.settings.refreshMinutes,
+        footnote = "Todo se hace en tu teléfono: la app consulta la API como siempre y no manda datos tuyos a ningún servicio extra. " +
+            "Puede tardar hasta el intervalo elegido en avisar.",
+    )
+}
+
+/** Aviso local de los pedidos de la tienda (taso-inv). Solo hace algo si hay sesión abierta en la pestaña Tienda. */
+@Composable
+private fun OrderNotifySection(state: UiState, vm: MainViewModel) {
+    NotifySection(
+        title = "Avisos de pedidos de la tienda",
+        description = "Una notificación cuando cambie el estado de tus pedidos en la Tienda o, si eres del personal, " +
+            "cuando llegue un pedido nuevo. Solo funciona si tienes la sesión abierta en la pestaña Tienda.",
+        enabled = state.settings.orderNotifications,
+        onChange = vm::setOrderNotifications,
+        channelId = AlertNotifier.ORDERS_CHANNEL_ID,
+        refreshMinutes = state.settings.refreshMinutes,
+        footnote = "La app consulta tus avisos en la Tienda con tu sesión, sin guardar nada más ni marcarlos como leídos. " +
+            "Mientras esté activo, la sesión no se cierra por llevar días sin abrir la Tienda; cerrar sesión lo detiene. " +
+            "En la pantalla bloqueada solo se ve un aviso genérico. Puede tardar hasta el intervalo elegido en avisar.",
+    )
+}
+
+/** Interruptor de un aviso local con su permiso de notificaciones, el atajo a los ajustes de su canal y las advertencias. */
+@Composable
+private fun NotifySection(
+    title: String,
+    description: String,
+    enabled: Boolean,
+    onChange: (Boolean) -> Unit,
+    channelId: String,
+    refreshMinutes: Int,
+    footnote: String,
+) {
     val context = LocalContext.current
-    val enabled = state.settings.alertNotifications
     var denied by remember { mutableStateOf(false) }
     // Al volver de los ajustes del sistema se vuelve a comprobar si las notificaciones quedaron permitidas.
     var resumes by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumes++ }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         denied = !granted
-        if (granted) vm.setAlertNotifications(true)
+        if (granted) onChange(true)
     }
     val blockedBySystem = enabled && resumes >= 0 && !AlertNotifier.canNotify(context)
-    Section("Avisos de alertas del bot") {
+    Section(title) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Avisar en el teléfono")
                     Text(
-                        "Una notificación cuando el bot publique una alerta nueva. Puedes apagarlo cuando quieras " +
-                            "y solo avisa de lo que llegue despu\u00e9s.",
+                        description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -670,8 +710,8 @@ private fun AlertNotifySection(state: UiState, vm: MainViewModel) {
                         val allowed = Build.VERSION.SDK_INT < 33 ||
                             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                         when {
-                            !on -> vm.setAlertNotifications(false)
-                            allowed -> vm.setAlertNotifications(true)
+                            !on -> onChange(false)
+                            allowed -> onChange(true)
                             else -> askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
                     },
@@ -692,8 +732,8 @@ private fun AlertNotifySection(state: UiState, vm: MainViewModel) {
                 )
             }
             if (enabled) {
-                OutlinedButton(onClick = { AlertNotifier.openSystemSettings(context) }) { Text("Sonido y tipo de aviso") }
-                if (state.settings.refreshMinutes == 0) {
+                OutlinedButton(onClick = { AlertNotifier.openSystemSettings(context, channelId) }) { Text("Sonido y tipo de aviso") }
+                if (refreshMinutes == 0) {
                     Text(
                         "La actualización en segundo plano está en Manual: sin ella no llegan avisos. Elige un intervalo arriba.",
                         style = MaterialTheme.typography.bodySmall,
@@ -701,8 +741,7 @@ private fun AlertNotifySection(state: UiState, vm: MainViewModel) {
                     )
                 }
                 Text(
-                    "Todo se hace en tu teléfono: la app consulta la API como siempre y no manda datos tuyos a ningún servicio extra. " +
-                        "Puede tardar hasta el intervalo elegido en avisar.",
+                    footnote,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

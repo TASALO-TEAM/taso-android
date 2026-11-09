@@ -109,6 +109,10 @@ data class AppSettings(
     val lastNotifiedMessageId: Long = 0L,
     /** Ya se le pregunto (o ya eligio) lo de los avisos de alertas: no se vuelve a preguntar. */
     val alertPromptDone: Boolean = false,
+    /** Avisar en el telefono de los pedidos de la tienda (taso-inv). Activo por defecto: solo hace algo con sesion en la Tienda. */
+    val orderNotifications: Boolean = true,
+    /** `creado` (segundos) del ultimo aviso de pedido ya mostrado; 0 = aun sin punto de partida. */
+    val lastNotifiedOrder: Long = 0L,
 ) {
     val source: Source get() = lastSource ?: defaultSource
 

@@ -375,6 +375,18 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         _openAlerts.value = false
     }
 
+    /** La notificacion de un pedido pide abrir la pestaña Tienda. Mismo camino que la de alertas. */
+    private val _openTienda = MutableStateFlow(false)
+    val openTienda: StateFlow<Boolean> = _openTienda
+
+    fun requestOpenTienda() {
+        _openTienda.value = true
+    }
+
+    fun consumeOpenTienda() {
+        _openTienda.value = false
+    }
+
     // ---------- Blog ----------
 
     private val _blog = MutableStateFlow(BlogUiState())
@@ -509,6 +521,11 @@ class MainViewModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             settingsStore.setAlertNotifications(on, baseline = state.value.messages.maxOfOrNull { it.id })
         }
+    }
+
+    /** Aviso en el telefono de los pedidos de la tienda (taso-inv). Al activarlo solo se avisa de lo que llegue despues. */
+    fun setOrderNotifications(on: Boolean) {
+        viewModelScope.launch { settingsStore.setOrderNotifications(on) }
     }
 
     // ---------- Ajustes ----------

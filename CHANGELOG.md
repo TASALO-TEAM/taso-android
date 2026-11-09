@@ -3,6 +3,16 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.22.0
+
+### Avisos de pedidos de la tienda
+- Si entraste en la pestaña Tienda, ahora te llega una notificación cuando cambia el estado de uno de tus pedidos. Si eres del personal, también avisa cuando llega un pedido nuevo.
+- Viene activado, pero solo hace algo si tienes la sesión abierta en la Tienda. Se apaga en Ajustes → Tasas → «Avisos de pedidos de la tienda» o cerrando sesión.
+- En la pantalla bloqueada solo se ve un aviso genérico; el detalle aparece al desbloquear. Al tocar el aviso se abre la Tienda.
+- Llega con el intervalo de actualización en segundo plano (15 minutos como mínimo), no al instante.
+- Mientras esté activo, la sesión de la Tienda no se cierra por llevar días sin abrirla (sigue el tope de 30 días). Está explicado en Ajustes → Privacidad.
+- Se corrige el texto de privacidad: la sesión sin uso caduca a los 10 días, no a los 14.
+
 ## 0.21.3
 
 ### Gráficos

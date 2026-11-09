@@ -9,7 +9,7 @@ data class PrivacySection(val title: String, val lines: List<String>)
  * Texto puro (sin Android) para poder probarlo en la JVM.
  */
 object PrivacyNotice {
-    const val UPDATED = "8 de noviembre de 2026"
+    const val UPDATED = "9 de noviembre de 2026"
     const val FULL_TEXT_URL = "$REPO_URL/blob/main/docs/PRIVACIDAD.md"
 
     /** Correo del equipo, a donde se pide el borrado de datos. */
@@ -50,7 +50,7 @@ object PrivacyNotice {
                 "Tus valoraciones (estrellas) y tus avisos. Si vinculas Telegram y no lo apagas, algunos avisos te llegan también por Telegram.",
                 "Si haces un pedido por el bot de Telegram: el texto de tu mensaje y tu id de chat.",
                 "Datos técnicos: por cada sesión, tu IP y el tipo de navegador; una cookie de sesión, necesaria para mantenerte dentro " +
-                    "(caduca a los 14 días sin usarla o a los 30 como máximo); y los intentos fallidos de entrada (usuario e IP), durante 24 horas. " +
+                    "(caduca a los 10 días sin usarla o a los 30 como máximo, y las vencidas se borran al siguiente inicio de sesión de cualquiera); y los intentos fallidos de entrada (usuario e IP), durante 24 horas. " +
                     "El servidor web también lleva un registro de accesos (IP, navegador y dirección visitada) que se va renovando y guarda solo lo más reciente.",
             ),
         ),
@@ -79,6 +79,16 @@ object PrivacyNotice {
                     "La app no pide ubicación, cámara ni micrófono, y nadie está obligado a instalarla: la herramienta funciona igual desde el navegador.",
                 "Puedes pedirle a un administrador que te muestre tu ficha cuando quieras y corrija lo que esté mal. " +
                     "Sancionar una cuenta limita el acceso a la herramienta; no es una medida disciplinaria laboral, que sigue el Código de Trabajo.",
+            ),
+        ),
+        PrivacySection(
+            "Avisos de pedidos en el teléfono",
+            listOf(
+                "Si entraste en la pestaña Tienda y no lo apagas, la app consulta en segundo plano tus avisos de pedidos (los de la campana de la Tienda) " +
+                    "usando tu sesión, y te los muestra como notificación. No se envía nada más ni se marcan como leídos. En el navegador esto no ocurre.",
+                "Mientras esté activo, esa consulta mantiene viva tu sesión: no se cierra por llevar días sin abrir la Tienda. " +
+                    "Siguen valiendo el tope de 30 días y el cierre de sesión, que la detiene.",
+                "En la pantalla bloqueada solo se ve un aviso genérico. Para apagarlo: Ajustes → Tasas → «Avisos de pedidos de la tienda», o cierra sesión en la Tienda.",
             ),
         ),
         PrivacySection(

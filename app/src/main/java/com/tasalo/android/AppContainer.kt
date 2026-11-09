@@ -9,6 +9,7 @@ import com.tasalo.android.data.local.BlogStore
 import com.tasalo.android.data.local.CacheStore
 import com.tasalo.android.data.local.SettingsStore
 import com.tasalo.android.data.remote.BlogClient
+import com.tasalo.android.data.remote.InvAvisosClient
 import com.tasalo.android.data.remote.TasaloApi
 import com.tasalo.android.diag.DiagnosticLog
 import com.tasalo.android.update.UpdateChecker
@@ -40,6 +41,7 @@ class AppContainer(context: Context) {
     val updateChecker = UpdateChecker(http)
     val updateDownloader = UpdateDownloader(http)
     val blogClient = BlogClient(http)
+    val avisosClient = InvAvisosClient(http)
     val blogStore = BlogStore(context.filesDir)
 
     private val apis = ConcurrentHashMap<String, TasaloApi>()

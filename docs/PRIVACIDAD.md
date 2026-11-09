@@ -1,6 +1,6 @@
 # Privacidad de TASALO Inventario
 
-Última actualización: 8 de noviembre de 2026. Cubre **TASALO Inventario (taso-inv)**: la Tienda para clientes y la herramienta del personal, que la app Android muestra en la pestaña Tienda. No habla de las tasas, el blog ni del resto de la app.
+Última actualización: 9 de noviembre de 2026. Cubre **TASALO Inventario (taso-inv)**: la Tienda para clientes y la herramienta del personal, que la app Android muestra en la pestaña Tienda. No habla de las tasas, el blog ni del resto de la app.
 
 Este texto sale de leer el código y las migraciones de taso-inv (v0.101.0.0), no de memoria. Resumen en lenguaje llano; la app muestra una versión corta en **Ajustes → Privacidad**.
 
@@ -30,7 +30,7 @@ Este texto sale de leer el código y las migraciones de taso-inv (v0.101.0.0), n
 **Registro de actividad:** quién hizo qué sobre qué cuenta (cambios de rol, sanciones, bajas, vínculos con Telegram o Google) y las acciones sensibles del personal (por ejemplo, anular una compra).
 
 **Datos técnicos**
-- Cookie de sesión (necesaria para mantenerte dentro): HttpOnly y SameSite estricta; caduca a los 14 días sin usarla o a los 30 como máximo.
+- Cookie de sesión (necesaria para mantenerte dentro): HttpOnly y SameSite estricta; caduca a los 10 días sin usarla o a los 30 como máximo. Las sesiones vencidas se borran (con su IP y navegador) la próxima vez que alguien inicia sesión.
 - Por cada sesión, tu IP y el tipo de navegador (hasta 200 caracteres).
 - Intentos fallidos de entrada (usuario e IP): se borran a las 24 horas.
 - Registro de accesos del servidor web (IP, navegador, dirección visitada): rota por tamaño y conserva solo lo más reciente (unos pocos MB).
@@ -44,6 +44,12 @@ Atender tus pedidos, mantener tu sesión, proteger las cuentas de abusos (límit
 - **Personal del negocio** (administradores y empleados): tus pedidos y tus datos de contacto y entrega.
 - **Solo administradores:** la gestión de cuentas, su registro de actividad y la ficha de Personal.
 - **Nadie más.** Los costos y ganancias del negocio no se muestran a los clientes.
+
+## Avisos de pedidos en el teléfono (app Android)
+- Si entraste en la pestaña Tienda y no lo apagas, la app consulta en segundo plano tus avisos de pedidos (los mismos de la campana de la Tienda) a `camiersus.duckdns.org`, usando tu sesión, y te los muestra como notificación. No se envía nada más ni se marcan como leídos. Esto no ocurre en el navegador.
+- Mientras esté activo, esa consulta mantiene viva tu sesión: no se cierra por llevar días sin abrir la Tienda. Siguen valiendo el tope de 30 días y el cierre de sesión, que detiene la consulta.
+- En la pantalla bloqueada solo se ve un aviso genérico; el detalle (que puede incluir el nombre de un cliente, si eres del personal) se ve al desbloquear.
+- Para apagarlo: Ajustes → Tasas → «Avisos de pedidos de la tienda», o cerrar sesión en la Tienda.
 
 ## Cuánto tiempo
 - Mientras tengas la cuenta.

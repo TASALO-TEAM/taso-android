@@ -114,6 +114,11 @@ class MainActivity : ComponentActivity() {
             viewModel.requestOpenAlerts()
             intent?.removeExtra(EXTRA_OPEN_ALERTS)
         }
+        // Tap en la notificacion de un pedido de la tienda: abre la pestaña Tienda.
+        if (intent?.getBooleanExtra(EXTRA_OPEN_TIENDA, false) == true) {
+            viewModel.requestOpenTienda()
+            intent?.removeExtra(EXTRA_OPEN_TIENDA)
+        }
         // Vuelta del login con Google hecho en el navegador (tasalo://login?codigo=...). El enlace se limpia al leerlo:
         // si la actividad se recrea (rotar) no debe entregarse otra vez un código que ya se quemó.
         TiendaNav.googleCodeFromLink(intent?.dataString)?.let { code ->
@@ -127,6 +132,9 @@ class MainActivity : ComponentActivity() {
 
         /** Lo pone la notificacion de una alerta del bot: al tocarla se abre la pantalla de notificaciones. */
         const val EXTRA_OPEN_ALERTS = "com.tasalo.android.extra.OPEN_ALERTS"
+
+        /** Lo pone la notificacion de un pedido de la tienda: al tocarla se abre la pestaña Tienda. */
+        const val EXTRA_OPEN_TIENDA = "com.tasalo.android.extra.OPEN_TIENDA"
     }
 }
 
@@ -235,6 +243,18 @@ private fun TasaloRoot(vm: MainViewModel) {
             detailKey = null
             showNotifications = true
             vm.consumeOpenAlerts()
+        }
+
+        // Tap en la notificacion de un pedido de la tienda: se cierra lo que haya encima y se abre la pestaña Tienda.
+        val openTienda by vm.openTienda.collectAsStateWithLifecycle()
+        LaunchedEffect(openTienda) {
+            if (!openTienda) return@LaunchedEffect
+            showNotifications = false
+            showBlog = false
+            detailKey = null
+            vm.consumeOpenTienda()
+            // En el scope del composable, no en este efecto: al consumir la peticion la clave cambia y este efecto se cancela.
+            scope.launch { pagerState.animateScrollToPage(TIENDA_TAB) }
         }
 
         // Un solo diálogo a la vez: primero el reporte de fallo, después la actualización.
