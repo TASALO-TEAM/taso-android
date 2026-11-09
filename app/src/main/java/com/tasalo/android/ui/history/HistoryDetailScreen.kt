@@ -2,22 +2,18 @@ package com.tasalo.android.ui.history
 
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -164,9 +160,7 @@ fun HistoryDetailScreen(
             GlassCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     when {
-                        state.loading -> Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
-                        }
+                        state.loading -> ChartSkeleton(lineColor, LocalGlass.current.border)
                         all.isEmpty() -> {
                             EmptyMessage(
                                 if (state.error) "No se pudo cargar el historial." else "Todavía no hay historial para esta moneda.",

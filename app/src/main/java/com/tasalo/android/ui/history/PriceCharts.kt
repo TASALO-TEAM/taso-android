@@ -3,6 +3,10 @@ package com.tasalo.android.ui.history
 import com.tasalo.android.ui.theme.LocalReduceMotion
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -81,6 +85,54 @@ fun SparklineBackground(points: List<PricePoint>, color: Color, modifier: Modifi
         drawPath(area, Brush.verticalGradient(listOf(color.copy(alpha = 0.22f), Color.Transparent)))
         drawPath(line, color.copy(alpha = 0.14f), style = Stroke(6.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
         drawPath(line, color.copy(alpha = 0.50f), style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+}
+
+/**
+ * Esqueleto del gráfico mientras llega el historial: mismas guías y alto que [PriceChart], una curva fantasma y un
+ * destello que la barre de izquierda a derecha (idea de phantom-ui: el esqueleto imita la forma real, no un anillo).
+ * Con «quitar animaciones» queda quieto. La animación vive solo mientras se muestra.
+ */
+@Composable
+fun ChartSkeleton(color: Color, gridColor: Color, modifier: Modifier = Modifier, height: Dp = 200.dp) {
+    val sweep = if (LocalReduceMotion.current) null else {
+        rememberInfiniteTransition(label = "esqueleto").animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(1300, easing = LinearEasing)),
+            label = "destello",
+        )
+    }
+    Canvas(modifier.fillMaxWidth().height(height).semantics { contentDescription = "Cargando gráfico" }) {
+        val padX = 8.dp.toPx()
+        val padY = 10.dp.toPx()
+        val w = size.width - padX * 2
+        val h = size.height - padY * 2
+        for (i in 0..2) {
+            val y = padY + h * i / 2f
+            drawLine(gridColor, Offset(padX, y), Offset(padX + w, y), strokeWidth = 1.dp.toPx())
+        }
+        val ys = listOf(0.60f, 0.68f, 0.52f, 0.60f, 0.40f, 0.48f, 0.30f, 0.38f, 0.22f)
+        val coords = ys.mapIndexed { i, y -> Offset(padX + w * i / (ys.size - 1), padY + (1f - y) * h) }
+        val line = Path().apply {
+            moveTo(coords.first().x, coords.first().y)
+            for (i in 1 until coords.size) lineTo(coords[i].x, coords[i].y)
+        }
+        val area = Path().apply {
+            addPath(line)
+            lineTo(coords.last().x, size.height)
+            lineTo(coords.first().x, size.height)
+            close()
+        }
+        drawPath(area, Brush.verticalGradient(listOf(color.copy(alpha = 0.10f), Color.Transparent)))
+        // La lectura de `sweep` ocurre al dibujar: animar no recompone, solo repinta.
+        val start = ((sweep?.value ?: 0.5f) * 1.6f - 0.6f) * size.width
+        val glint = Brush.horizontalGradient(
+            listOf(color.copy(alpha = 0.16f), color.copy(alpha = 0.55f), color.copy(alpha = 0.16f)),
+            startX = start,
+            endX = start + size.width * 0.6f,
+        )
+        drawPath(line, glint, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 

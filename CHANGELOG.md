@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.21.3
+
+### Gráficos
+- Mientras carga el historial de una moneda ya no aparece el anillo girando: se ve el esqueleto del gráfico (guías y una curva tenue) con un destello que lo recorre, para que se note que la app está trabajando.
+- Con «quitar animaciones» activado el esqueleto queda quieto.
+
 ## 0.21.2
 
 ### Barra inferior
