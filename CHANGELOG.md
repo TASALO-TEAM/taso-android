@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.23.0
+
+### CADECA se retira
+- CADECA ya no publica tasas, así que la quitamos de la app: el selector, la calculadora, los ajustes y los widgets ahora muestran El Toque, QvaPay y BCC.
+- Si tenías CADECA como fuente por defecto o en algún widget, la app pasa sola a tu fuente por defecto (El Toque si no habías elegido otra).
+
 ## 0.22.1
 
 ### Barra inferior

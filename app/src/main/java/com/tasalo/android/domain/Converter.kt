@@ -2,7 +2,7 @@ package com.tasalo.android.domain
 
 /**
  * Conversión entre monedas para la calculadora, usando un pivote.
- * En El Toque, BCC y CADECA cada tasa es cuántos CUP vale una unidad de esa moneda (1 USD = 520 CUP), así que
+ * En El Toque y BCC cada tasa es cuántos CUP vale una unidad de esa moneda (1 USD = 520 CUP), así que
  * cualquier par se resuelve con una sola fórmula: `monto * tasa(origen) / tasa(destino)` con el CUP como pivote.
  * En QvaPay cada valor es cuánto de un método de pago se obtiene por 1 USD; el pivote es el USD y la tabla guarda
  * el valor en USD de una unidad de cada método (1 / tasa), de modo que la misma fórmula sirve.

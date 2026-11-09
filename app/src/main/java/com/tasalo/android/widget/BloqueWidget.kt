@@ -28,7 +28,7 @@ import com.tasalo.android.domain.ThemeMode
 import com.tasalo.android.util.Format
 import com.tasalo.android.work.RefreshScheduler
 
-/** W2 — "Bloque": las monedas de El Toque, QvaPay, BCC o CADECA, en una o dos columnas según el ancho. */
+/** W2 — "Bloque": las monedas de El Toque, QvaPay o BCC, en una o dos columnas según el ancho. */
 class BloqueWidget : SafeGlanceWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -70,7 +70,7 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         val stale = Format.isStale(rates.fetchedAt, data.now)
         val invert = data.settings.invertColors
         val textColor = if (stale) WidgetColors.dim else WidgetColors.text
-        val isCadeca = source.hasBuySell
+        val hasBuySell = source.hasBuySell
         val list = rates.bySource[source].orEmpty().filter { !data.settings.isHidden(source, it.currency) }
 
         val scale = fontScale().coerceAtMost(1.15f)
@@ -78,18 +78,18 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         val usableH = size.height.value - 24f
 
         // Con ancho de sobra, dos columnas: la misma información cabe en menos alto
-        // (antes un 4x3 quedaba medio vacío). CADECA necesita más ancho por las dos cifras.
-        val columns = if (usableW >= (if (isCadeca) 280f else 220f)) 2 else 1
+        // (antes un 4x3 quedaba medio vacío). Compra y venta necesitan más ancho por las dos cifras.
+        val columns = if (usableW >= (if (hasBuySell) 280f else 220f)) 2 else 1
         val rowDp = 24f * scale
-        val headerDp = 24f * scale + if (isCadeca) 14f else 4f
+        val headerDp = 24f * scale + if (hasBuySell) 14f else 4f
         val maxRows = ((usableH - headerDp) / rowDp).toInt().coerceIn(1, 15)
 
         WidgetHeader(source.widgetTitle(), subtitleFor(rates.fetchedAt, data.now))
-        if (isCadeca && list.isNotEmpty()) {
+        if (hasBuySell && list.isNotEmpty()) {
             Row(GlanceModifier.fillMaxWidth()) {
                 repeat(columns) { index ->
                     if (index > 0) Spacer(GlanceModifier.width(10.dp))
-                    CadecaHeader(GlanceModifier.defaultWeight())
+                    BuySellHeader(GlanceModifier.defaultWeight())
                 }
             }
         } else {
@@ -102,7 +102,7 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
         }
 
         // Con una sola columna y ancho de sobra, cada fila lleva su curva de 30 dias (sale del resumen guardado).
-        val showSpark = columns == 1 && !isCadeca && usableW >= 170f
+        val showSpark = columns == 1 && !hasBuySell && usableW >= 170f
         val sparkFor: (Rate) -> Bitmap? = { r ->
             if (showSpark) WidgetChart.rowSpark(context, data, source, r.currency, 44f, 18f) else null
         }
@@ -111,7 +111,7 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
             Row(GlanceModifier.fillMaxWidth()) {
                 chunk.forEachIndexed { index, rate ->
                     if (index > 0) Spacer(GlanceModifier.width(10.dp))
-                    RateCellRow(rate, isCadeca, textColor, invert, sparkFor(rate), GlanceModifier.defaultWeight())
+                    RateCellRow(rate, hasBuySell, textColor, invert, sparkFor(rate), GlanceModifier.defaultWeight())
                 }
                 // Última fila incompleta: se reserva el hueco para que la columna no se estire.
                 repeat(columns - chunk.size) {
@@ -124,7 +124,7 @@ private fun BloqueContent(context: Context, data: WidgetData, source: Source) {
 }
 
 @Composable
-private fun CadecaHeader(modifier: GlanceModifier) {
+private fun BuySellHeader(modifier: GlanceModifier) {
     Row(modifier) {
         Spacer(GlanceModifier.defaultWeight())
         WText("Compra", color = WidgetColors.dim, size = 10, end = true, modifier = GlanceModifier.defaultWeight())
@@ -137,7 +137,7 @@ private fun CadecaHeader(modifier: GlanceModifier) {
 @Composable
 private fun RateCellRow(
     rate: Rate,
-    isCadeca: Boolean,
+    hasBuySell: Boolean,
     textColor: androidx.glance.unit.ColorProvider,
     invert: Boolean,
     spark: Bitmap?,
@@ -152,7 +152,7 @@ private fun RateCellRow(
                 modifier = GlanceModifier.width(44.dp).height(18.dp),
             )
         }
-        if (isCadeca) {
+        if (hasBuySell) {
             WText(rate.buy?.let(Format::rate) ?: "—", size = 13, mono = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())
             WText(rate.sell?.let(Format::rate) ?: Format.rate(rate.rate), size = 13, mono = true, bold = true, color = textColor, end = true, modifier = GlanceModifier.defaultWeight())
         } else {

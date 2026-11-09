@@ -9,11 +9,10 @@ const val REPO_URL = "https://github.com/TASALO-TEAM/taso-android"
 enum class Source(val id: String, val title: String) {
     ELTOQUE("eltoque", "El Toque"),
     QVAPAY("qvapay", "QvaPay"),
-    BCC("bcc", "BCC"),
-    CADECA("cadeca", "CADECA");
+    BCC("bcc", "BCC");
 
-    /** CADECA y QvaPay traen compra y venta por separado (en QvaPay, `rate` es el promedio). */
-    val hasBuySell: Boolean get() = this == CADECA || this == QVAPAY
+    /** QvaPay trae compra y venta por separado (`rate` es el promedio). */
+    val hasBuySell: Boolean get() = this == QVAPAY
 
     companion object {
         fun fromId(value: String?): Source? =
