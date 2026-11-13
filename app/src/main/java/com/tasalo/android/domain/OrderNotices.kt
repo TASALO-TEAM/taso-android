@@ -17,7 +17,9 @@ data class OrderAviso(val tipo: String, val texto: String, val creado: Long, val
  * shortcut: se compara por `creado` (segundos); dos avisos del mismo segundo que el ultimo avisado se perderian, usar el id si molesta.
  */
 object OrderNotices {
-    private val TYPES = setOf("pedido_estado", "pedido_nuevo")
+    private val TYPES = setOf("pedido_estado", "pedido_nuevo", "usuario_nuevo")
+    // taso-inv solo crea `usuario_nuevo` para admins, asi que no hace falta mirar el rol aqui.
+    private const val NEW_USER = "usuario_nuevo"
     private val json = Json { ignoreUnknownKeys = true }
 
     /** null = respuesta que no es valida (no se avisa nada). Un aviso raro se descarta sin tumbar el resto. */
@@ -44,10 +46,13 @@ object OrderNotices {
     /** null = nada que avisar. Uno: su texto; varios: un resumen con el texto del mas reciente. `newestId` = su `creado`. */
     fun notice(pending: List<OrderAviso>): AlertNotice? {
         val newest = pending.maxByOrNull { it.creado } ?: return null
-        return if (pending.size == 1) {
-            AlertNotice("Pedido de la tienda", newest.texto, newest.creado)
-        } else {
-            AlertNotice("${pending.size} avisos de pedidos", newest.texto, newest.creado)
+        val onlyUsers = pending.all { it.tipo == NEW_USER }
+        val noUsers = pending.none { it.tipo == NEW_USER }
+        return when {
+            pending.size == 1 -> AlertNotice(if (onlyUsers) "Nuevo usuario" else "Pedido de la tienda", newest.texto, newest.creado)
+            onlyUsers -> AlertNotice("${pending.size} usuarios nuevos", newest.texto, newest.creado)
+            noUsers -> AlertNotice("${pending.size} avisos de pedidos", newest.texto, newest.creado)
+            else -> AlertNotice("${pending.size} avisos de TASALO inv", newest.texto, newest.creado)
         }
     }
 }

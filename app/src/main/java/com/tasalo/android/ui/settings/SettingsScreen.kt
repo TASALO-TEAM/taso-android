@@ -660,7 +660,7 @@ private fun OrderNotifySection(state: UiState, vm: MainViewModel) {
     NotifySection(
         title = "Avisos de pedidos de la tienda",
         description = "Una notificación cuando cambie el estado de tus pedidos en la Tienda o, si eres del personal, " +
-            "cuando llegue un pedido nuevo. Solo funciona si tienes la sesión abierta en la pestaña Tienda.",
+            "cuando llegue un pedido nuevo (y, si eres administrador, cuando entre un usuario nuevo). Solo funciona si tienes la sesión abierta en la pestaña Tienda.",
         enabled = state.settings.orderNotifications,
         onChange = vm::setOrderNotifications,
         channelId = AlertNotifier.ORDERS_CHANNEL_ID,

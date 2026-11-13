@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.24.0
+
+### Avisos de usuarios nuevos (administradores)
+- Si eres administrador de TASALO inv, la app ahora tambi?n te avisa en el tel?fono cuando entra un usuario nuevo (con Telegram o con Google), igual que ya avisaba de los pedidos.
+- Sigue siendo el mismo interruptor de Ajustes, ?Avisos de pedidos de la tienda?, y solo funciona con la sesi?n abierta en la pesta?a Tienda.
+
 ## 0.23.0
 
 ### CADECA se retira

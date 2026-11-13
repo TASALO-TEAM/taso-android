@@ -55,4 +55,18 @@ class OrderNoticesTest {
         assertEquals(40L, OrderNotices.baseline(listOf(aviso(10), aviso(40, leida = true))))
         assertEquals(1L, OrderNotices.baseline(emptyList()))
     }
+
+    @Test
+    fun `los usuarios nuevos tambien cuentan y tienen su propio titulo`() {
+        val user = { c: Long -> aviso(c, tipo = "usuario_nuevo", texto = "Nuevo ingreso con Google: ana") }
+        assertEquals(listOf(5L), OrderNotices.pending(listOf(user(5), user(2)), lastNotified = 3).map { it.creado })
+
+        val one = OrderNotices.notice(listOf(user(5)))!!
+        assertEquals("Nuevo usuario", one.title)
+        assertEquals("Nuevo ingreso con Google: ana", one.text)
+
+        assertEquals("2 usuarios nuevos", OrderNotices.notice(listOf(user(5), user(6)))!!.title)
+        assertEquals("2 avisos de TASALO inv", OrderNotices.notice(listOf(user(5), aviso(6)))!!.title)
+        assertEquals("2 avisos de pedidos", OrderNotices.notice(listOf(aviso(5), aviso(6)))!!.title)
+    }
 }
