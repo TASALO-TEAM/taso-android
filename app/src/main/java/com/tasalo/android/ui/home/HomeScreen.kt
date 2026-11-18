@@ -20,16 +20,25 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tasalo.android.ui.components.AdaptiveSegmentedChoice
 import com.tasalo.android.domain.PricePoint
+import com.tasalo.android.domain.Rate
+import com.tasalo.android.domain.RateGroups
 import com.tasalo.android.domain.Source
 import com.tasalo.android.ui.RefreshError
 import com.tasalo.android.ui.UiState
@@ -65,6 +74,8 @@ fun HomeScreen(
     listView: Boolean = false,
 ) {
     val source = state.settings.source
+    // «Mostrar más» (monedas de referencia): se recuerda al girar la pantalla y se cierra al cambiar de app.
+    var showMore by rememberSaveable { mutableStateOf(false) }
     val snapshot = state.rates
     val rates = snapshot?.bySource?.get(source).orEmpty()
         .filter { !state.settings.isHidden(source, it.currency) }
@@ -131,7 +142,8 @@ fun HomeScreen(
                         item(span = { GridItemSpan(maxLineSpan) }) { EmptyMessage("Sin datos para esta fuente") }
                     }
                     else -> {
-                        items(rates, key = { "${source.name}:${it.currency}" }) { rate ->
+                        val groups = RateGroups.group(rates)
+                        val card: @Composable (Rate) -> Unit = { rate ->
                             RateCard(
                                 rate,
                                 source,
@@ -139,6 +151,38 @@ fun HomeScreen(
                                 onClick = { onOpenDetail(source, rate.currency) },
                                 listMode = listView,
                             )
+                        }
+                        if (groups == null) {
+                            items(rates, key = { "${source.name}:${it.currency}" }) { rate -> card(rate) }
+                        } else {
+                            groups.sections.forEach { section ->
+                                item(key = "title:${source.name}:${section.group}", span = { GridItemSpan(maxLineSpan) }) {
+                                    Text(
+                                        section.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 4.dp).semantics { heading() },
+                                    )
+                                }
+                                items(section.rates, key = { "${source.name}:${it.currency}" }) { rate -> card(rate) }
+                            }
+                            if (groups.reference.isNotEmpty()) {
+                                item(key = "more:${source.name}", span = { GridItemSpan(maxLineSpan) }) {
+                                    TextButton(onClick = { showMore = !showMore }) {
+                                        Text(if (showMore) "Mostrar menos" else "Mostrar más (${groups.reference.size})")
+                                    }
+                                }
+                                if (showMore) {
+                                    item(key = "refnote:${source.name}", span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(
+                                            "Valores de referencia: sin ofertas reales en el mercado.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    items(groups.reference, key = { "${source.name}:${it.currency}" }) { rate -> card(rate) }
+                                }
+                            }
                         }
                     }
                 }

@@ -5,6 +5,7 @@ import com.tasalo.android.domain.Change
 import com.tasalo.android.domain.Currencies
 import com.tasalo.android.domain.QvaPay
 import com.tasalo.android.domain.Rate
+import com.tasalo.android.domain.RateGroups
 import com.tasalo.android.domain.Source
 import com.tasalo.android.domain.YearApi
 import java.time.Instant
@@ -65,12 +66,26 @@ object Parsers {
         val buy = number(o["buy"])
         val sell = number(o["sell"])
         val rate = number(o["rate"]) ?: sell ?: buy ?: return null
-        return Rate(code, rate, buy, sell, change(o["change"]), number(o["prev_rate"]))
+        return Rate(
+            code, rate, buy, sell, change(o["change"]), number(o["prev_rate"]),
+            name = (o["name"] as? JsonPrimitive)?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() },
+            group = (o["group"] as? JsonPrimitive)?.contentOrNull?.takeIf { it in RateGroups.ORDER },
+            tier = (o["tier"] as? JsonPrimitive)?.contentOrNull?.takeIf { it == "market" || it == "reference" },
+            offers = number(o["offers"])?.toInt(),
+            order = number(o["order"])?.toInt(),
+        )
     }
 
+    /** Con catálogo de la API (group/order) manda el catálogo; sin él, el orden de respaldo de cada fuente. */
     fun sortRates(list: List<Rate>, source: Source? = null): List<Rate> {
         val index: (String) -> Int = if (source == Source.QVAPAY) QvaPay::orderIndex else Currencies::orderIndex
-        return list.sortedWith(compareBy<Rate>({ index(it.currency) }, { it.currency }))
+        return list.sortedWith(
+            compareBy<Rate>(
+                { RateGroups.ORDER.indexOf(it.group).let { i -> if (i < 0) RateGroups.ORDER.size else i } },
+                { if (it.group != null) it.order ?: Int.MAX_VALUE else index(it.currency) },
+                { it.currency },
+            ),
+        )
     }
 
     /** Fuente vacía, ausente o `null` = lista vacía, no error. */
