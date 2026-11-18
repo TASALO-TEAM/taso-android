@@ -120,7 +120,7 @@ fun RateCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        RateTitle(rate.currency, meta?.flag, meta?.name)
+                        RateTitle(rate.currency, meta?.flag, meta?.name ?: rate.name)
                         ChangeText(rate.change, Format.change(rate))
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -129,7 +129,7 @@ fun RateCard(
                 }
             } else {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    RateTitle(rate.currency, meta?.flag, meta?.name)
+                    RateTitle(rate.currency, meta?.flag, meta?.name ?: rate.name)
                     RateValue(rate, source)
                     ChangeText(rate.change, Format.change(rate))
                 }

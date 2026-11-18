@@ -29,7 +29,17 @@ data class Rate(
     val sell: Double?,
     val change: Change,
     val prevRate: Double?,
+    /** Catálogo de El Toque que manda la API (opcional: QvaPay, BCC o una API vieja no lo traen). */
+    val name: String? = null,
+    /** "main" | "crypto" | "other". */
+    val group: String? = null,
+    /** "market" o "reference" (valor fijo, sin ofertas reales). */
+    val tier: String? = null,
+    val offers: Int? = null,
+    val order: Int? = null,
 ) {
+    val isReference: Boolean get() = tier == "reference"
+
     val changePct: Double?
         get() = prevRate?.takeIf { it != 0.0 }?.let { (rate - it) / it * 100 }
 }
@@ -122,7 +132,7 @@ data class CurrencyMeta(val name: String, val flag: String)
 
 object Currencies {
     val PREFERRED_ORDER = listOf(
-        "EUR", "USD", "MLC", "BTC", "TRX", "USDT",
+        "EUR", "USD", "ZELLE", "MLC", "CLA", "BTC", "TRX", "USDT",
         "CAD", "GBP", "CHF", "RUB", "AUD", "JPY",
         "MXN", "BRL", "COP",
     )
@@ -130,6 +140,15 @@ object Currencies {
     val META: Map<String, CurrencyMeta> = mapOf(
         "EUR" to CurrencyMeta("Euro", "🇪🇺"),
         "USD" to CurrencyMeta("Dólar", "🇺🇸"),
+        "ZELLE" to CurrencyMeta("Zelle", "⚡"),
+        "CLA" to CurrencyMeta("Tarjeta Clásica", "💳"),
+        "BNB" to CurrencyMeta("BNB", "🔶"),
+        "LTC" to CurrencyMeta("Litecoin", "Ł"),
+        "USDT_ERC20" to CurrencyMeta("Tether (ERC20)", "💵"),
+        "JMD" to CurrencyMeta("Dólar jamaicano", "🇯🇲"),
+        "RUR" to CurrencyMeta("Rublo ruso", "🇷🇺"),
+        "SVC" to CurrencyMeta("Colón salvadoreño", "🇸🇻"),
+        "UYP" to CurrencyMeta("Peso uruguayo", "🇺🇾"),
         "MLC" to CurrencyMeta("MLC", "💳"),
         "BTC" to CurrencyMeta("Bitcoin", "₿"),
         "TRX" to CurrencyMeta("TRON", "⚡"),
