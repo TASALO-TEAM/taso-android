@@ -5,11 +5,11 @@ data class PrivacySection(val title: String, val lines: List<String>)
 
 /**
  * Descargo de privacidad de TASALO Inventario (taso-inv, la pestana Tienda). Es el resumen de `docs/PRIVACIDAD.md`:
- * si cambia uno, cambia el otro. Lo redactado aqui sale de leer el codigo y las migraciones de taso-inv (v0.101.0.0), no de memoria.
+ * si cambia uno, cambia el otro. Lo redactado aqui sale de leer el codigo y las migraciones de taso-inv (v0.101.0.0, puesto al dia con la v0.117.0.2), no de memoria.
  * Texto puro (sin Android) para poder probarlo en la JVM.
  */
 object PrivacyNotice {
-    const val UPDATED = "9 de noviembre de 2026"
+    const val UPDATED = "21 de noviembre de 2026"
     const val FULL_TEXT_URL = "$REPO_URL/blob/main/docs/PRIVACIDAD.md"
 
     /** Correo del equipo, a donde se pide el borrado de datos. */
@@ -47,6 +47,8 @@ object PrivacyNotice {
                 "Si entras con Google: el identificador de tu cuenta de Google, tu nombre y tu correo (queda como tu contacto). " +
                     "Si entras con Telegram: tu id de Telegram, tu nombre y tu @usuario.",
                 "Tus pedidos: lo que pides, la fecha y el destino de entrega, las notas y el total, y la ficha de cliente con los datos de contacto y entrega que se hayan dado.",
+                "Si pediste tu cuenta con usuario y contraseña, también se guarda qué versión del aviso de privacidad aceptaste y cuándo.",
+                "Si vinculas un Telegram o un Google que ya habían creado otra cuenta de cliente sin contraseña, esa cuenta se une a la tuya: sus pedidos, valoraciones y avisos pasan a la tuya y la cuenta anterior desaparece.",
                 "Tus valoraciones (estrellas) y tus avisos. Si vinculas Telegram y no lo apagas, algunos avisos te llegan también por Telegram.",
                 "Si haces un pedido por el bot de Telegram: el texto de tu mensaje y tu id de chat.",
                 "Datos técnicos: por cada sesión, tu IP y el tipo de navegador; una cookie de sesión, necesaria para mantenerte dentro " +
@@ -74,7 +76,7 @@ object PrivacyNotice {
             "Si trabajas en el negocio",
             listOf(
                 "Esta herramienta no sustituye tu contrato ni tu expediente laboral, que el negocio lleva aparte según el Código de Trabajo. " +
-                    "La ficha de Personal no tiene campos para carné de identidad, dirección, sueldo ni salud.",
+                    "La ficha de Personal puede llevar tu cargo, tu contacto, tu sueldo y los pagos de nómina que te hace el negocio, y solo la ven los administradores. No tiene campos para carné de identidad, dirección ni salud.",
                 "Tus sesiones y el registro de actividad sirven para saber quién hizo qué en el negocio y proteger las cuentas, no para seguirte fuera del trabajo. " +
                     "La app no pide ubicación, cámara ni micrófono, y nadie está obligado a instalarla: la herramienta funciona igual desde el navegador.",
                 "Puedes pedirle a un administrador que te muestre tu ficha cuando quieras y corrija lo que esté mal. " +
@@ -84,7 +86,7 @@ object PrivacyNotice {
         PrivacySection(
             "Avisos de pedidos en el teléfono",
             listOf(
-                "Si entraste en la pestaña Tienda y no lo apagas, la app consulta en segundo plano tus avisos de pedidos (los de la campana de la Tienda) " +
+                "Si entraste en la pestaña Tienda y no lo apagas, la app consulta en segundo plano tus avisos de pedidos y, si eres administrador, los de usuarios nuevos (los de la campana de la Tienda) " +
                     "usando tu sesión, y te los muestra como notificación. No se envía nada más ni se marcan como leídos. En el navegador esto no ocurre.",
                 "Mientras esté activo, esa consulta mantiene viva tu sesión: no se cierra por llevar días sin abrir la Tienda. " +
                     "Siguen valiendo el tope de 30 días y el cierre de sesión, que la detiene.",
