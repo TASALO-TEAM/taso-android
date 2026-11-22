@@ -3,6 +3,12 @@
 Cada versión nueva se publica al subir a `main` un `VERSION_NAME` (en `gradle.properties`) sin Release.
 El texto de la sección `## <versión>` es el que ven los usuarios en el aviso de actualización.
 
+## 0.25.1
+
+### Privacidad al día
+- El texto de Ajustes > Privacidad ahora dice lo que TASALO Inventario guarda hoy: el sueldo y los pagos de nómina del personal (solo los ven los administradores), la versión del aviso de privacidad que aceptas al pedir tu cuenta y la unión de cuentas cuando vinculas un Telegram o un Google que ya tenían otra cuenta.
+- Antes decía que no se guardaban sueldos; desde la nómina de noviembre eso ya no era cierto.
+
 ## 0.24.0
 
 ### Avisos de usuarios nuevos (administradores)
